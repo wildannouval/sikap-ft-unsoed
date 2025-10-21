@@ -12,9 +12,100 @@
             </a>
 
             <flux:navlist variant="outline">
-                <flux:navlist.group :heading="__('Platform')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                {{-- Mahasiswa --}}
+                @role('Mahasiswa')
+                <flux:navlist.group heading="Mahasiswa" class="grid">
+                    <flux:navlist.item
+                        icon="home"
+                        :href="route('mhs.dashboard')"
+                        :current="request()->routeIs('mhs.dashboard')"
+                        wire:navigate>Dashboard</flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="document-plus"
+                        :href="route('mhs.sp.index')"
+                        :current="request()->routeIs('mhs.sp.*')"
+                        wire:navigate>Surat Pengantar</flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="bell"
+                        :href="route('mhs.notifikasi')"
+                        :current="request()->routeIs('mhs.notifikasi')"
+                        wire:navigate>Notifikasi</flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="calendar-days"
+                        :href="route('mhs.kalender')"
+                        :current="request()->routeIs('mhs.kalender')"
+                        wire:navigate>Kalender Seminar</flux:navlist.item>
                 </flux:navlist.group>
+                @endrole
+
+                {{-- Bapendik --}}
+                @role('Bapendik')
+                <flux:navlist.group heading="Bapendik" class="grid">
+                    <flux:navlist.item icon="home" :href="route('bap.dashboard')" :current="request()->routeIs('bap.dashboard')" wire:navigate>Dashboard</flux:navlist.item>
+
+                    @can('sp.validate')
+                    <flux:navlist.item icon="document-check" :href="route('bap.sp.validasi')" :current="request()->routeIs('bap.sp.validasi')" wire:navigate>Validasi Surat Pengantar</flux:navlist.item>
+                    @endcan
+
+                    @can('kp.approve')
+                    <flux:navlist.item icon="clipboard-check" :href="route('bap.kp.validasi')" :current="request()->routeIs('bap.kp.validasi')" wire:navigate>Validasi KP</flux:navlist.item>
+                    @endcan
+
+                    @can('seminar.schedule')
+                    <flux:navlist.item icon="calendar-plus" :href="route('bap.seminar.schedule')" :current="request()->routeIs('bap.seminar.schedule')" wire:navigate>Penjadwalan Seminar</flux:navlist.item>
+                    @endcan
+
+                    @can('masterdata.manage')
+                    <flux:navlist.item icon="users" :href="route('bap.users')" :current="request()->routeIs('bap.users')" wire:navigate>Data Pengguna</flux:navlist.item>
+                    <flux:navlist.item icon="building-2" :href="route('bap.ruangan')" :current="request()->routeIs('bap.ruangan')" wire:navigate>Data Ruangan</flux:navlist.item>
+                    <flux:navlist.item icon="book-open-text" :href="route('bap.jurusan')" :current="request()->routeIs('bap.jurusan')" wire:navigate>Data Jurusan</flux:navlist.item>
+                    @endcan
+
+                    <flux:navlist.item icon="bell" :href="route('bap.notifikasi')" :current="request()->routeIs('bap.notifikasi')" wire:navigate>Notifikasi</flux:navlist.item>
+                    <flux:navlist.item icon="calendar" :href="route('bap.kalender')" :current="request()->routeIs('bap.kalender')" wire:navigate>Kalender Seminar</flux:navlist.item>
+                </flux:navlist.group>
+                @endrole
+
+                {{-- Dosen Pembimbing --}}
+                @role('Dosen Pembimbing')
+                <flux:navlist.group heading="Dosen Pembimbing" class="grid">
+                    <flux:navlist.item icon="home" :href="route('dsp.dashboard')" :current="request()->routeIs('dsp.dashboard')" wire:navigate>Dashboard</flux:navlist.item>
+                    <flux:navlist.item icon="graduation-cap" :href="route('dsp.mhs')" :current="request()->routeIs('dsp.mhs')" wire:navigate>Mahasiswa Bimbingan</flux:navlist.item>
+
+                    @can('nilai.input')
+                    <flux:navlist.item icon="square-pen" :href="route('dsp.nilai')" :current="request()->routeIs('dsp.nilai')" wire:navigate>Penilaian KP</flux:navlist.item>
+                    @endcan
+
+                    <flux:navlist.item icon="folder-archive" :href="route('dsp.laporan')" :current="request()->routeIs('dsp.laporan')" wire:navigate>Laporan & Arsip</flux:navlist.item>
+                    <flux:navlist.item icon="bell" :href="route('dsp.notifikasi')" :current="request()->routeIs('dsp.notifikasi')" wire:navigate>Notifikasi</flux:navlist.item>
+                    <flux:navlist.item icon="calendar" :href="route('dsp.kalender')" :current="request()->routeIs('dsp.kalender')" wire:navigate>Kalender Seminar</flux:navlist.item>
+                </flux:navlist.group>
+                @endrole
+
+                {{-- Dosen Komisi --}}
+                @role('Dosen Komisi')
+                <flux:navlist.group heading="Dosen Komisi" class="grid">
+                    <flux:navlist.item icon="home" :href="route('kom.dashboard')" :current="request()->routeIs('kom.dashboard')" wire:navigate>Dashboard</flux:navlist.item>
+
+                    @can('kp.approve')
+                    <flux:navlist.item icon="clipboard-check" :href="route('kom.kp.validasi')" :current="request()->routeIs('kom.kp.validasi')" wire:navigate>Validasi Pengajuan KP</flux:navlist.item>
+                    @endcan
+
+                    @can('nilai.input')
+                    <flux:navlist.item icon="square-pen" :href="route('kom.nilai')" :current="request()->routeIs('kom.nilai')" wire:navigate>Penilaian KP</flux:navlist.item>
+                    @endcan
+
+                    <flux:navlist.item icon="folder-archive" :href="route('kom.laporan')" :current="request()->routeIs('kom.laporan')" wire:navigate>Laporan & Arsip</flux:navlist.item>
+                    <flux:navlist.item icon="bell" :href="route('kom.notifikasi')" :current="request()->routeIs('kom.notifikasi')" wire:navigate>Notifikasi</flux:navlist.item>
+                    <flux:navlist.item icon="calendar" :href="route('kom.kalender')" :current="request()->routeIs('kom.kalender')" wire:navigate>Kalender Seminar</flux:navlist.item>
+                </flux:navlist.group>
+                @endrole
+                {{-- <flux:navlist.group :heading="__('Platform')" class="grid">
+                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                </flux:navlist.group> --}}
             </flux:navlist>
 
             <flux:spacer />

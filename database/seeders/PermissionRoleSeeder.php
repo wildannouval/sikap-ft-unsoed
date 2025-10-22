@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -10,29 +9,73 @@ use Spatie\Permission\Models\Role;
 class PermissionRoleSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Buat permission & role dasar aplikasi.
      */
     public function run(): void
     {
-        app()['cache']->forget('spatie.permission.cache');
+        // Bersihkan cache permission agar perubahan terdeteksi
+        app('cache')->forget('spatie.permission.cache');
 
-        $perms = [
-            'sp.create','sp.view','sp.validate',
-            'kp.create','kp.view','kp.approve',
-            'bimbingan.create','bimbingan.view','bimbingan.verify',
-            'seminar.register','seminar.schedule','seminar.view',
-            'nilai.input','nilai.view','masterdata.manage',
+        $permissions = [
+            // Surat Pengantar
+            'sp.create', 'sp.view', 'sp.validate',
+
+            // KP
+            'kp.create', 'kp.view', 'kp.approve',
+
+            // Bimbingan
+            'bimbingan.create', 'bimbingan.view', 'bimbingan.verify',
+
+            // Seminar
+            'seminar.register', 'seminar.schedule', 'seminar.view',
+
+            // Nilai
+            'nilai.input', 'nilai.view',
+
+            // Master data (hak admin/bapendik)
+            'masterdata.manage',
+
+            // (opsional) Penandatangan
+            'signatory.manage',
         ];
-        foreach ($perms as $p) { Permission::firstOrCreate(['name'=>$p,'guard_name'=>'web']); }
 
-        $roleMhs  = Role::firstOrCreate(['name'=>'Mahasiswa', 'guard_name'=>'web']);
-        $roleBap  = Role::firstOrCreate(['name'=>'Bapendik', 'guard_name'=>'web']);
-        $roleDsp  = Role::firstOrCreate(['name'=>'Dosen Pembimbing', 'guard_name'=>'web']);
-        $roleKom  = Role::firstOrCreate(['name'=>'Dosen Komisi', 'guard_name'=>'web']);
+        foreach ($permissions as $name) {
+            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        }
 
-        $roleMhs->givePermissionTo(['sp.create','sp.view','kp.create','kp.view','bimbingan.create','bimbingan.view','seminar.register','seminar.view','nilai.view']);
-        $roleBap->givePermissionTo(['sp.validate','kp.approve','seminar.schedule','seminar.view','masterdata.manage']);
-        $roleDsp->givePermissionTo(['bimbingan.verify','nilai.input','seminar.view']);
-        $roleKom->givePermissionTo(['kp.approve','nilai.input','seminar.view']);
+        // Roles
+        $roleMhs = Role::firstOrCreate(['name' => 'Mahasiswa',        'guard_name' => 'web']);
+        $roleBap = Role::firstOrCreate(['name' => 'Bapendik',         'guard_name' => 'web']);
+        $roleDsp = Role::firstOrCreate(['name' => 'Dosen Pembimbing', 'guard_name' => 'web']);
+        $roleKom = Role::firstOrCreate(['name' => 'Dosen Komisi',     'guard_name' => 'web']);
+
+        // Assign permissions per role
+        $roleMhs->syncPermissions([
+            'sp.create','sp.view',
+            'kp.create','kp.view',
+            'bimbingan.create','bimbingan.view',
+            'seminar.register','seminar.view',
+            'nilai.view',
+        ]);
+
+        $roleBap->syncPermissions([
+            'sp.validate',
+            'kp.approve',
+            'seminar.schedule','seminar.view',
+            'masterdata.manage',
+            'signatory.manage', // boleh kelola penandatangan
+        ]);
+
+        $roleDsp->syncPermissions([
+            'bimbingan.verify',
+            'nilai.input',
+            'seminar.view',
+        ]);
+
+        $roleKom->syncPermissions([
+            'kp.approve',
+            'nilai.input',
+            'seminar.view',
+        ]);
     }
 }

@@ -10,12 +10,17 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "bacon/bacon-qr-code": "^3.0",
+        "barryvdh/laravel-dompdf": "^3.1",
         "laravel/fortify": "^1.30",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "livewire/flux": "2.2.6",
         "livewire/flux-pro": "2.2.6",
         "livewire/volt": "^1.7.0",
+        "mpdf/mpdf": "^8.2",
+        "ncjoes/office-converter": "^1.0",
+        "phpoffice/phpword": "1.2",
         "spatie/laravel-permission": "^6.21"
     },
     "repositories": [     
@@ -23,7 +28,7 @@
            "type": "artifact",
            "url": "./packages"
        }
-   ],
+    ],
     "require-dev": {
         "fakerphp/faker": "^1.23",
         "laravel/pail": "^1.2.2",

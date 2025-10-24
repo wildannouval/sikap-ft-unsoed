@@ -1,31 +1,40 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
-    <head>
-        @include('partials.head')
-    </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky stashable class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
-            <a href="{{ route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
-                <x-app-logo />
-            </a>
+<head>
+    @include('partials.head')
+</head>
 
-            <flux:navlist variant="outline">
-                {{-- Mahasiswa --}}
-                @role('Mahasiswa')
+<body class="min-h-screen bg-white dark:bg-zinc-800">
+    <flux:sidebar sticky stashable class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+        <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
+
+        <a href="{{ route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
+            <x-app-logo />
+        </a>
+
+        <flux:navlist variant="outline">
+            {{-- Mahasiswa --}}
+            @role('Mahasiswa')
                 <flux:navlist.group heading="Mahasiswa" class="grid">
-                    <flux:navlist.item
-                        icon="home"
-                        :href="route('mhs.dashboard')"
-                        :current="request()->routeIs('mhs.dashboard')"
-                        wire:navigate>Dashboard</flux:navlist.item>
+                    <flux:navlist.item icon="home" :href="route('mhs.dashboard')"
+                        :current="request()->routeIs('mhs.dashboard')" wire:navigate>
+                        Dashboard
+                    </flux:navlist.item>
 
-                    <flux:navlist.item
-                        icon="document-plus"
-                        :href="route('mhs.sp.index')"
-                        :current="request()->routeIs('mhs.sp.*')"
-                        wire:navigate>Surat Pengantar</flux:navlist.item>
+                    @can('sp.view')
+                        <flux:navlist.item icon="document-check" :href="route('mhs.sp.index')"
+                            :current="request()->routeIs('mhs.sp.index')" wire:navigate>
+                            Surat Pengantar
+                        </flux:navlist.item>
+                    @endcan
+
+                    @can('kp.create')
+                        <flux:navlist.item icon="document-text" :href="route('mhs.kp.index')"
+                            :current="request()->routeIs('mhs.kp.index')" wire:navigate>
+                            Pengajuan KP
+                        </flux:navlist.item>
+                    @endcan
 
                     {{-- <flux:navlist.item
                         icon="bell"
@@ -39,10 +48,10 @@
                         :current="request()->routeIs('mhs.kalender')"
                         wire:navigate>Kalender Seminar</flux:navlist.item> --}}
                 </flux:navlist.group>
-                @endrole
+            @endrole
 
-                {{-- Bapendik --}}
-                @role('Bapendik')
+            {{-- Bapendik --}}
+            {{-- @role('Bapendik')
                 <flux:navlist.group heading="Bapendik" class="grid">
                     <flux:navlist.item icon="home" :href="route('bap.dashboard')" :current="request()->routeIs('bap.dashboard')" wire:navigate>Dashboard</flux:navlist.item>
 
@@ -54,7 +63,7 @@
                     <flux:navlist.item icon="identification" :href="route('bap.penandatangan.index')" :current="request()->routeIs('bap.penandatangan.index')" wire:navigate>Penandatangan</flux:navlist.item>
                     @endcan
 
-                    {{-- @can('kp.approve')
+                    @can('kp.approve')
                     <flux:navlist.item icon="document-check" :href="route('bap.kp.validasi')" :current="request()->routeIs('bap.kp.validasi')" wire:navigate>Validasi KP</flux:navlist.item>
                     @endcan
 
@@ -69,159 +78,188 @@
                     @endcan
 
                     <flux:navlist.item icon="bell" :href="route('bap.notifikasi')" :current="request()->routeIs('bap.notifikasi')" wire:navigate>Notifikasi</flux:navlist.item>
-                    <flux:navlist.item icon="calendar" :href="route('bap.kalender')" :current="request()->routeIs('bap.kalender')" wire:navigate>Kalender Seminar</flux:navlist.item> --}}
+                    <flux:navlist.item icon="calendar" :href="route('bap.kalender')" :current="request()->routeIs('bap.kalender')" wire:navigate>Kalender Seminar</flux:navlist.item>
                 </flux:navlist.group>
-                @endrole
+                @endrole --}}
 
-                {{-- Dosen Pembimbing --}}
-                @role('Dosen Pembimbing')
-                <flux:navlist.group heading="Dosen Pembimbing" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dsp.dashboard')" :current="request()->routeIs('dsp.dashboard')" wire:navigate>Dashboard</flux:navlist.item>
-                    <flux:navlist.item icon="academic-cap" :href="route('dsp.mhs')" :current="request()->routeIs('dsp.mhs')" wire:navigate>Mahasiswa Bimbingan</flux:navlist.item>
+            @role('Bapendik')
+                <flux:navlist.group heading="Bapendik" class="grid">
+                    <flux:navlist.item icon="home" :href="route('bap.dashboard')"
+                        :current="request()->routeIs('bap.dashboard')" wire:navigate>
+                        Dashboard
+                    </flux:navlist.item>
 
-                    @can('nilai.input')
-                    <flux:navlist.item icon="pencil-square" :href="route('dsp.nilai')" :current="request()->routeIs('dsp.nilai')" wire:navigate>Penilaian KP</flux:navlist.item>
+                    @can('sp.validate')
+                        <flux:navlist.item icon="document-check" :href="route('bap.sp.validasi')"
+                            :current="request()->routeIs('bap.sp.validasi')" wire:navigate>
+                            Validasi Surat Pengantar
+                        </flux:navlist.item>
                     @endcan
 
-                    <flux:navlist.item icon="archive-box" :href="route('dsp.laporan')" :current="request()->routeIs('dsp.laporan')" wire:navigate>Laporan & Arsip</flux:navlist.item>
-                    <flux:navlist.item icon="bell" :href="route('dsp.notifikasi')" :current="request()->routeIs('dsp.notifikasi')" wire:navigate>Notifikasi</flux:navlist.item>
-                    <flux:navlist.item icon="calendar" :href="route('dsp.kalender')" :current="request()->routeIs('dsp.kalender')" wire:navigate>Kalender Seminar</flux:navlist.item>
-                </flux:navlist.group>
-                @endrole
-
-                {{-- Dosen Komisi --}}
-                @role('Dosen Komisi')
-                <flux:navlist.group heading="Dosen Komisi" class="grid">
-                    <flux:navlist.item icon="home" :href="route('kom.dashboard')" :current="request()->routeIs('kom.dashboard')" wire:navigate>Dashboard</flux:navlist.item>
+                    @can('signatory.manage')
+                        <flux:navlist.item icon="identification" :href="route('bap.penandatangan.index')"
+                            :current="request()->routeIs('bap.penandatangan.index')" wire:navigate>Penandatangan
+                        </flux:navlist.item>
+                    @endcan
 
                     @can('kp.approve')
-                    <flux:navlist.item icon="document-check" :href="route('kom.kp.validasi')" :current="request()->routeIs('kom.kp.validasi')" wire:navigate>Validasi Pengajuan KP</flux:navlist.item>
+                        <flux:navlist.item icon="check-badge" :href="route('bap.kp.spk')"
+                            :current="request()->routeIs('bap.kp.spk')" wire:navigate>
+                            Penerbitan SPK
+                        </flux:navlist.item>
                     @endcan
+                </flux:navlist.group>
+            @endrole
+
+            {{-- Dosen Pembimbing --}}
+            @role('Dosen Pembimbing')
+                <flux:navlist.group heading="Dosen Pembimbing" class="grid">
+                    <flux:navlist.item icon="home" :href="route('dsp.dashboard')"
+                        :current="request()->routeIs('dsp.dashboard')" wire:navigate>Dashboard</flux:navlist.item>
+                    <flux:navlist.item icon="academic-cap" :href="route('dsp.mhs')"
+                        :current="request()->routeIs('dsp.mhs')" wire:navigate>Mahasiswa Bimbingan</flux:navlist.item>
 
                     @can('nilai.input')
-                    <flux:navlist.item icon="pencil-square" :href="route('kom.nilai')" :current="request()->routeIs('kom.nilai')" wire:navigate>Penilaian KP</flux:navlist.item>
+                        <flux:navlist.item icon="pencil-square" :href="route('dsp.nilai')"
+                            :current="request()->routeIs('dsp.nilai')" wire:navigate>Penilaian KP</flux:navlist.item>
                     @endcan
 
-                    <flux:navlist.item icon="archive-box" :href="route('kom.laporan')" :current="request()->routeIs('kom.laporan')" wire:navigate>Laporan & Arsip</flux:navlist.item>
-                    <flux:navlist.item icon="bell" :href="route('kom.notifikasi')" :current="request()->routeIs('kom.notifikasi')" wire:navigate>Notifikasi</flux:navlist.item>
-                    <flux:navlist.item icon="calendar" :href="route('kom.kalender')" :current="request()->routeIs('kom.kalender')" wire:navigate>Kalender Seminar</flux:navlist.item>
+                    <flux:navlist.item icon="archive-box" :href="route('dsp.laporan')"
+                        :current="request()->routeIs('dsp.laporan')" wire:navigate>Laporan & Arsip</flux:navlist.item>
+                    <flux:navlist.item icon="bell" :href="route('dsp.notifikasi')"
+                        :current="request()->routeIs('dsp.notifikasi')" wire:navigate>Notifikasi</flux:navlist.item>
+                    <flux:navlist.item icon="calendar" :href="route('dsp.kalender')"
+                        :current="request()->routeIs('dsp.kalender')" wire:navigate>Kalender Seminar</flux:navlist.item>
                 </flux:navlist.group>
-                @endrole
-                {{-- <flux:navlist.group :heading="__('Platform')" class="grid">
+            @endrole
+
+            {{-- Dosen Komisi --}}
+            @role('Dosen Komisi')
+                <flux:navlist.group heading="Komisi" class="grid">
+                    <flux:navlist.item icon="home" :href="route('dashboard')" {{-- atau route khusus komisi jika ada --}}
+                        :current="request()->routeIs('dashboard')" wire:navigate>
+                        Dashboard
+                    </flux:navlist.item>
+
+                    @can('kp.approve')
+                        <flux:navlist.item icon="document-check" :href="route('komisi.kp.review')"
+                            :current="request()->routeIs('komisi.kp.review')" wire:navigate>
+                            Review Pengajuan KP
+                        </flux:navlist.item>
+                    @endcan
+                </flux:navlist.group>
+            @endrole
+            {{-- <flux:navlist.group :heading="__('Platform')" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
                 </flux:navlist.group> --}}
-            </flux:navlist>
+        </flux:navlist>
 
-            <flux:spacer />
+        <flux:spacer />
 
-            <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
+        <flux:navlist variant="outline">
+            <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit"
+                target="_blank">
                 {{ __('Repository') }}
-                </flux:navlist.item>
+            </flux:navlist.item>
 
-                <flux:navlist.item icon="book-open" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
+            <flux:navlist.item icon="book-open" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
                 {{ __('Documentation') }}
-                </flux:navlist.item>
-            </flux:navlist>
+            </flux:navlist.item>
+        </flux:navlist>
 
-            <!-- Desktop User Menu -->
-            <flux:dropdown class="hidden lg:block" position="bottom" align="start">
-                <flux:profile
-                    :name="auth()->user()->name"
-                    :initials="auth()->user()->initials()"
-                    icon:trailing="chevrons-up-down"
-                />
+        <!-- Desktop User Menu -->
+        <flux:dropdown class="hidden lg:block" position="bottom" align="start">
+            <flux:profile :name="auth()->user()->name" :initials="auth()->user()->initials()"
+                icon:trailing="chevrons-up-down" />
 
-                <flux:menu class="w-[220px]">
-                    <flux:menu.radio.group>
-                        <div class="p-0 text-sm font-normal">
-                            <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
-                                <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
-                                    <span
-                                        class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white"
-                                    >
-                                        {{ auth()->user()->initials() }}
-                                    </span>
+            <flux:menu class="w-[220px]">
+                <flux:menu.radio.group>
+                    <div class="p-0 text-sm font-normal">
+                        <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
+                            <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
+                                <span
+                                    class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                                    {{ auth()->user()->initials() }}
                                 </span>
+                            </span>
 
-                                <div class="grid flex-1 text-start text-sm leading-tight">
-                                    <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
-                                    <span class="truncate text-xs">{{ auth()->user()->email }}</span>
-                                </div>
+                            <div class="grid flex-1 text-start text-sm leading-tight">
+                                <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
+                                <span class="truncate text-xs">{{ auth()->user()->email }}</span>
                             </div>
                         </div>
-                    </flux:menu.radio.group>
+                    </div>
+                </flux:menu.radio.group>
 
-                    <flux:menu.separator />
+                <flux:menu.separator />
 
-                    <flux:menu.radio.group>
-                        <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
-                    </flux:menu.radio.group>
+                <flux:menu.radio.group>
+                    <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}
+                    </flux:menu.item>
+                </flux:menu.radio.group>
 
-                    <flux:menu.separator />
+                <flux:menu.separator />
 
-                    <form method="POST" action="{{ route('logout') }}" class="w-full">
-                        @csrf
-                        <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
-                            {{ __('Log Out') }}
-                        </flux:menu.item>
-                    </form>
-                </flux:menu>
-            </flux:dropdown>
-        </flux:sidebar>
+                <form method="POST" action="{{ route('logout') }}" class="w-full">
+                    @csrf
+                    <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
+                        {{ __('Log Out') }}
+                    </flux:menu.item>
+                </form>
+            </flux:menu>
+        </flux:dropdown>
+    </flux:sidebar>
 
-        <!-- Mobile User Menu -->
-        <flux:header class="lg:hidden">
-            <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
+    <!-- Mobile User Menu -->
+    <flux:header class="lg:hidden">
+        <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
-            <flux:spacer />
+        <flux:spacer />
 
-            <flux:dropdown position="top" align="end">
-                <flux:profile
-                    :initials="auth()->user()->initials()"
-                    icon-trailing="chevron-down"
-                />
+        <flux:dropdown position="top" align="end">
+            <flux:profile :initials="auth()->user()->initials()" icon-trailing="chevron-down" />
 
-                <flux:menu>
-                    <flux:menu.radio.group>
-                        <div class="p-0 text-sm font-normal">
-                            <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
-                                <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
-                                    <span
-                                        class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white"
-                                    >
-                                        {{ auth()->user()->initials() }}
-                                    </span>
+            <flux:menu>
+                <flux:menu.radio.group>
+                    <div class="p-0 text-sm font-normal">
+                        <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
+                            <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
+                                <span
+                                    class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                                    {{ auth()->user()->initials() }}
                                 </span>
+                            </span>
 
-                                <div class="grid flex-1 text-start text-sm leading-tight">
-                                    <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
-                                    <span class="truncate text-xs">{{ auth()->user()->email }}</span>
-                                </div>
+                            <div class="grid flex-1 text-start text-sm leading-tight">
+                                <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
+                                <span class="truncate text-xs">{{ auth()->user()->email }}</span>
                             </div>
                         </div>
-                    </flux:menu.radio.group>
+                    </div>
+                </flux:menu.radio.group>
 
-                    <flux:menu.separator />
+                <flux:menu.separator />
 
-                    <flux:menu.radio.group>
-                        <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
-                    </flux:menu.radio.group>
+                <flux:menu.radio.group>
+                    <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}
+                    </flux:menu.item>
+                </flux:menu.radio.group>
 
-                    <flux:menu.separator />
+                <flux:menu.separator />
 
-                    <form method="POST" action="{{ route('logout') }}" class="w-full">
-                        @csrf
-                        <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
-                            {{ __('Log Out') }}
-                        </flux:menu.item>
-                    </form>
-                </flux:menu>
-            </flux:dropdown>
-        </flux:header>
+                <form method="POST" action="{{ route('logout') }}" class="w-full">
+                    @csrf
+                    <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
+                        {{ __('Log Out') }}
+                    </flux:menu.item>
+                </form>
+            </flux:menu>
+        </flux:dropdown>
+    </flux:header>
 
-        {{ $slot }}
+    {{ $slot }}
 
-        @fluxScripts
-    </body>
+    @fluxScripts
+</body>
+
 </html>

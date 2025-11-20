@@ -42,21 +42,54 @@ use App\Livewire\Notifications\Index as NotificationsIndex;
 
 /*
 |--------------------------------------------------------------------------
-| Root
+| Helper redirect role-based
 |--------------------------------------------------------------------------
-| Kalau sudah login → ke dashboard, kalau belum → ke route('login') dari Fortify.
-| Jangan render view('login') manual supaya tidak error "View [login] not found".
 */
 
-Route::get('/', function () {
+$goToRoleDashboard = function () {
+    $user = Auth::user();
+
+    if (!$user) {
+        return redirect()->route('login');
+    }
+
+    if ($user->hasRole('Mahasiswa')) {
+        return redirect()->route('mhs.dashboard');
+    }
+    if ($user->hasRole('Bapendik')) {
+        return redirect()->route('bap.dashboard');
+    }
+    if ($user->hasRole('Dosen Pembimbing')) {
+        return redirect()->route('dsp.dashboard');
+    }
+    if ($user->hasRole('Dosen Komisi')) {
+        return redirect()->route('komisi.dashboard');
+    }
+
+    return redirect()->route('login');
+};
+
+/*
+|--------------------------------------------------------------------------
+| Root
+|--------------------------------------------------------------------------
+| Kalau sudah login → ke dashboard sesuai role, jika belum → ke login.
+*/
+Route::get('/', function () use ($goToRoleDashboard) {
     return Auth::check()
-        ? redirect()->route('dashboard')
+        ? $goToRoleDashboard()
         : redirect()->route('login');
 })->name('home');
 
-Route::view('/dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+/*
+|--------------------------------------------------------------------------
+| /dashboard
+|--------------------------------------------------------------------------
+| Fortify biasanya mendarat di /dashboard -> arahkan sesuai role.
+*/
+Route::get('/dashboard', function () use ($goToRoleDashboard) {
+    return $goToRoleDashboard();
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 /** =================== Fallback umum (semua role bisa pakai) =================== */
 Route::middleware(['auth'])->group(function () {

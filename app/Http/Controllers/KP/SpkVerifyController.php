@@ -4,7 +4,6 @@ namespace App\Http\Controllers\KP;
 
 use App\Http\Controllers\Controller;
 use App\Models\KerjaPraktik;
-use Illuminate\Http\Request;
 
 class SpkVerifyController extends Controller
 {

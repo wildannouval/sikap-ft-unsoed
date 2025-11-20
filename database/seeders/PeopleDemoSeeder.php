@@ -2,59 +2,75 @@
 
 namespace Database\Seeders;
 
+use App\Models\Dosen;
 use App\Models\Jurusan;
 use App\Models\Mahasiswa;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class PeopleDemoSeeder extends Seeder
 {
-    /**
-     * Seed contoh user: Mahasiswa, Bapendik, Dosen Pembimbing, Dosen Komisi.
-     * Catatan: Seeder ini mengasumsikan PermissionRoleSeeder sudah dijalankan.
-     */
     public function run(): void
     {
         // Jurusan demo
         $ti = Jurusan::firstOrCreate(['nama_jurusan' => 'Teknik Informatika']);
 
         // Mahasiswa
-        $mhs = User::firstOrCreate(
+        $mhsUser = User::firstOrCreate(
             ['email' => 'mhs@example.com'],
-            ['name' => 'Mahasiswa Satu', 'password' => Hash::make('password')]
+            ['name' => 'Mahasiswa Satu', 'password' => 'password']
         );
-        $mhs->syncRoles('Mahasiswa');
+        $mhsUser->syncRoles('Mahasiswa');
 
         Mahasiswa::firstOrCreate(
-            ['user_id' => $mhs->id],
+            ['user_id' => $mhsUser->id],
             [
-                'jurusan_id'     => $ti->id,
-                'nama_mahasiswa' => $mhs->name,
-                'nim'            => 'H1A001',
-                'tahun_angkatan' => 2022,
+                'jurusan_id'               => $ti->id,
+                'mahasiswa_name'           => $mhsUser->name,
+                'mahasiswa_nim'            => 'F1E0000001',
+                'mahasiswa_tahun_angkatan' => 2022,
             ]
         );
 
         // Bapendik
         $bap = User::firstOrCreate(
             ['email' => 'bap@example.com'],
-            ['name' => 'Bapendik', 'password' => Hash::make('password')]
+            ['name' => 'Bapendik', 'password' => 'password']
         );
         $bap->syncRoles('Bapendik');
 
-        // Dosen Pembimbing
-        $dsp = User::firstOrCreate(
+        // Dosen Pembimbing (user + dosen)
+        $dspUser = User::firstOrCreate(
             ['email' => 'dsp@example.com'],
-            ['name' => 'Dosen Pembimbing', 'password' => Hash::make('password')]
+            ['name' => 'Dosen Pembimbing', 'password' => 'password']
         );
-        $dsp->syncRoles('Dosen Pembimbing');
+        $dspUser->syncRoles('Dosen Pembimbing');
 
-        // Dosen Komisi
-        $kom = User::firstOrCreate(
-            ['email' => 'kom@example.com'],
-            ['name' => 'Dosen Komisi', 'password' => Hash::make('password')]
+        Dosen::firstOrCreate(
+            ['user_id' => $dspUser->id],
+            [
+                'dosen_name'   => $dspUser->name,
+                'dosen_nip'    => null,
+                'jurusan_id'   => $ti->id,
+                'is_komisi_kp' => false,
+            ]
         );
-        $kom->syncRoles('Dosen Komisi');
+
+        // Dosen Komisi (user + dosen)
+        $komUser = User::firstOrCreate(
+            ['email' => 'kom@example.com'],
+            ['name' => 'Dosen Komisi', 'password' => 'password']
+        );
+        $komUser->syncRoles('Dosen Komisi');
+
+        Dosen::firstOrCreate(
+            ['user_id' => $komUser->id],
+            [
+                'dosen_name'   => $komUser->name,
+                'dosen_nip'    => null,
+                'jurusan_id'   => $ti->id,
+                'is_komisi_kp' => true,
+            ]
+        );
     }
 }

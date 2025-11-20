@@ -73,10 +73,10 @@ class SuratPengantarDocxBuilder
             if (! in_array('qr_code_ttd', $vars, true)) {
                 $list = empty($vars) ? '(tidak ada satu pun variable terdeteksi)' : implode(', ', $vars);
                 throw new RuntimeException(
-                    "Placeholder \${qr_code_ttd} TIDAK ditemukan di template. ".
-                    "Variables yang terdeteksi: {$list}. ".
-                    "Pastikan menulis persis \${qr_code_ttd} sebagai TEKS polos (bukan shape/header/footer) ".
-                    "dan file template yang dipakai adalah {$templatePath}."
+                    "Placeholder \${qr_code_ttd} TIDAK ditemukan di template. " .
+                        "Variables yang terdeteksi: {$list}. " .
+                        "Pastikan menulis persis \${qr_code_ttd} sebagai TEKS polos (bukan shape/header/footer) " .
+                        "dan file template yang dipakai adalah {$templatePath}."
                 );
             }
         }
@@ -98,8 +98,8 @@ class SuratPengantarDocxBuilder
             'tanggal_disetujui_surat_pengantar',
             optional($this->sp->tanggal_disetujui_surat_pengantar ?? $today)->translatedFormat('d F Y')
         );
-        $tpl->setValue('nama_mahasiswa', $mhs?->nama_mahasiswa ?? '-');
-        $tpl->setValue('nim_mahasiswa', $mhs?->nim ?? '-');
+        $tpl->setValue('nama_mahasiswa', $mhs?->mahasiswa_name ?? '-');
+        $tpl->setValue('nim_mahasiswa', $mhs?->mahasiswa_nim ?? '-');
         $tpl->setValue('jurusan_mahasiswa', $mhs?->jurusan?->nama_jurusan ?? '-');
 
         $tpl->setValue('lokasi_instansi', $this->sp->lokasi_surat_pengantar ?? '-');

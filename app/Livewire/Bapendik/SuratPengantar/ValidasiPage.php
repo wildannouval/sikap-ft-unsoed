@@ -4,6 +4,7 @@ namespace App\Livewire\Bapendik\SuratPengantar;
 
 use App\Models\Signatory;
 use App\Models\SuratPengantar;
+use App\Services\Notifier; // [NOTIF] ⬅️ tambah
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Computed;
@@ -32,7 +33,6 @@ class ValidasiPage extends Component
 
     public function mount(): void
     {
-        // default penandatangan (urutkan sesuai jabatan)
         $this->signatory_id = Signatory::query()->orderBy('position')->value('id');
     }
 
@@ -70,16 +70,16 @@ class ValidasiPage extends Component
                 $term = "%{$this->search}%";
                 $q->where(function ($qq) use ($term) {
                     $qq->where('lokasi_surat_pengantar', 'like', $term)
-                       ->orWhere('penerima_surat_pengantar', 'like', $term)
-                       ->orWhere('alamat_surat_pengantar', 'like', $term)
-                       ->orWhere('nomor_surat', 'like', $term)
-                       ->orWhereHas('mahasiswa', function ($mq) use ($term) {
-                           $mq->where('nama_mahasiswa', 'like', $term)
-                              ->orWhere('nim', 'like', $term);
-                       });
+                        ->orWhere('penerima_surat_pengantar', 'like', $term)
+                        ->orWhere('alamat_surat_pengantar', 'like', $term)
+                        ->orWhere('nomor_surat', 'like', $term)
+                        ->orWhereHas('mahasiswa', function ($mq) use ($term) {
+                            $mq->where('mahasiswa_name', 'like', $term)
+                                ->orWhere('mahasiswa_nim', 'like', $term);
+                        });
                 });
             })
-            ->tap(fn ($q) => $this->sortBy ? $q->orderBy($this->sortBy, $this->sortDirection) : $q);
+            ->tap(fn($q) => $this->sortBy ? $q->orderBy($this->sortBy, $this->sortDirection) : $q);
     }
 
     #[Computed]
@@ -98,18 +98,15 @@ class ValidasiPage extends Component
             ->paginate($this->perPage);
     }
 
-    // === NEW: counter untuk badge/tab ===
     #[Computed]
     public function pendingCount(): int
     {
-        // hitung total Diajukan (tanpa filter pencarian) untuk ringkasan/tab
         return SuratPengantar::where('status_surat_pengantar', 'Diajukan')->count();
     }
 
     #[Computed]
     public function publishedCount(): int
     {
-        // hitung total Diterbitkan (tanpa filter pencarian) untuk ringkasan/tab
         return SuratPengantar::where('status_surat_pengantar', 'Diterbitkan')->count();
     }
 
@@ -119,8 +116,6 @@ class ValidasiPage extends Component
 
         $this->publish_id = $sp->id;
         $this->publish_nomor_surat = (string) ($sp->nomor_surat ?? '');
-
-        // jika belum ada, set default lagi
         $this->signatory_id ??= Signatory::query()->orderBy('position')->value('id');
 
         Flux::modal('sp-publish')->show();
@@ -134,7 +129,7 @@ class ValidasiPage extends Component
             'signatory_id'        => ['required', 'integer', 'exists:signatories,id'],
         ]);
 
-        $sp = SuratPengantar::findOrFail($this->publish_id);
+        $sp = SuratPengantar::with('mahasiswa')->findOrFail($this->publish_id);
         $sig = Signatory::findOrFail($this->signatory_id);
 
         $sp->nomor_surat = $this->publish_nomor_surat;
@@ -149,10 +144,26 @@ class ValidasiPage extends Component
         $sp->ttd_signed_by_nip      = $sig->nip;
         $sp->save();
 
+        // [NOTIF] Beritahu Mahasiswa bahwa SP sudah terbit
+        $mhsUserId = $sp->mahasiswa?->user_id;
+        if ($mhsUserId) {
+            Notifier::toUser(
+                $mhsUserId,
+                'Surat Pengantar Diterbitkan',
+                "SP untuk {$sp->lokasi_surat_pengantar} telah diterbitkan. Nomor: {$sp->nomor_surat}.",
+                // arahkan ke halaman SP mahasiswa (unduh DOCX dari menu)
+                route('mhs.sp.index'),
+                [
+                    'type'   => 'sp_published',
+                    'sp_id'  => $sp->id,
+                    'nomor'  => $sp->nomor_surat,
+                ]
+            );
+        }
+
         Flux::modal('sp-publish')->close();
         Flux::toast(heading: 'Diterbitkan', text: 'Nomor surat tersimpan & surat diterbitkan.', variant: 'success');
 
-        // reset state
         $this->publish_id = null;
         $this->publish_nomor_surat = '';
         $this->signatory_id = Signatory::query()->orderBy('position')->value('id');
@@ -169,12 +180,27 @@ class ValidasiPage extends Component
 
     public function submitReject(): void
     {
-        if (! $this->reject_id) return;
+        if (!$this->reject_id) return;
 
-        $sp = SuratPengantar::findOrFail($this->reject_id);
+        $sp = SuratPengantar::with('mahasiswa')->findOrFail($this->reject_id);
         $sp->status_surat_pengantar = 'Ditolak';
         $sp->catatan_surat = $this->catatan_tolak ?: null;
         $sp->save();
+
+        // [NOTIF] Beritahu Mahasiswa bahwa SP ditolak
+        $mhsUserId = $sp->mahasiswa?->user_id;
+        if ($mhsUserId) {
+            Notifier::toUser(
+                $mhsUserId,
+                'Pengajuan SP Ditolak',
+                $sp->catatan_surat ? "Catatan: {$sp->catatan_surat}" : 'Silakan perbaiki data pengajuan.',
+                route('mhs.sp.index'),
+                [
+                    'type'   => 'sp_rejected',
+                    'sp_id'  => $sp->id,
+                ]
+            );
+        }
 
         Flux::modal('sp-reject')->close();
         Flux::toast(heading: 'Ditolak', text: 'Pengajuan ditolak dan catatan sudah disimpan.', variant: 'warning');

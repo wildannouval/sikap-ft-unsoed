@@ -10,124 +10,149 @@ use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\TwoFactor;
 
 use App\Http\Controllers\SP\DownloadController as SpDownloadController;
-use App\Http\Controllers\SP\VerifyController as SpVerifyController;
+use App\Http\Controllers\SP\VerifyController   as SpVerifyController;
 
-use App\Http\Controllers\Kp\DownloadSpkController;
+use App\Http\Controllers\KP\DownloadSpkController;
 use App\Http\Controllers\KP\SpkVerifyController;
+use App\Http\Controllers\KP\DownloadBaController as BaDownloadController;
+use App\Http\Controllers\KP\BaVerifyController;
+
+use App\Livewire\Mahasiswa\Kp\KonsultasiPage as MhsKpKonsultasiPage;
+use App\Livewire\Dosen\Kp\KonsultasiIndex   as DosenKpKonsultasiIndex;
+
+use App\Livewire\Bapendik\Master\DosenIndex     as BapDosenIndex;
+use App\Livewire\Bapendik\Master\MahasiswaIndex as BapMahasiswaIndex;
+use App\Livewire\Bapendik\Master\RuanganIndex   as BapRuanganIndex;
+
+use App\Livewire\Mahasiswa\Kp\SeminarDaftarPage;
+use App\Livewire\Dosen\Kp\SeminarApprovalIndex;
+use App\Livewire\Bapendik\Kp\SeminarJadwalPage;
+
+use App\Livewire\Dosen\Kp\PenilaianForm as DosenPenilaianForm;
+use App\Livewire\Mahasiswa\KP\NilaiIndex as MhsNilaiIndex;
+use App\Livewire\Bapendik\Kp\NilaiIndex as BapNilaiIndex;
+use App\Livewire\Komisi\Kp\NilaiIndex   as KomisiNilaiIndex;
+
+use App\Livewire\Mahasiswa\DashboardPage as MhsDashboardPage;
+use App\Livewire\Bapendik\DashboardPage  as BapDashboardPage;
+use App\Livewire\Dosen\DashboardPage     as DspDashboardPage;
+use App\Livewire\Komisi\DashboardPage    as KomisiDashboardPage;
+
+use App\Livewire\Notifications\Index as NotificationsIndex;
 
 /*
 |--------------------------------------------------------------------------
-| Home & Dashboard
+| Root
 |--------------------------------------------------------------------------
+| Kalau sudah login → ke dashboard, kalau belum → ke route('login') dari Fortify.
+| Jangan render view('login') manual supaya tidak error "View [login] not found".
 */
+
 Route::get('/', function () {
-    return Auth::check() ? redirect()->route('dashboard') : redirect()->route('login');
+    return Auth::check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
 })->name('home');
 
-Route::view('dashboard', 'dashboard')
+Route::view('/dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-/*
-|--------------------------------------------------------------------------
-| Settings
-|--------------------------------------------------------------------------
-*/
+/** =================== Fallback umum (semua role bisa pakai) =================== */
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
-    Route::get('settings/profile', Profile::class)->name('profile.edit');
-    Route::get('settings/password', Password::class)->name('user-password.edit');
+    Route::get('settings/profile',   Profile::class)->name('profile.edit');
+    Route::get('settings/password',  Password::class)->name('user-password.edit');
     Route::get('settings/appearance', Appearance::class)->name('appearance.edit');
 
     Route::get('settings/two-factor', TwoFactor::class)
         ->middleware(
             when(
                 Features::canManageTwoFactorAuthentication()
-                && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
+                    && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
                 ['password.confirm'],
                 [],
             ),
         )
         ->name('two-factor.show');
+
+    // >>> Fallback route notifikasi umum
+    Route::get('/notifikasi', NotificationsIndex::class)->name('notifications');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Mahasiswa
-|--------------------------------------------------------------------------
-*/
+/** =================== Mahasiswa =================== */
 Route::prefix('mhs')
     ->middleware(['auth', 'role:Mahasiswa'])
     ->group(function () {
-        Route::view('/dashboard', 'mhs.dashboard')->name('mhs.dashboard');
-
-        // Surat Pengantar (SP)
+        Route::get('/dashboard', MhsDashboardPage::class)->name('mhs.dashboard');
         Route::view('/surat-pengantar', 'mhs.surat-pengantar.index')->name('mhs.sp.index');
-        Route::get('/surat-pengantar/{sp}/download-docx', [SpDownloadController::class, 'downloadDocxForMahasiswa'])
-            ->name('mhs.sp.download.docx');
-
-        // Kerja Praktik (KP)
+        Route::get('/surat-pengantar/{sp}/download-docx', [SpDownloadController::class, 'downloadDocxForMahasiswa'])->name('mhs.sp.download.docx');
         Route::view('/kp', 'mhs.kp.index')->name('mhs.kp.index');
+        Route::get('/kp/{kp}/download-docx', [DownloadSpkController::class, 'downloadDocxForMahasiswa'])->name('mhs.kp.download.docx');
+        Route::get('/kp/{kp}/konsultasi', MhsKpKonsultasiPage::class)->name('mhs.kp.konsultasi');
+        Route::get('/kp/{kp}/seminar', SeminarDaftarPage::class)->name('mhs.kp.seminar');
+        Route::get('/kp/{kp}/seminar/{seminar}/download-ba', [BaDownloadController::class, 'downloadForMahasiswa'])->name('mhs.kp.seminar.download.ba');
+        Route::get('/nilai', MhsNilaiIndex::class)->name('mhs.nilai');
 
-        // UNDUH SPK KP (pastikan controller-nya DownloadSpkController)
-        Route::get('/kp/{kp}/download-docx', [DownloadSpkController::class, 'downloadDocxForMahasiswa'])
-            ->name('mhs.kp.download.docx');
+        // >>> Route notifikasi khusus Mahasiswa
+        Route::get('/notifikasi', NotificationsIndex::class)->name('mhs.notifikasi');
     });
 
-/*
-|--------------------------------------------------------------------------
-| Bapendik
-|--------------------------------------------------------------------------
-*/
+/** =================== Bapendik =================== */
 Route::prefix('bap')
     ->middleware(['auth', 'role:Bapendik'])
     ->group(function () {
-        Route::view('/dashboard', 'bap.dashboard')->name('bap.dashboard');
-
-        // Validasi & Riwayat SP
-        Route::view('/surat-pengantar/validasi', 'bap.validasi-surat-pengantar.index')
-            ->name('bap.sp.validasi');
-
-        // Unduh DOCX SP
-        Route::get('/surat-pengantar/{sp}/download-docx', [SpDownloadController::class, 'downloadDocxForBapendik'])
-            ->name('bap.sp.download.docx');
-
-        // Master Penandatangan
+        Route::get('/dashboard', BapDashboardPage::class)->name('bap.dashboard');
+        Route::view('/surat-pengantar/validasi', 'bap.validasi-surat-pengantar.index')->name('bap.sp.validasi');
+        Route::get('/surat-pengantar/{sp}/download-docx', [SpDownloadController::class, 'downloadDocxForBapendik'])->name('bap.sp.download.docx');
         Route::view('/penandatangan', 'bap.penandatangan.index')->name('bap.penandatangan.index');
-
-        // Penerbitan SPK KP (halaman Bapendik)
         Route::view('/kp/spk', 'bap.kp.spk')->name('bap.kp.spk');
+        Route::get('/kp/{kp}/download-docx', [DownloadSpkController::class, 'downloadDocxForBapendik'])->name('bap.kp.download.docx');
+        Route::get('/kp/seminar/jadwal', SeminarJadwalPage::class)->name('bap.kp.seminar.jadwal');
+        Route::get('/kp/seminar/{seminar}/download-ba', [BaDownloadController::class, 'downloadForBapendik'])->name('bap.kp.seminar.download.ba');
+        Route::get('/kp/nilai', BapNilaiIndex::class)->name('bap.kp.nilai');
 
-        // Unduh DOCX SPK KP (Bapendik)
-        Route::get('/kp/{kp}/download-docx', [DownloadSpkController::class, 'downloadDocxForBapendik'])
-            ->name('bap.kp.download.docx');
+        Route::middleware(['permission:masterdata.manage'])->group(function () {
+            Route::get('/master/dosen',     BapDosenIndex::class)->name('bap.master.dosen');
+            Route::get('/master/mahasiswa', BapMahasiswaIndex::class)->name('bap.master.mahasiswa');
+            Route::get('/master/ruangan',   BapRuanganIndex::class)->name('bap.master.ruangan');
+        });
+
+        // >>> Route notifikasi khusus Bapendik
+        Route::get('/notifikasi', NotificationsIndex::class)->name('bap.notifikasi');
     });
 
-/*
-|--------------------------------------------------------------------------
-| Komisi
-|--------------------------------------------------------------------------
-| Gunakan PERMISSION yang sama agar konsisten (tidak 403).
-*/
+/** =================== Dosen Pembimbing =================== */
+Route::prefix('dsp')
+    ->middleware(['auth', 'role:Dosen Pembimbing']) // <-- tanpa tanda kutip
+    ->group(function () {
+        Route::get('/dashboard', \App\Livewire\Dosen\DashboardPage::class)->name('dsp.dashboard');
+        Route::get('/kp/konsultasi', \App\Livewire\Dosen\Kp\KonsultasiIndex::class)->name('dsp.kp.konsultasi');
+        Route::get('/kp/seminar', \App\Livewire\Dosen\Kp\SeminarApprovalIndex::class)->name('dsp.kp.seminar.approval');
+        Route::get('/kp/seminar/{seminar}/download-ba', [\App\Http\Controllers\KP\DownloadBaController::class, 'downloadForDospem'])->name('dsp.kp.seminar.download.ba');
+        Route::view('/mhs', 'dsp.mhs.index')->name('dsp.mhs');
+        Route::view('/laporan', 'dsp.laporan.index')->name('dsp.laporan');
+        Route::view('/kalender', 'dsp.kalender.index')->name('dsp.kalender');
+        Route::get('/nilai', \App\Livewire\Dosen\Kp\PenilaianForm::class)->name('dsp.nilai');
+
+        Route::get('/notifikasi', \App\Livewire\Notifications\Index::class)->name('dsp.notifikasi');
+    });
+
+/** =================== Dosen Komisi =================== */
 Route::prefix('komisi')
     ->middleware(['auth', 'permission:kp.review'])
     ->group(function () {
-        Route::view('/dashboard', 'komisi.dashboard')->name('komisi.dashboard');
+        Route::get('/dashboard', KomisiDashboardPage::class)->name('komisi.dashboard');
         Route::view('/kp/review', 'komisi.kp.index')->name('komisi.kp.review');
+        Route::get('/kp/{kp}/download-docx', [DownloadSpkController::class, 'downloadDocxForKomisi'])->name('komisi.kp.download.docx');
+        Route::get('/kp/nilai', KomisiNilaiIndex::class)->name('komisi.kp.nilai');
 
-        // Unduh SPK (DOCX) untuk Komisi – hanya saat SPK terbit
-        Route::get('/kp/{kp}/download-docx', [DownloadSpkController::class, 'downloadDocxForKomisi'])
-            ->name('komisi.kp.download.docx');
+        // >>> Route notifikasi khusus Komisi
+        Route::get('/notifikasi', NotificationsIndex::class)->name('komisi.notifikasi');
     });
 
-/*
-|--------------------------------------------------------------------------
-| Verifikasi QR (Publik)
-|--------------------------------------------------------------------------
-*/
-// Verifikasi SP (surat pengantar)
+/** =================== Verifikasi publik =================== */
 Route::get('/sp/verify/{token}', [SpVerifyController::class, 'show'])->name('sp.verify');
-
-// Verifikasi SPK (KP) – builder kamu memanggil 'spk.verify'
 Route::get('/verify/spk/{token}', SpkVerifyController::class)->name('spk.verify');
+Route::get('/verify/ba/{token}', BaVerifyController::class)->name('ba.verify');

@@ -67,7 +67,7 @@
 
                                     <flux:table.cell class="whitespace-nowrap">
                                         {{ $row->mahasiswa?->user?->name }}<br>
-                                        <span class="text-xs text-zinc-500">{{ $row->mahasiswa?->nim }}</span>
+                                        <span class="text-xs text-zinc-500">{{ $row->mahasiswa?->mahasiswa_nim }}</span>
                                     </flux:table.cell>
 
                                     <flux:table.cell class="max-w-[360px]">
@@ -79,7 +79,7 @@
                                     </flux:table.cell>
 
                                     <flux:table.cell class="whitespace-nowrap">
-                                        {{ $row->dosenPembimbing?->nama ?? '—' }}
+                                        {{ $row->dosenPembimbing?->dosen_name ?? '—' }}
                                     </flux:table.cell>
 
                                     <flux:table.cell>
@@ -257,7 +257,7 @@
                         <div class="text-sm text-zinc-500">Mahasiswa</div>
                         <div class="font-semibold">
                             {{ $item->mahasiswa?->user?->name }}
-                            <div class="text-sm text-zinc-500">{{ $item->mahasiswa?->nim }}</div>
+                            <div class="text-sm text-zinc-500">{{ $item->mahasiswa?->mahasiswa_nim }}</div>
                         </div>
                     </flux:card>
 
@@ -271,7 +271,7 @@
                     <flux:card class="space-y-2">
                         <div class="text-sm text-zinc-500">Pembimbing</div>
                         <div class="font-medium">
-                            {{ $item->dosenPembimbing?->nama ?? '—' }}
+                            {{ $item->dosenPembimbing?->dosen_name ?? '—' }}
                         </div>
                     </flux:card>
 

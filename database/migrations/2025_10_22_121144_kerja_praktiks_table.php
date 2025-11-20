@@ -10,39 +10,56 @@ return new class extends Migration {
         Schema::create('kerja_praktiks', function (Blueprint $table) {
             $table->id();
 
-            // siapa pengaju
-            $table->foreignId('mahasiswa_id')->constrained('mahasiswas')->cascadeOnDelete();
+            // FK ke mahasiswas (PK kustom: mahasiswa_id)
+            $table->unsignedBigInteger('mahasiswa_id');
 
-            // data pengajuan
+            // Data pengajuan
             $table->string('judul_kp');
             $table->string('lokasi_kp');
             $table->string('proposal_path')->nullable();
             $table->string('surat_keterangan_path')->nullable();
 
-            // status alur
-            // Diajukan -> Diproses (komisi) -> Diterbitkan (SPK) / Ditolak
-            $table->enum('status', ['Diajukan', 'Diproses', 'Diterbitkan', 'Ditolak'])->default('Diajukan');
-            $table->text('catatan')->nullable(); // catatan dari komisi/bap/dll
+            // Status alur (selaras dengan App\Models\KerjaPraktik::statuses())
+            $table->enum('status', [
+                'review_komisi',
+                'review_bapendik',
+                'ditolak',
+                'spk_terbit',
+                'kp_sedang_berjalan',
+                'seminar_diajukan',
+                'seminar_dijadwalkan',
+                'nilai_terbit',
+            ])->default('review_komisi');
 
-            // penetapan oleh komisi
-            $table->foreignId('komisi_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('pembimbing_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('catatan')->nullable(); // catatan peninjauan, alasan, dsb.
 
-            // penerbitan SPK (oleh Bapendik)
+            // Penetapan dosen pembimbing (FK ke dosens dengan PK kustom: dosen_id)
+            $table->unsignedBigInteger('dosen_pembimbing_id')->nullable();
+
+            // Penerbitan SPK (oleh Bapendik)
             $table->string('nomor_spk')->nullable();
+            $table->date('tanggal_terbit_spk')->nullable();
             $table->foreignId('signatory_id')->nullable()->constrained('signatories')->nullOnDelete();
             $table->timestamp('ttd_signed_at')->nullable();
 
-            // verifikasi/QR SPK
-            $table->uuid('qr_token')->nullable()->unique();
+            // Verifikasi/QR SPK
+            $table->uuid('spk_qr_token')->nullable()->unique();
+            $table->uuid('qr_token')->nullable()->unique(); // jika masih dipakai di tempat lain
             $table->timestamp('qr_expires_at')->nullable();
 
             $table->timestamps();
 
-            // index tambahan biar query enak
+            // Index untuk query umum
             $table->index(['status', 'created_at']);
 
-            $table->foreignId('dosen_pembimbing_id')->nullable()->constrained('dosens')->nullOnDelete();
+            // --- Definisi FK manual untuk PK kustom ---
+            $table->foreign('mahasiswa_id')
+                ->references('mahasiswa_id')->on('mahasiswas')
+                ->cascadeOnDelete();
+
+            $table->foreign('dosen_pembimbing_id')
+                ->references('dosen_id')->on('dosens')
+                ->nullOnDelete();
         });
     }
 

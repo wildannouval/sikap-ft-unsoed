@@ -11,7 +11,7 @@ use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\Element\TextRun;
 use RuntimeException;
 
-// bacon/bacon-qr-code (tanpa import backend spesifik agar IDE tenang)
+// bacon/bacon-qr-code
 use BaconQrCode\Writer;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
@@ -23,10 +23,6 @@ class SpkDocxBuilder
         protected ?Signatory $signatory = null,
         protected string $templateName = 'TEMPLATE_SPK.docx',
     ) {}
-
-    /* ============================
-     * Path & util
-     * ============================ */
 
     protected function templatePath(): string
     {
@@ -51,13 +47,11 @@ class SpkDocxBuilder
         return $this->tmpDir() . DIRECTORY_SEPARATOR . $filename;
     }
 
-    /** PhpWord lebih aman dengan forward-slash */
     protected function normalizePath(string $path): string
     {
         return str_replace('\\', '/', $path);
     }
 
-    /** Hanya set variabel kalau ada di template */
     protected function setIfPresent(TemplateProcessor $tpl, array $vars, string $key, $value): void
     {
         if (in_array($key, $vars, true)) {
@@ -65,27 +59,17 @@ class SpkDocxBuilder
         }
     }
 
-    /* ============================
-     * Build DOCX
-     * ============================ */
-
-    /**
-     * Build DOCX & return absolute path file sementara.
-     */
     public function buildDocx(): string
     {
         $templatePath = $this->templatePath();
         $tpl = new TemplateProcessor($templatePath);
-
-        // Verifikasi placeholder agar QR benar-benar kebaca
         $vars = method_exists($tpl, 'getVariables') ? $tpl->getVariables() : [];
 
         if (! in_array('qr_code_ttd', $vars, true)) {
             $list = empty($vars) ? '(tidak ada satu pun variable terdeteksi)' : implode(', ', $vars);
             throw new RuntimeException(
-                "Placeholder \${qr_code_ttd} TIDAK ditemukan di template. ".
-                "Variables terdeteksi: {$list}. ".
-                "Pastikan menulis persis \${qr_code_ttd} sebagai TEKS polos (bukan shape/header/footer)."
+                "Placeholder \${qr_code_ttd} TIDAK ditemukan di template. " .
+                    "Variables terdeteksi: {$list}."
             );
         }
 
@@ -100,51 +84,75 @@ class SpkDocxBuilder
             $this->kp->save();
         }
 
-        // URL verifikasi (route sudah kamu buat: spk.verify)
         $verifyUrl = route('spk.verify', ['token' => $this->kp->spk_qr_token]);
 
-        // ====== Isi placeholder aman (hanya kalau ada di template) ======
-        // Beberapa nama disesuaikan dengan yang pernah kamu sebut.
+        // ====== Isi placeholder ======
         $this->setIfPresent($tpl, $vars, 'nomor_spk', $this->kp->nomor_spk ?? '-');
 
-        // dukung beberapa variasi nama tanggal di template:
         $tgl = optional($this->kp->tanggal_terbit_spk ?? $now)->translatedFormat('d F Y');
-        foreach (['tanggal_spk','tanggal_terbit_spk','tanggal_penunjukan'] as $k) {
+        foreach (['tanggal_spk', 'tanggal_terbit_spk', 'tanggal_penunjukan'] as $k) {
             $this->setIfPresent($tpl, $vars, $k, $tgl);
         }
 
-        // identitas mahasiswa
-        $this->setIfPresent($tpl, $vars, 'nama_mahasiswa', $mhs?->user?->name ?? $mhs?->nama_mahasiswa ?? '-');
-        $this->setIfPresent($tpl, $vars, 'nim_mahasiswa', $mhs?->nim ?? '-');
-        $this->setIfPresent($tpl, $vars, 'jurusan_mahasiswa', $jur?->nama_jurusan ?? '-');
+        // === Identitas mahasiswa (PASTI gunakan kolom kamu) ===
+        $namaMhs = $mhs?->user?->name
+            ?? $mhs?->nama_mahasiswa
+            ?? '-';
 
-        // KP
+        $nimMhs  = $mhs?->mahasiswa_nim // <— ini yang benar di DB kamu
+            ?? '-';
+
+        $jurusan = $jur?->nama_jurusan ?? '-';
+
+        $this->setIfPresent($tpl, $vars, 'nama_mahasiswa', $namaMhs);
+        $this->setIfPresent($tpl, $vars, 'nim_mahasiswa', $nimMhs);
+        $this->setIfPresent($tpl, $vars, 'jurusan_mahasiswa', $jurusan);
+
+        // === Data KP ===
         $this->setIfPresent($tpl, $vars, 'judul_kp', $this->kp->judul_kp ?? '-');
-        $this->setIfPresent($tpl, $vars, 'judul_kerja_praktik_mahasiswa', $this->kp->judul_kp ?? '-'); // alias lain
+        $this->setIfPresent($tpl, $vars, 'judul_kerja_praktik_mahasiswa', $this->kp->judul_kp ?? '-');
         $this->setIfPresent($tpl, $vars, 'lokasi_kp', $this->kp->lokasi_kp ?? '-');
 
-        // pembimbing & komisi (ambil dari relasi/snapshot)
-        $this->setIfPresent($tpl, $vars, 'dosen_pembimbing_nama', $this->kp->dosenPembimbing?->nama ?? $this->kp->dosen_pembimbing_nama ?? '-');
-        $this->setIfPresent($tpl, $vars, 'nama_dosen_pembimbing', $this->kp->dosenPembimbing?->nama ?? $this->kp->dosen_pembimbing_nama ?? '-'); // alias
-        $this->setIfPresent($tpl, $vars, 'dosen_komisi_nama', $this->kp->dosenKomisi?->nama ?? $this->kp->dosen_komisi_nama ?? '-');
-        $this->setIfPresent($tpl, $vars, 'nama_dosen_komisi', $this->kp->dosenKomisi?->nama ?? $this->kp->dosen_komisi_nama ?? '-'); // alias
+        // === Dosen Pembimbing & Komisi (pakai kolom kamu: dosen_name, dosen_nip) ===
+        $pembimbingNama = $this->kp->dosenPembimbing?->dosen_name
+            ?? $this->kp->dosen_pembimbing_nama
+            ?? '-';
 
-        // penandatangan (pakai signatory terkini kalau ada; kalau tidak, snapshot dari KP)
+        $pembimbingNip  = $this->kp->dosenPembimbing?->dosen_nip
+            ?? $this->kp->dosen_pembimbing_nip
+            ?? '-';
+
+        $komisiNama = $this->kp->dosenKomisi?->dosen_name
+            ?? $this->kp->dosen_komisi_nama
+            ?? '-';
+
+        $komisiNip  = $this->kp->dosenKomisi?->dosen_nip
+            ?? $this->kp->dosen_komisi_nip
+            ?? '-';
+
+        // nama
+        $this->setIfPresent($tpl, $vars, 'dosen_pembimbing_nama', $pembimbingNama);
+        $this->setIfPresent($tpl, $vars, 'nama_dosen_pembimbing', $pembimbingNama); // alias
+        $this->setIfPresent($tpl, $vars, 'dosen_komisi_nama', $komisiNama);
+        $this->setIfPresent($tpl, $vars, 'nama_dosen_komisi', $komisiNama); // alias
+
+        // NIP (tambahkan placeholder ini pada template jika belum ada)
+        $this->setIfPresent($tpl, $vars, 'nip_dosen_pembimbing', $pembimbingNip);
+        $this->setIfPresent($tpl, $vars, 'nip_dosen_komisi', $komisiNip);
+
+        // === Penandatangan
         $this->setIfPresent($tpl, $vars, 'penandatangan_nama', $this->signatory?->name ?? $this->kp->ttd_signed_by_name ?? '-');
         $this->setIfPresent($tpl, $vars, 'penandatangan_jabatan', $this->signatory?->position ?? $this->kp->ttd_signed_by_position ?? '-');
         $this->setIfPresent($tpl, $vars, 'penandatangan_nip', $this->signatory?->nip ?? $this->kp->ttd_signed_by_nip ?? '-');
 
-        // ====== Generate QR PNG ======
+        // ====== QR Code ======
         $qrPath = $this->generateQrPng($verifyUrl);
         if (! $qrPath || ! file_exists($qrPath) || filesize($qrPath) === 0) {
             throw new RuntimeException('Gagal membuat QR PNG. Cek ekstensi GD/Imagick & permission storage/app/tmp.');
         }
         $normalized = $this->normalizePath($qrPath);
 
-        // Sisipkan ke ${qr_code_ttd} (2 strategi)
         $inserted = false;
-
-        // 1) setImageValue
         try {
             if (method_exists($tpl, 'setImageValue')) {
                 $tpl->setImageValue('qr_code_ttd', [
@@ -158,18 +166,12 @@ class SpkDocxBuilder
             Log::warning('[SPK DOCX] setImageValue gagal, fallback complex block', ['err' => $e->getMessage()]);
         }
 
-        // 2) setComplexBlock + TextRun->addImage
         if (! $inserted) {
             $run = new TextRun();
-            $run->addImage($normalized, [
-                'width'  => 120,
-                'height' => 120,
-            ]);
+            $run->addImage($normalized, ['width' => 120, 'height' => 120]);
             $tpl->setComplexBlock('qr_code_ttd', $run);
-            $inserted = true;
         }
 
-        // simpan file .docx sementara
         $tmpName = 'spk_' . $this->kp->id . '_' . time() . '.docx';
         $tmpPath = $this->normalizePath($this->tmpPath($tmpName));
         $tpl->saveAs($tmpPath);
@@ -177,9 +179,6 @@ class SpkDocxBuilder
         return $tmpPath;
     }
 
-    /**
-     * (Opsional) Build PDF
-     */
     public function buildPdf(): string
     {
         $docx = $this->buildDocx();
@@ -197,28 +196,19 @@ class SpkDocxBuilder
         return $pdfPath;
     }
 
-    /**
-     * Generate PNG QR yang kompatibel lintas-versi bacon/bacon-qr-code:
-     * 1) Modern (v2/v3): ImageRenderer + Imagick/GD backend
-     * 2) Lama  (v1)   : Renderer\Image\Png
-     * 3) Fallback HTTP: unduh dari API publik (tanpa GD/Imagick)
-     */
     protected function generateQrPng(string $text): ?string
     {
         $name = 'qr_spk_' . $this->kp->id . '_' . time() . '.png';
         $path = $this->tmpPath($name);
 
-        // === 1) Jalur modern (v2/v3)
+        // 1) Jalur modern
         try {
             if (class_exists('\BaconQrCode\Renderer\ImageRenderer')) {
                 $backendClass = null;
 
-                // Prefer imagick
                 if (extension_loaded('imagick') && class_exists('\BaconQrCode\Renderer\Image\ImagickImageBackEnd')) {
                     $backendClass = '\BaconQrCode\Renderer\Image\ImagickImageBackEnd';
-                }
-                // GD backend (kalau tersedia)
-                elseif (extension_loaded('gd') && class_exists('\BaconQrCode\Renderer\Image\GdImageBackEnd')) {
+                } elseif (extension_loaded('gd') && class_exists('\BaconQrCode\Renderer\Image\GdImageBackEnd')) {
                     $backendClass = '\BaconQrCode\Renderer\Image\GdImageBackEnd';
                 }
 
@@ -235,10 +225,9 @@ class SpkDocxBuilder
             }
         } catch (\Throwable $e) {
             Log::warning('[SPK DOCX] QR modern renderer fail', ['err' => $e->getMessage()]);
-            // lanjut ke v1
         }
 
-        // === 2) Jalur lama (v1)
+        // 2) Jalur lama
         try {
             if (class_exists('\BaconQrCode\Renderer\Image\Png')) {
                 $pngRenderer = new \BaconQrCode\Renderer\Image\Png();
@@ -247,36 +236,28 @@ class SpkDocxBuilder
                 if (method_exists($pngRenderer, 'setMargin')) $pngRenderer->setMargin(0);
 
                 $writer = new Writer($pngRenderer);
-
                 if (method_exists($writer, 'writeFile')) {
                     $writer->writeFile($text, $path);
-                    if (file_exists($path) && filesize($path) > 0) {
-                        return $path;
-                    }
+                    if (file_exists($path) && filesize($path) > 0) return $path;
                 } else {
                     $binary = $writer->writeString($text);
-                    if (@file_put_contents($path, $binary) !== false) {
-                        return $path;
-                    }
+                    if (@file_put_contents($path, $binary) !== false) return $path;
                 }
             }
         } catch (\Throwable $e) {
             Log::warning('[SPK DOCX] QR legacy renderer fail', ['err' => $e->getMessage()]);
-            // lanjut ke HTTP fallback
         }
 
-        // === 3) Fallback HTTP (tanpa GD/Imagick) ===
+        // 3) Fallback HTTP
         try {
             $encoded = rawurlencode($text);
             $url     = "https://api.qrserver.com/v1/create-qr-code/?size=360x360&margin=0&data={$encoded}";
 
-            // Prefer file_get_contents
             $png = @file_get_contents($url);
             if ($png !== false && @file_put_contents($path, $png) !== false) {
                 return $path;
             }
 
-            // Fallback cURL kalau tersedia
             if (function_exists('curl_init')) {
                 $ch = curl_init($url);
                 curl_setopt_array($ch, [
@@ -295,6 +276,6 @@ class SpkDocxBuilder
             Log::warning('[SPK DOCX] QR http fallback fail', ['err' => $e->getMessage()]);
         }
 
-        return null; // Gagal semua
+        return null;
     }
 }

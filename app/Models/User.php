@@ -61,12 +61,17 @@ class User extends Authenticatable
         return Str::of($this->name)
             ->explode(' ')
             ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
+            ->map(fn($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
 
     public function mahasiswa()
     {
-        return $this->hasOne(\App\Models\Mahasiswa::class);
+        return $this->hasOne(Mahasiswa::class, 'user_id', 'id');
+    }
+
+    public function dosen()
+    {
+        return $this->hasOne(Dosen::class, 'user_id', 'id');
     }
 }

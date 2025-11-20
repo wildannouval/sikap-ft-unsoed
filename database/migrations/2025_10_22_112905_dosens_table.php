@@ -5,24 +5,34 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void {
+    public function up(): void
+    {
         Schema::create('dosens', function (Blueprint $table) {
-            $table->id();
-            // Jika setiap dosen punya akun login sendiri, map ke users:
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('nama');
-            $table->string('nip')->nullable();
-            $table->string('nidn')->nullable();
-            $table->string('jabatan')->nullable(); // mis: Lektor, Kaprodi, dsb.
-            $table->string('email')->nullable();
-            $table->string('telepon')->nullable();
+            $table->bigIncrements('dosen_id');
+
+            $table->foreignId('user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->string('dosen_name', 120);
+            $table->string('dosen_nip', 50)->nullable()->unique();
+
+            $table->foreignId('jurusan_id')
+                ->nullable()
+                ->constrained('jurusans')
+                ->nullOnDelete();
+
+            $table->boolean('is_komisi_kp')->default(false);
+
             $table->timestamps();
 
-            $table->index(['nama', 'nip', 'nidn']);
+            $table->index(['dosen_name', 'dosen_nip']);
         });
     }
 
-    public function down(): void {
+    public function down(): void
+    {
         Schema::dropIfExists('dosens');
     }
 };

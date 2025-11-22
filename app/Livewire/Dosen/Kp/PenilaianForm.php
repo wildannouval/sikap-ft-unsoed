@@ -4,6 +4,7 @@ namespace App\Livewire\Dosen\Kp;
 
 use App\Models\KpGrade;
 use App\Models\KpSeminar;
+use App\Services\Notifier;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
@@ -91,7 +92,6 @@ class PenilaianForm extends Component
                                     $x->orWhere('mahasiswa_nim', 'like', $term);
                                     $added = true;
                                 }
-                                // Jika kedua kolom tidak ada, jangan melemaskan filter—buat kondisi false
                                 if (!$added) {
                                     $x->whereRaw('0=1');
                                 }
@@ -115,7 +115,6 @@ class PenilaianForm extends Component
         $this->editingId     = $row->id;
         $this->ba_scan_path  = $row->grade?->ba_scan_path;
 
-        // isi form dari grade bila sudah ada
         $g = $row->grade;
         $this->dospem_sistematika_laporan = $g?->dospem_sistematika_laporan;
         $this->dospem_tata_bahasa         = $g?->dospem_tata_bahasa;
@@ -158,7 +157,6 @@ class PenilaianForm extends Component
 
     protected function computeScores(): array
     {
-        // rata-rata komponen, lalu bobot: dospem 60%, PL 40%
         $d = collect([
             $this->dospem_sistematika_laporan,
             $this->dospem_tata_bahasa,
@@ -183,14 +181,14 @@ class PenilaianForm extends Component
         $final       = round(($scoreDospem + $scorePl), 2);
 
         $letter = match (true) {
-            $final >= 85    => 'A',
-            $final >= 80    => 'AB',
-            $final >= 70    => 'B',
-            $final >= 65    => 'BC',
-            $final >= 60    => 'C',
-            $final >= 55    => 'CD',
-            $final >= 0     => 'D',
-            default         => 'D',
+            $final >= 85 => 'A',
+            $final >= 80 => 'AB',
+            $final >= 70 => 'B',
+            $final >= 65 => 'BC',
+            $final >= 60 => 'C',
+            $final >= 55 => 'CD',
+            $final >= 0  => 'D',
+            default      => 'D',
         };
 
         return [$scoreDospem, $scorePl, $final, $letter];
@@ -250,6 +248,23 @@ class PenilaianForm extends Component
         // update status seminar -> dinilai
         $seminar->update(['status' => KpSeminar::ST_DINILAI]);
 
+        // ======== NEW: notif ke mahasiswa agar upload bukti distribusi ========
+        try {
+            $userId = $seminar->kp?->mahasiswa?->user?->id;
+            if ($userId) {
+                Notifier::toUser(
+                    (int) $userId,
+                    'Upload Bukti Distribusi',
+                    'Nilai seminar kamu sudah diproses. Silakan unggah bukti distribusi untuk melihat nilai akhir.',
+                    route('mhs.nilai'),
+                    ['kp_seminar_id' => $seminar->id]
+                );
+            }
+        } catch (\Throwable $e) {
+            // \Log::warning('Notif mhs gagal: '.$e->getMessage());
+        }
+        // ======================================================================
+
         // refresh entity untuk ringkasan modal
         $this->seminar = $seminar->fresh(['grade', 'kp.mahasiswa.user']);
 
@@ -261,7 +276,6 @@ class PenilaianForm extends Component
     public function render()
     {
         return view('livewire.dosen.kp.penilaian-form', [
-            // pastikan $seminar tersedia di blade
             'seminar' => $this->editingId
                 ? ($this->seminar ?: KpSeminar::with(['grade', 'kp.mahasiswa.user'])->find($this->editingId))
                 : null,

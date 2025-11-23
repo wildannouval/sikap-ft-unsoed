@@ -27,6 +27,7 @@ class NilaiIndex extends Component
     {
         $this->resetPage();
     }
+
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -35,7 +36,9 @@ class NilaiIndex extends Component
     #[Computed]
     public function mahasiswaId(): int
     {
-        return (int) (Mahasiswa::where('user_id', Auth::id())->value('mahasiswa_id') ?? 0);
+        // Konsisten gunakan PK sebenarnya (getKey), bukan tebak kolom
+        $mhs = Mahasiswa::where('user_id', Auth::id())->first();
+        return (int) ($mhs?->getKey() ?? 0);
     }
 
     #[Computed]

@@ -24,18 +24,18 @@ class SeminarDaftarPage extends Component
     /** Entity seminar (jika sudah ada) */
     public ?KpSeminar $seminar = null;
 
-    /** Form fields (sesuai permintaan) */
+    /** Form fields */
     public string $judul_kp_final = '';
     public ?string $tanggal_seminar = null; // YYYY-MM-DD
     public ?int $ruangan_id = null;
     public ?string $jam_mulai = null;   // HH:MM
     public ?string $jam_selesai = null; // HH:MM
 
-    /** Optional tambahan (tetap dipertahankan agar kompatibel) */
+    /** Optional tambahan */
     public ?string $abstrak = null;
 
-    /** Upload (opsional, tetap didukung) */
-    public $berkas_laporan; // PDF
+    /** Upload (opsional) */
+    public $berkas_laporan; // UploadedFile (PDF)
     public ?string $berkas_laporan_path = null;
 
     /** Status string */
@@ -45,8 +45,8 @@ class SeminarDaftarPage extends Component
     {
         $mhs = Mahasiswa::where('user_id', Auth::id())->firstOrFail();
 
-        // Hanya milik sendiri
-        abort_unless($kp->mahasiswa_id === $mhs->mahasiswa_id, 403, 'KP bukan milik Anda.');
+        // Pastikan KP milik mahasiswa login (bandingkan dengan PK sebenarnya)
+        abort_unless((int)$kp->mahasiswa_id === (int)$mhs->getKey(), 403, 'KP bukan milik Anda.');
 
         // Status KP harus aktif
         abort_unless(
@@ -62,12 +62,12 @@ class SeminarDaftarPage extends Component
 
         // Ambil/isi seminar yang sudah ada
         $this->seminar = KpSeminar::where('kerja_praktik_id', $kp->id)
-            ->where('mahasiswa_id', $mhs->mahasiswa_id)
+            ->where('mahasiswa_id', $mhs->getKey())
             ->latest('id')
             ->first();
 
         if ($this->seminar) {
-            $this->judul_kp_final      = (string) ($this->seminar->judul_laporan ?? '');
+            $this->judul_kp_final      = (string)($this->seminar->judul_laporan ?? '');
             $this->abstrak             = $this->seminar->abstrak;
             $this->berkas_laporan_path = $this->seminar->berkas_laporan_path;
             $this->status              = $this->seminar->status;
@@ -89,7 +89,7 @@ class SeminarDaftarPage extends Component
             'jam_selesai'     => ['required', 'date_format:H:i', 'after:jam_mulai'],
 
             'abstrak'         => ['nullable', 'string', 'max:5000'],
-            'berkas_laporan'  => ['nullable', 'file', 'mimes:pdf', 'max:10240'], // opsional
+            'berkas_laporan'  => ['nullable', 'file', 'mimes:pdf', 'max:10240'], // 10MB
         ];
     }
 
@@ -122,7 +122,7 @@ class SeminarDaftarPage extends Component
             ->all();
     }
 
-    /** helper buat gabung tanggal + jam_mulai jadi datetime untuk kolom `tanggal_seminar` */
+    /** Gabung tanggal + jam_mulai jadi datetime untuk kolom `tanggal_seminar` */
     private function buildSeminarDateTime(): ?string
     {
         if (!$this->tanggal_seminar || !$this->jam_mulai) return null;
@@ -146,7 +146,7 @@ class SeminarDaftarPage extends Component
 
         $payload = [
             'kerja_praktik_id'    => $this->kp->id,
-            'mahasiswa_id'        => $mhs->mahasiswa_id,
+            'mahasiswa_id'        => $mhs->getKey(),
             'dosen_pembimbing_id' => $this->kp->dosen_pembimbing_id,
             'judul_laporan'       => $this->judul_kp_final,
             'abstrak'             => $this->abstrak,
@@ -190,7 +190,7 @@ class SeminarDaftarPage extends Component
         ]);
         $this->status = KpSeminar::ST_DIAJUKAN;
 
-        // === NOTIFIKASI → Dosen Pembimbing
+        // Notif → Dosen Pembimbing
         $dosenUser = $this->kp->dosenPembimbing?->user;
         $mhs = $this->kp->mahasiswa;
         if ($dosenUser) {

@@ -5,13 +5,15 @@ namespace App\Livewire\Komisi\Kp;
 use App\Models\KpSeminar;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 
 class NilaiIndex extends Component
 {
     use WithPagination;
 
-    public string $q = '';
-    public string $statusFilter = 'all'; // all | ba_terbit | dinilai
+    #[Url(as: 'q')]      public string $q = '';
+    #[Url(as: 'status')] public string $statusFilter = 'all'; // all | ba_terbit | dinilai
     public int $perPage = 10;
 
     public function updatingQ()
@@ -27,12 +29,14 @@ class NilaiIndex extends Component
         $this->resetPage();
     }
 
+    #[Computed]
     public function items()
     {
         $term = '%' . $this->q . '%';
 
         return KpSeminar::query()
             ->with(['grade', 'kp.mahasiswa.user'])
+            ->whereIn('status', ['ba_terbit', 'dinilai'])
             ->when($this->statusFilter !== 'all', fn($q) => $q->where('status', $this->statusFilter))
             ->when($this->q !== '', function ($q) use ($term) {
                 $q->where(function ($qq) use ($term) {
@@ -46,7 +50,6 @@ class NilaiIndex extends Component
                         });
                 });
             })
-            ->whereIn('status', ['ba_terbit', 'dinilai'])
             ->orderByDesc('updated_at')
             ->paginate($this->perPage)
             ->withQueryString();
@@ -54,8 +57,6 @@ class NilaiIndex extends Component
 
     public function render()
     {
-        return view('livewire.komisi.kp.nilai-index', [
-            'items' => $this->items(),
-        ]);
+        return view('livewire.komisi.kp.nilai-index');
     }
 }

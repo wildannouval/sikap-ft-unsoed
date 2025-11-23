@@ -14,10 +14,10 @@ class ReviewPage extends Component
 {
     use WithPagination;
 
-    #[Url(as: 'q')]     public string $q = '';
+    #[Url(as: 'q')]      public string $q = '';
     #[Url(as: 'status')] public string $statusFilter = 'review_komisi';
     #[Url(as: 'sortBy')] public string $sortBy = 'created_at';
-    #[Url(as: 'dir')]   public string $sortDirection = 'desc';
+    #[Url(as: 'dir')]    public string $sortDirection = 'desc';
 
     public int $perPage = 10;
 
@@ -147,17 +147,13 @@ class ReviewPage extends Component
         if ($kp->status === KerjaPraktik::ST_REVIEW_KOMISI) {
             $kp->update(['status' => KerjaPraktik::ST_REVIEW_BAPENDIK]);
 
-            // === NOTIF ===
             // 1) Ke Bapendik
             Notifier::toRole(
                 'Bapendik',
                 'KP Disetujui Komisi',
                 "Pengajuan KP oleh {$kp->mahasiswa?->user?->name} telah disetujui Komisi dan menunggu penerbitan SPK.",
                 route('bap.kp.spk'),
-                [
-                    'type'  => 'kp_approved_by_komisi',
-                    'kp_id' => $kp->id,
-                ]
+                ['type' => 'kp_approved_by_komisi', 'kp_id' => $kp->id]
             );
 
             // 2) Ke Mahasiswa
@@ -166,16 +162,14 @@ class ReviewPage extends Component
                 'Pengajuan KP Disetujui Komisi',
                 'Pengajuan telah disetujui Komisi dan diteruskan ke Bapendik untuk penerbitan SPK.',
                 route('mhs.kp.index'),
-                [
-                    'type'  => 'kp_forwarded_to_bapendik',
-                    'kp_id' => $kp->id,
-                ]
+                ['type' => 'kp_forwarded_to_bapendik', 'kp_id' => $kp->id]
             );
 
             session()->flash('ok', 'Pengajuan diteruskan ke Bapendik untuk penerbitan SPK.');
         } else {
             session()->flash('err', 'Pengajuan tidak bisa disetujui (status tidak valid).');
         }
+
         $this->approveId = null;
     }
 
@@ -200,16 +194,12 @@ class ReviewPage extends Component
                 'catatan' => $this->rejectNote,
             ]);
 
-            // === NOTIF === Mahasiswa
             Notifier::toUser(
                 $kp->mahasiswa?->user_id,
                 'Pengajuan KP Ditolak',
                 "Pengajuan KP ditolak oleh Komisi. Catatan: {$this->rejectNote}",
                 route('mhs.kp.index'),
-                [
-                    'type'  => 'kp_rejected',
-                    'kp_id' => $kp->id,
-                ]
+                ['type' => 'kp_rejected', 'kp_id' => $kp->id]
             );
 
             session()->flash('ok', 'Pengajuan ditolak oleh Komisi.');
@@ -221,7 +211,6 @@ class ReviewPage extends Component
         $this->rejectNote = '';
     }
 
-    // ==== TETAPKAN / GANTI PEMBIMBING ====
     public function openAssign(int $id): void
     {
         $kp = KerjaPraktik::findOrFail($id);
@@ -232,7 +221,7 @@ class ReviewPage extends Component
         }
 
         $this->assignId = $kp->id;
-        $this->dosen_id = $kp->dosen_pembimbing_id; // isi jika sudah ada
+        $this->dosen_id = $kp->dosen_pembimbing_id;
     }
 
     public function saveAssign(): void
@@ -250,7 +239,6 @@ class ReviewPage extends Component
 
         $kp->update(['dosen_pembimbing_id' => $this->dosen_id]);
 
-        // === NOTIF ===
         $dosen = Dosen::find($this->dosen_id);
 
         // 1) Ke Mahasiswa
@@ -259,24 +247,17 @@ class ReviewPage extends Component
             'Dosen Pembimbing Ditugaskan',
             "Komisi menetapkan {$dosen?->dosen_name} sebagai dosen pembimbing KP-mu.",
             route('mhs.kp.index'),
-            [
-                'type'      => 'kp_supervisor_assigned',
-                'kp_id'     => $kp->id,
-                'dosen_id'  => $this->dosen_id,
-            ]
+            ['type' => 'kp_supervisor_assigned', 'kp_id' => $kp->id, 'dosen_id' => $this->dosen_id]
         );
 
-        // 2) Ke Dosen (jika ada mapping user_id di tabel dosen)
+        // 2) Ke Dosen
         if ($dosen && !empty($dosen->user_id)) {
             Notifier::toUser(
                 $dosen->user_id,
                 'Penetapan Dosen Pembimbing KP',
                 "Anda ditetapkan sebagai pembimbing KP untuk {$kp->mahasiswa?->user?->name}.",
                 route('dsp.kp.konsultasi'),
-                [
-                    'type'   => 'kp_supervisor_assigned_to_lecturer',
-                    'kp_id'  => $kp->id,
-                ]
+                ['type' => 'kp_supervisor_assigned_to_lecturer', 'kp_id' => $kp->id]
             );
         }
 

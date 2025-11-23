@@ -20,14 +20,16 @@ class Page extends Component
 
     public ?int $editingId = null;
     public ?int $deleteId  = null;
-
     public ?int $detailId  = null;
 
     public string $judul_kp = '';
     public string $lokasi_kp = '';
 
-    public $proposal_kp;         // UploadedFile
-    public $surat_keterangan_kp; // UploadedFile
+    /** @var \Livewire\Features\SupportFileUploads\TemporaryUploadedFile|null */
+    public $proposal_kp;
+
+    /** @var \Livewire\Features\SupportFileUploads\TemporaryUploadedFile|null */
+    public $surat_keterangan_kp;
 
     public ?int $selectedSpId = null;
 
@@ -41,17 +43,19 @@ class Page extends Component
         return [
             'judul_kp' => ['required', 'string', 'min:5', 'max:255'],
             'lokasi_kp' => ['required', 'string', 'min:3', 'max:255'],
+
+            // saat create: wajib; saat edit: opsional
             'proposal_kp' => [$this->editingId ? 'nullable' : 'required', 'file', 'mimes:pdf', 'max:2048'],
             'surat_keterangan_kp' => [$this->editingId ? 'nullable' : 'required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
 
-            // pastikan SP milik mahasiswa login & status Diterbitkan
+            // SP milik mahasiswa login & sudah Diterbitkan (opsional saja)
             'selectedSpId' => [
                 'nullable',
                 Rule::exists('surat_pengantars', 'id')->where(function ($q) {
                     $mhs = Mahasiswa::where('user_id', Auth::id())->first();
                     $q->where('mahasiswa_id', $mhs?->getKey())
                         ->where('status_surat_pengantar', 'Diterbitkan');
-                })
+                }),
             ],
         ];
     }
@@ -116,11 +120,9 @@ class Page extends Component
             ->first();
 
         if ($sp) {
-            $lokasi = (string) $sp->lokasi_surat_pengantar;
-            $this->lokasi_kp = $lokasi;
-
+            $this->lokasi_kp = (string) $sp->lokasi_surat_pengantar;
             if (trim($this->judul_kp) === '') {
-                $this->judul_kp = $lokasi;
+                $this->judul_kp = $this->lokasi_kp;
             }
         }
     }
@@ -149,30 +151,22 @@ class Page extends Component
             'catatan'               => null,
         ]);
 
-        // === NOTIF ===
-        // 1) Ke Komisi
+        // Notif Komisi
         Notifier::toRole(
             'Dosen Komisi',
             'Pengajuan KP Baru',
             "Mahasiswa {$mhs->user?->name} mengajukan KP: {$this->judul_kp} di {$this->lokasi_kp}.",
             route('komisi.kp.review'),
-            [
-                'type'   => 'kp_submitted',
-                'kp_id'  => $kp->id,
-                'mhs_id' => $mhs->getKey(),
-            ]
+            ['type' => 'kp_submitted', 'kp_id' => $kp->id, 'mhs_id' => $mhs->getKey()]
         );
 
-        // 2) ACK ke Mahasiswa
+        // Notif ACK ke Mahasiswa
         Notifier::toUser(
             Auth::id(),
             'Pengajuan KP diterima',
             'Pengajuan berhasil disimpan. Menunggu review Komisi.',
             route('mhs.kp.index'),
-            [
-                'type'  => 'kp_ack',
-                'kp_id' => $kp->id,
-            ]
+            ['type' => 'kp_ack', 'kp_id' => $kp->id]
         );
 
         $this->reset(['editingId', 'judul_kp', 'lokasi_kp', 'proposal_kp', 'surat_keterangan_kp', 'selectedSpId']);
@@ -333,7 +327,6 @@ class Page extends Component
     {
         return KerjaPraktik::badgeColor($status);
     }
-
     public function statusLabel(string $status): string
     {
         return KerjaPraktik::statusLabel($status);

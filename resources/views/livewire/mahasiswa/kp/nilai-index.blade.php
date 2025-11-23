@@ -48,9 +48,26 @@
                             </flux:badge>
                         </flux:table.cell>
 
-                        {{-- Distribusi --}}
-                        <flux:table.cell>
-                            <livewire:mahasiswa.kp.distribusi-upload :seminar-id="$row->id" :key="'dist-' . $row->id" />
+                        {{-- Distribusi: jika sudah ada => link; jika belum => tombol buka modal --}}
+                        <flux:table.cell class="whitespace-nowrap">
+                            @if ($row->distribusi_proof_path)
+                                <a class="text-sm underline"
+                                    href="{{ asset('storage/' . $row->distribusi_proof_path) }}" target="_blank">Lihat
+                                    Bukti</a>
+                                <div class="text-[11px] text-zinc-500">
+                                    {{ $row->distribusi_uploaded_at?->format('d M Y H:i') }}
+                                </div>
+                            @else
+                                @if (in_array($row->status, ['dinilai', 'ba_terbit']))
+                                    {{-- Fallback modal attr memastikan modal tetap muncul walau reaktivitas Livewire terblokir --}}
+                                    <flux:button size="xs" variant="primary" icon="arrow-up-tray"
+                                        modal="mhs-upload-distribusi" wire:click="openUpload({{ $row->id }})">
+                                        Upload Bukti
+                                    </flux:button>
+                                @else
+                                    <span class="text-xs text-zinc-400">Menunggu dinilai</span>
+                                @endif
+                            @endif
                         </flux:table.cell>
 
                         {{-- Skor Akhir (tampilkan hanya jika distribusi sudah diupload) --}}
@@ -95,4 +112,35 @@
             </flux:table.rows>
         </flux:table>
     </flux:card>
+
+    {{-- Modal Global: kombinasi :show (Livewire) + name (fallback modal attr) --}}
+    <flux:modal name="mhs-upload-distribusi" :show="$showUploadModal" dismissable class="min-w-[34rem]">
+        {{-- Saat tombol diklik, modal bisa muncul dulu via "modal" attr; konten akan mengisi saat $uploadSeminarId sudah diset --}}
+        @if ($uploadSeminarId)
+            <div class="p-1">
+                <flux:card class="space-y-4 border-indigo-200/70 dark:border-indigo-900/40">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="text-base font-semibold">Upload Bukti Distribusi</h3>
+                            <p class="text-sm text-zinc-500">
+                                Unggah bukti distribusi setelah status <span class="font-medium">Dinilai</span> atau
+                                <span class="font-medium">BA Terbit</span>.
+                            </p>
+                        </div>
+                        <flux:button variant="ghost" icon="x-mark" wire:click="closeUpload"
+                            modal="mhs-upload-distribusi">
+                            Tutup
+                        </flux:button>
+                    </div>
+
+                    {{-- Form upload sebagai card form (komponen anak) --}}
+                    <livewire:mahasiswa.kp.distribusi-upload :seminar-id="$uploadSeminarId" :key="'modal-upload-' . $uploadSeminarId" />
+
+                </flux:card>
+            </div>
+        @else
+            {{-- Skeleton ringan saat id belum tersetel (klik via fallback modal duluan) --}}
+            <div class="p-6 text-sm text-zinc-500">Memuat formulir…</div>
+        @endif
+    </flux:modal>
 </div>

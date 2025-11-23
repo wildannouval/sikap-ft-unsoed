@@ -15,13 +15,12 @@ class DistribusiUpload extends Component
 {
     use WithFileUploads;
 
-    /** Props dari parent table */
+    /** Props dari parent modal */
     public int $seminarId;
 
     /** State */
     public ?KpSeminar $seminar = null;
-    public bool $open = false; // expander inline pengganti modal
-    public $file;              // uploaded file
+    public $file; // uploaded file
 
     public function mount(int $seminarId): void
     {
@@ -54,23 +53,6 @@ class DistribusiUpload extends Component
         ];
     }
 
-    /** Buka / tutup panel inline (lebih stabil ketimbang modal di dalam row tabel) */
-    public function toggle(): void
-    {
-        // refresh entity biar status & hak akses akurat
-        $this->seminar = $this->loadSeminarOrFail();
-
-        // hanya tampilkan panel jika sudah "dinilai" atau "ba_terbit"
-        if (!in_array($this->seminar->status, ['dinilai', 'ba_terbit'])) {
-            // kalau belum waktunya, beri pesan ringan tapi jangan error-block
-            $this->addError('file', 'Bukti distribusi dapat diunggah setelah seminar dinilai atau BA terbit.');
-            $this->open = false;
-            return;
-        }
-
-        $this->open = !$this->open;
-    }
-
     public function save(): void
     {
         $this->validate();
@@ -93,7 +75,7 @@ class DistribusiUpload extends Component
             'distribusi_uploaded_at' => now(),
         ]);
 
-        // Notifikasi ke pihak terkait (dosen pembimbing spesifik bila ada, kalau tidak broadcast role)
+        // Notifikasi ke pihak terkait
         try {
             $notified = 0;
             if ($seminar->dosen_pembimbing_id) {
@@ -123,7 +105,6 @@ class DistribusiUpload extends Component
                 );
             }
 
-            // Bapendik & Komisi
             Notifier::toRole(
                 'Bapendik',
                 'Bukti Distribusi Diunggah',
@@ -143,14 +124,13 @@ class DistribusiUpload extends Component
             // optional: log warning
         }
 
-        // Beres
+        // beres
         $this->reset('file');
-        $this->open = false; // tutup panel setelah sukses
 
-        // Refresh entitas lokal
+        // refresh entity lokal (untuk berjaga-jaga jika dipajang ulang)
         $this->seminar = $this->loadSeminarOrFail();
 
-        // Beri tahu parent table buat refresh
+        // Beri tahu parent: tutup modal + refresh tabel
         $this->dispatch('mhs-distribusi-uploaded');
 
         session()->flash('ok', 'Bukti distribusi berhasil diunggah.');

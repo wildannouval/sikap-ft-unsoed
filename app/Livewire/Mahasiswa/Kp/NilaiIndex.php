@@ -17,6 +17,12 @@ class NilaiIndex extends Component
     public string $q = '';
     public int $perPage = 10;
 
+    /** ID seminar yang sedang dibuka upload-nya (untuk modal global) */
+    public ?int $uploadSeminarId = null;
+
+    /** Toggle modal global (dipakai bareng fallback modal attr) */
+    public bool $showUploadModal = false;
+
     public function updatingQ()
     {
         $this->resetPage();
@@ -47,11 +53,33 @@ class NilaiIndex extends Component
             ->withQueryString();
     }
 
-    // Setelah anak (komponen upload) selesai, refresh tabel biar status langsung terlihat
+    /** Buka modal upload untuk seminar tertentu */
+    public function openUpload(int $seminarId): void
+    {
+        $this->uploadSeminarId = $seminarId;
+        $this->showUploadModal = true; // untuk :show binding
+    }
+
+    /** Tutup modal upload */
+    public function closeUpload(): void
+    {
+        $this->showUploadModal = false;
+        $this->uploadSeminarId = null;
+    }
+
+    // Setelah anak selesai, refresh tabel + tutup modal
     #[On('mhs-distribusi-uploaded')]
     public function refreshTable(): void
     {
+        $this->closeUpload();
         $this->resetPage();
+    }
+
+    // Jika user menekan tombol batal di form anak
+    #[On('mhs-upload-cancel')]
+    public function handleCancel(): void
+    {
+        $this->closeUpload();
     }
 
     public function render()

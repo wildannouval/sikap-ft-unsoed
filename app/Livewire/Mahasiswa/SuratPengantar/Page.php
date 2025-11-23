@@ -4,7 +4,7 @@ namespace App\Livewire\Mahasiswa\SuratPengantar;
 
 use App\Models\Mahasiswa;
 use App\Models\SuratPengantar;
-use App\Services\Notifier; // [NOTIF] ⬅️ tambah
+use App\Services\Notifier;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -73,9 +73,9 @@ class Page extends Component
     public function badgeColor(string $status): string
     {
         return match ($status) {
-            'Diajukan'    => 'blue',
-            'Diterbitkan' => 'green',
-            'Ditolak'     => 'red',
+            'Diajukan'    => 'indigo',
+            'Diterbitkan' => 'emerald',
+            'Ditolak'     => 'rose',
             default       => 'zinc',
         };
     }
@@ -94,20 +94,20 @@ class Page extends Component
             'tanggal_pengajuan_surat_pengantar'  => now(),
         ]);
 
-        // [NOTIF] Beritahu Bapendik: ada SP baru
+        // Notif Bapendik
         Notifier::toRole(
             'Bapendik',
             'SP Baru Diajukan',
             "Ada pengajuan SP baru oleh " . Auth::user()->name . ".",
             route('bap.sp.validasi'),
             [
-                'type'  => 'sp_submitted',
-                'sp_id' => $sp->id,
+                'type'   => 'sp_submitted',
+                'sp_id'  => $sp->id,
                 'mhs_id' => $this->mhsId,
             ]
         );
 
-        // [NOTIF] Ack ke Mahasiswa sendiri
+        // Notif Mahasiswa
         Notifier::toUser(
             Auth::id(),
             'Pengajuan SP diterima',

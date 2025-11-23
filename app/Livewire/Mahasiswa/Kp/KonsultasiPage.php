@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Services\Notifier; // <— NOTIFIER
+use App\Services\Notifier;
 
 class KonsultasiPage extends Component
 {
@@ -33,14 +33,13 @@ class KonsultasiPage extends Component
 
     /**
      * Pastikan:
-     * - KP milik mahasiswa login (pakai PK sebenarnya, bukan selalu "id")
+     * - KP milik mahasiswa login
      * - Status KP sudah SPK terbit atau sedang berjalan
      */
     public function mount(KerjaPraktik $kp): void
     {
         $mhs = Mahasiswa::where('user_id', Auth::id())->firstOrFail();
 
-        // === FIX 403: bandingkan ke PK yang benar ===
         abort_unless((int) $kp->mahasiswa_id === (int) $mhs->getKey(), 403, 'Forbidden');
 
         abort_unless(
@@ -55,7 +54,6 @@ class KonsultasiPage extends Component
         $this->kp = $kp;
     }
 
-    /** Validasi input */
     protected function rules(): array
     {
         return [
@@ -84,9 +82,18 @@ class KonsultasiPage extends Component
         $this->resetPage();
     }
 
-    /**
-     * Data konsultasi untuk tabel
-     */
+    /** Toggle sort (biar bisa klik header tabel) */
+    public function sort(string $field): void
+    {
+        if ($this->sortBy === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $field;
+            $this->sortDirection = 'asc';
+        }
+    }
+
+    /** Data konsultasi untuk tabel */
     #[Computed]
     public function items()
     {
@@ -94,9 +101,10 @@ class KonsultasiPage extends Component
             ->where('kerja_praktik_id', $this->kp->id)
             ->when($this->q !== '', function ($q) {
                 $q->where(function ($qq) {
-                    $qq->where('topik_konsultasi', 'like', '%' . $this->q . '%')
-                        ->orWhere('hasil_konsultasi', 'like', '%' . $this->q . '%')
-                        ->orWhere('konsultasi_dengan', 'like', '%' . $this->q . '%');
+                    $kw = '%' . $this->q . '%';
+                    $qq->where('topik_konsultasi', 'like', $kw)
+                        ->orWhere('hasil_konsultasi', 'like', $kw)
+                        ->orWhere('konsultasi_dengan', 'like', $kw);
                 });
             })
             ->orderBy($this->sortBy, $this->sortDirection)
@@ -104,12 +112,7 @@ class KonsultasiPage extends Component
             ->withQueryString();
     }
 
-    /**
-     * Submit konsultasi baru
-     * - Simpan record konsultasi
-     * - Jika status KP masih SPK TERBIT, ubah ke KP SEDANG BERJALAN
-     * - Kirim notifikasi ke Dosen Pembimbing
-     */
+    /** Submit konsultasi baru */
     public function submit(): void
     {
         $this->validate();
@@ -118,9 +121,8 @@ class KonsultasiPage extends Component
 
         $row = KpConsultation::create([
             'kerja_praktik_id'     => $this->kp->id,
-            // === FIX 403/relasi: gunakan PK sebenarnya milik mahasiswa ===
             'mahasiswa_id'         => $mhs->getKey(),
-            'dosen_pembimbing_id'  => $this->kp->dosen_pembimbing_id, // boleh null (FK set null)
+            'dosen_pembimbing_id'  => $this->kp->dosen_pembimbing_id, // boleh null
             'konsultasi_dengan'    => $this->konsultasi_dengan !== '' ? $this->konsultasi_dengan : null,
             'tanggal_konsultasi'   => $this->tanggal_konsultasi,
             'topik_konsultasi'     => $this->topik_konsultasi,
@@ -131,7 +133,7 @@ class KonsultasiPage extends Component
             $this->kp->update(['status' => KerjaPraktik::ST_KP_BERJALAN]);
         }
 
-        // === NOTIFIKASI → Dosen Pembimbing
+        // Notif → Dosen Pembimbing
         $dosenUser = $this->kp->dosenPembimbing?->user;
         if ($dosenUser) {
             $title = 'Konsultasi baru diajukan';

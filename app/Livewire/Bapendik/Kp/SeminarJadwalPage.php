@@ -13,8 +13,8 @@ class SeminarJadwalPage extends Component
 {
     use WithPagination;
 
-    public string $q = '';
-    public string $statusFilter = 'disetujui_pembimbing'; // all | disetujui_pembimbing | dijadwalkan | ba_terbit | ditolak | diajukan
+    public string $search = '';
+    public string $statusFilter = 'disetujui_pembimbing'; // all | diajukan | disetujui_pembimbing | dijadwalkan | ba_terbit | ditolak
     public string $sortBy = 'created_at';
     public string $sortDirection = 'desc';
     public int $perPage = 10;
@@ -22,29 +22,34 @@ class SeminarJadwalPage extends Component
     // schedule/BA modal state
     public ?int $editId = null;
     public ?string $tanggal_seminar = null; // HTML datetime-local format: Y-m-d\TH:i
-    public ?int $ruangan_id = null;        // opsional, kalau nanti mau binding ke master room
+    public ?int $ruangan_id = null;         // opsional, kalau nanti mau binding ke master room
     public ?string $ruangan_nama = null;
 
     public ?string $nomor_ba = null;
-    public ?string $tanggal_ba = null;     // Y-m-d
-    public ?int $signatory_id = null;      // opsional: snapshot penandatangan
+    public ?string $tanggal_ba = null;      // Y-m-d
+    public ?int $signatory_id = null;       // opsional: snapshot penandatangan
 
-    public function updatingQ()
+    // --- Pagination reset hooks ---
+    public function updatingSearch()
     {
         $this->resetPage();
     }
+
     public function updatingStatusFilter()
     {
         $this->resetPage();
     }
+
     public function updatingSortBy()
     {
         $this->resetPage();
     }
+
     public function updatingSortDirection()
     {
         $this->resetPage();
     }
+
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -58,28 +63,45 @@ class SeminarJadwalPage extends Component
             $this->sortBy = $field;
             $this->sortDirection = 'asc';
         }
+
         $this->resetPage();
+    }
+
+    /**
+     * Query dasar (pattern sama seperti SpkPage).
+     */
+    protected function baseQuery()
+    {
+        return KpSeminar::query()
+            ->with(['kp.mahasiswa.user', 'kp.dosenPembimbing'])
+            ->when($this->search !== '', function ($query) {
+                $term = '%' . $this->search . '%';
+
+                $query->where(function ($q) use ($term) {
+                    $q->where('judul_laporan', 'like', $term)
+                        ->orWhere('nomor_ba', 'like', $term)
+                        ->orWhereHas('kp', function ($kpq) use ($term) {
+                            $kpq->where('judul_kp', 'like', $term)
+                                ->orWhereHas('mahasiswa', function ($mq) use ($term) {
+                                    $mq->where('mahasiswa_nim', 'like', $term)
+                                        ->orWhere('mahasiswa_name', 'like', $term)
+                                        ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', $term));
+                                })
+                                ->orWhereHas('dosenPembimbing', function ($dq) use ($term) {
+                                    // SESUAIKAN DENGAN KOLOM DI TABEL `dosens`
+                                    $dq->where('dosen_name', 'like', $term);
+                                });
+                        });
+                });
+            })
+            ->when($this->statusFilter !== 'all', fn($q) => $q->where('status', $this->statusFilter))
+            ->orderBy($this->sortBy, $this->sortDirection);
     }
 
     #[Computed]
     public function items()
     {
-        return KpSeminar::query()
-            ->with(['kp.mahasiswa.user', 'kp.dosenPembimbing'])
-            ->when($this->q !== '', function ($q) {
-                $term = '%' . $this->q . '%';
-                $q->where(function ($qq) use ($term) {
-                    $qq->where('judul_laporan', 'like', $term)
-                        ->orWhere('nomor_ba', 'like', $term)
-                        ->orWhereHas('kp.mahasiswa.user', fn($u) => $u->where('name', 'like', $term))
-                        ->orWhereHas('kp.mahasiswa', function ($m) use ($term) {
-                            $m->where('nim', 'like', $term)
-                                ->orWhere('mahasiswa_nim', 'like', $term);
-                        });
-                });
-            })
-            ->when($this->statusFilter !== 'all', fn($q) => $q->where('status', $this->statusFilter))
-            ->orderBy($this->sortBy, $this->sortDirection)
+        return $this->baseQuery()
             ->paginate($this->perPage)
             ->withQueryString();
     }
@@ -87,6 +109,7 @@ class SeminarJadwalPage extends Component
     public function openEdit(int $id): void
     {
         $row = KpSeminar::with(['kp.mahasiswa.user'])->findOrFail($id);
+
         $this->editId          = $row->id;
         $this->tanggal_seminar = optional($row->tanggal_seminar)->format('Y-m-d\TH:i');
         $this->ruangan_id      = $row->ruangan_id;
@@ -105,6 +128,7 @@ class SeminarJadwalPage extends Component
         ]);
 
         $row = KpSeminar::with(['kp.mahasiswa.user', 'kp.dosenPembimbing.user'])->findOrFail($this->editId);
+
         $row->update([
             'tanggal_seminar' => $this->tanggal_seminar,
             'ruangan_id'      => $this->ruangan_id,
@@ -112,7 +136,7 @@ class SeminarJadwalPage extends Component
             'status'          => KpSeminar::ST_DIJADWALKAN,
         ]);
 
-        // === NOTIFIKASI → Mahasiswa & Dosen Pembimbing
+        // === NOTIFIKASI – Mahasiswa & Dosen Pembimbing
         $mhsUser = $row->kp?->mahasiswa?->user;
         $dspUser = $row->kp?->dosenPembimbing?->user;
 
@@ -127,9 +151,9 @@ class SeminarJadwalPage extends Component
                 ),
                 route('mhs.kp.seminar', ['kp' => $row->kerja_praktik_id]),
                 [
-                    'type'        => 'kp_seminar_scheduled',
-                    'kp_id'       => $row->kerja_praktik_id,
-                    'seminar_id'  => $row->id,
+                    'type'       => 'kp_seminar_scheduled',
+                    'kp_id'      => $row->kerja_praktik_id,
+                    'seminar_id' => $row->id,
                 ]
             );
         }
@@ -146,9 +170,9 @@ class SeminarJadwalPage extends Component
                 ),
                 route('dsp.kp.seminar.approval'),
                 [
-                    'type'        => 'kp_seminar_scheduled_info',
-                    'kp_id'       => $row->kerja_praktik_id,
-                    'seminar_id'  => $row->id,
+                    'type'       => 'kp_seminar_scheduled_info',
+                    'kp_id'      => $row->kerja_praktik_id,
+                    'seminar_id' => $row->id,
                 ]
             );
         }
@@ -169,16 +193,19 @@ class SeminarJadwalPage extends Component
         $row = KpSeminar::with([
             'kp.mahasiswa.user',
             'kp.mahasiswa.jurusan',
-            'kp.dosenPembimbing.user'
+            'kp.dosenPembimbing.user',
         ])->findOrFail($this->editId);
 
         // snapshot signer bila diisi
         if ($this->signatory_id) {
             $sign = Signatory::find($this->signatory_id);
-            $row->signatory_id           = $sign?->id;
-            $row->ttd_signed_by_name     = $sign?->name;
-            $row->ttd_signed_by_position = $sign?->position;
-            $row->ttd_signed_by_nip      = $sign?->nip;
+
+            if ($sign) {
+                $row->signatory_id           = $sign->id;
+                $row->ttd_signed_by_name     = $sign->name;
+                $row->ttd_signed_by_position = $sign->position;
+                $row->ttd_signed_by_nip      = $sign->nip;
+            }
         }
 
         $row->nomor_ba   = $this->nomor_ba;
@@ -186,7 +213,7 @@ class SeminarJadwalPage extends Component
         $row->status     = KpSeminar::ST_BA_TERBIT;
         $row->save();
 
-        // === NOTIFIKASI → Mahasiswa & Dosen Pembimbing (+ tautan unduh)
+        // === NOTIFIKASI – Mahasiswa & Dosen Pembimbing (+ link unduh)
         $mhsUser = $row->kp?->mahasiswa?->user;
         $dspUser = $row->kp?->dosenPembimbing?->user;
 
@@ -202,7 +229,7 @@ class SeminarJadwalPage extends Component
                     'seminar_id'     => $row->id,
                     'download_route' => route('mhs.kp.seminar.download.ba', [
                         'kp'      => $row->kerja_praktik_id,
-                        'seminar' => $row->id
+                        'seminar' => $row->id,
                     ]),
                 ]
             );

@@ -161,7 +161,7 @@
 
                         {{-- Master Data (collapsible) --}}
                         @can('masterdata.manage')
-                            <flux:navlist.group heading="Master Data" expandable :expanded="false" class="grid">
+                            <flux:navlist.group heading="Master Data" expandable class="grid">
                                 @if (Route::has('bap.master.dosen'))
                                     <flux:navlist.item icon="users" :href="route('bap.master.dosen')"
                                         :current="request()->routeIs('bap.master.dosen')" wire:navigate>Data Dosen

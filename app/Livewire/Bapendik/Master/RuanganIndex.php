@@ -3,6 +3,7 @@
 namespace App\Livewire\Bapendik\Master;
 
 use App\Models\Room;
+use Flux\Flux;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Computed;
@@ -26,14 +27,17 @@ class RuanganIndex extends Component
     {
         $this->resetPage();
     }
+
     public function updatingSortBy()
     {
         $this->resetPage();
     }
+
     public function updatingSortDirection()
     {
         $this->resetPage();
     }
+
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -77,20 +81,28 @@ class RuanganIndex extends Component
     public function store(): void
     {
         $this->validate();
+
         Room::create([
             'room_number' => $this->room_number,
             'building'    => $this->building,
             'notes'       => $this->notes,
         ]);
-        session()->flash('ok', 'Ruangan ditambahkan.');
+
         $this->resetForm();
         $this->resetPage();
+
+        // === TOAST sukses tambah ===
+        Flux::toast(
+            heading: 'Berhasil',
+            text: 'Ruangan ditambahkan.',
+            variant: 'success',
+        );
     }
 
     public function edit(int $id): void
     {
         $r = Room::findOrFail($id);
-        $this->editId = $r->id;
+        $this->editId      = $r->id;
         $this->room_number = $r->room_number;
         $this->building    = $r->building;
         $this->notes       = $r->notes;
@@ -99,22 +111,36 @@ class RuanganIndex extends Component
     public function update(): void
     {
         $this->validate();
+
         $r = Room::findOrFail($this->editId);
         $r->update([
             'room_number' => $this->room_number,
             'building'    => $this->building,
             'notes'       => $this->notes,
         ]);
-        session()->flash('ok', 'Perubahan disimpan.');
+
         $this->resetForm();
         $this->resetPage();
+
+        // === TOAST sukses update ===
+        Flux::toast(
+            heading: 'Berhasil',
+            text: 'Perubahan ruangan disimpan.',
+            variant: 'success',
+        );
     }
 
     public function delete(int $id): void
     {
         Room::findOrFail($id)->delete();
-        session()->flash('ok', 'Ruangan dihapus.');
         $this->resetPage();
+
+        // === TOAST sukses hapus ===
+        Flux::toast(
+            heading: 'Berhasil',
+            text: 'Ruangan dihapus.',
+            variant: 'success',
+        );
     }
 
     public function render()

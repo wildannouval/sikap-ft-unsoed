@@ -5,6 +5,7 @@ namespace App\Livewire\Bapendik\Master;
 use App\Models\Dosen;
 use App\Models\Jurusan;
 use App\Models\User;
+use Flux\Flux;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -51,6 +52,7 @@ class DosenIndex extends Component
     {
         $this->resetPage();
     }
+
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -136,8 +138,14 @@ class DosenIndex extends Component
 
         $this->showForm = false;
         $this->resetForm();
-        session()->flash('ok', 'Data dosen disimpan.');
         $this->resetPage();
+
+        // === TOAST sukses simpan (pakai Flux facade) ===
+        Flux::toast(
+            heading: 'Berhasil',
+            text: 'Data dosen disimpan.',
+            variant: 'success',
+        );
     }
 
     public function delete(int $id): void
@@ -145,8 +153,14 @@ class DosenIndex extends Component
         $row = Dosen::findOrFail($id);
         $row->delete();
 
-        session()->flash('ok', 'Data dosen dihapus.');
         $this->resetPage();
+
+        // === TOAST sukses hapus ===
+        Flux::toast(
+            heading: 'Berhasil',
+            text: 'Data dosen dihapus.',
+            variant: 'success',
+        );
     }
 
     public function resetUserPassword(int $id, string $newPassword = 'password'): void
@@ -157,7 +171,12 @@ class DosenIndex extends Component
         $row->user->password = $newPassword;
         $row->user->save();
 
-        session()->flash('ok', 'Password akun dosen direset.');
+        // === TOAST sukses reset password ===
+        Flux::toast(
+            heading: 'Berhasil',
+            text: 'Password akun dosen direset.',
+            variant: 'success',
+        );
     }
 
     private function resetForm(): void

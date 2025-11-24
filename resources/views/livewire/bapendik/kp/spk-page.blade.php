@@ -1,6 +1,18 @@
 <div class="space-y-6">
     <flux:toast />
 
+    {{-- HEADER --}}
+    <div class="flex items-center justify-between">
+        <div>
+            <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
+                Penerbitan SPK (Bapendik)
+            </flux:heading>
+            <flux:subheading class="text-zinc-600 dark:text-zinc-300">
+                Terbitkan SPK untuk pengajuan KP yang sudah disetujui Komisi.
+            </flux:subheading>
+        </div>
+    </div>
+
     {{-- PANDUAN (aksen sky untuk Bapendik) --}}
     <flux:card
         class="space-y-4 rounded-xl border
@@ -33,23 +45,6 @@
         </div>
     </flux:card>
 
-    {{-- HEADER --}}
-    <div class="flex items-center justify-between">
-        <div>
-            <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
-                Penerbitan SPK (Bapendik)
-            </flux:heading>
-            <flux:subheading class="text-zinc-600 dark:text-zinc-300">
-                Terbitkan SPK untuk pengajuan KP yang sudah disetujui Komisi.
-            </flux:subheading>
-        </div>
-
-        <div class="flex items-center gap-2 w-full md:w-[30rem]">
-            <flux:input icon="magnifying-glass" placeholder="Cari judul/instansi/nama/NIM/nomor SPK…"
-                wire:model.live.debounce.300ms="search" />
-        </div>
-    </div>
-
     <flux:separator variant="subtle" />
 
     <flux:tab.group wire:model.live="tab">
@@ -77,6 +72,9 @@
                     <div class="flex items-center justify-between gap-2">
                         <h3 class="text-sm font-medium tracking-wide">Menunggu Penerbitan</h3>
                         <div class="flex items-center gap-2">
+                            {{-- SEARCH di dalam header tabel --}}
+                            <flux:input icon="magnifying-glass" placeholder="Cari judul/instansi/nama/NIM/nomor SPK…"
+                                class="hidden sm:block w-40 md:w-72" wire:model.live.debounce.300ms="search" />
                             <flux:select wire:model.live="perPage" class="w-32">
                                 <flux:select.option :value="10">10 / halaman</flux:select.option>
                                 <flux:select.option :value="25">25 / halaman</flux:select.option>
@@ -116,7 +114,9 @@
 
                                     <flux:table.cell class="whitespace-nowrap">
                                         {{ $row->mahasiswa?->user?->name }}
-                                        <div class="text-xs text-zinc-500">NIM: {{ $row->mahasiswa?->nim }}</div>
+                                        <div class="text-xs text-zinc-500">
+                                            NIM: {{ $row->mahasiswa?->mahasiswa_nim }}
+                                        </div>
                                     </flux:table.cell>
 
                                     <flux:table.cell class="whitespace-nowrap">
@@ -135,7 +135,7 @@
                                     </flux:table.cell>
 
                                     <flux:table.cell class="whitespace-nowrap">
-                                        {{ $row->dosenPembimbing?->nama ?? '—' }}
+                                        {{ $row->dosenPembimbing?->dosen_name ?? '—' }}
                                     </flux:table.cell>
 
                                     <flux:table.cell class="text-right">
@@ -182,6 +182,9 @@
                     <div class="flex items-center justify-between gap-2">
                         <h3 class="text-sm font-medium tracking-wide">Riwayat SPK Terbit</h3>
                         <div class="flex items-center gap-2">
+                            {{-- SEARCH di dalam header tabel --}}
+                            <flux:input icon="magnifying-glass" placeholder="Cari judul/instansi/nama/NIM/nomor SPK…"
+                                class="hidden sm:block w-40 md:w-72" wire:model.live.debounce.300ms="search" />
                             <flux:select wire:model.live="perPage" class="w-32">
                                 <flux:select.option :value="10">10 / halaman</flux:select.option>
                                 <flux:select.option :value="25">25 / halaman</flux:select.option>
@@ -223,7 +226,9 @@
 
                                     <flux:table.cell class="whitespace-nowrap">
                                         {{ $row->mahasiswa?->user?->name }}
-                                        <div class="text-xs text-zinc-500">NIM: {{ $row->mahasiswa?->nim }}</div>
+                                        <div class="text-xs text-zinc-500">
+                                            NIM: {{ $row->mahasiswa?->mahasiswa_nim }}
+                                        </div>
                                     </flux:table.cell>
 
                                     <flux:table.cell class="whitespace-nowrap">
@@ -242,7 +247,7 @@
                                     </flux:table.cell>
 
                                     <flux:table.cell class="whitespace-nowrap">
-                                        {{ $row->dosenPembimbing?->nama ?? '—' }}
+                                        {{ $row->dosenPembimbing?->dosen_name ?? '—' }}
                                     </flux:table.cell>
 
                                     <flux:table.cell class="text-right">
@@ -302,7 +307,9 @@
                         <div class="text-sm text-zinc-500">Mahasiswa</div>
                         <div class="font-semibold">
                             {{ $item->mahasiswa?->user?->name }}
-                            <div class="text-sm text-zinc-500">NIM: {{ $item->mahasiswa?->nim }}</div>
+                            <div class="text-sm text-zinc-500">
+                                NIM: {{ $item->mahasiswa?->mahasiswa_nim }}
+                            </div>
                         </div>
                     </flux:card>
 
@@ -315,7 +322,7 @@
 
                     <flux:card class="space-y-2">
                         <div class="text-sm text-zinc-500">Dosen Pembimbing</div>
-                        <div class="font-medium">{{ $item->dosenPembimbing?->nama ?? '—' }}</div>
+                        <div class="font-medium">{{ $item->dosenPembimbing?->dosen_name ?? '—' }}</div>
                     </flux:card>
 
                     @if ($item->nomor_spk || $item->tanggal_terbit_spk)

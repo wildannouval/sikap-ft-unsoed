@@ -35,18 +35,22 @@ class SpkPage extends Component
     {
         $this->resetPage();
     }
+
     public function updatingTab()
     {
         $this->resetPage();
     }
+
     public function updatingSortBy()
     {
         $this->resetPage();
     }
+
     public function updatingSortDirection()
     {
         $this->resetPage();
     }
+
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -69,15 +73,20 @@ class SpkPage extends Component
             ->with(['mahasiswa.user', 'dosenPembimbing'])
             ->when($this->search !== '', function ($q) {
                 $term = '%' . $this->search . '%';
+
                 $q->where(function ($qq) use ($term) {
                     $qq->where('judul_kp', 'like', $term)
                         ->orWhere('lokasi_kp', 'like', $term)
                         ->orWhere('nomor_spk', 'like', $term)
                         ->orWhereHas('mahasiswa', function ($mq) use ($term) {
-                            $mq->where('nim', 'like', $term)
+                            // kolom NIM sesuai schema: mahasiswa_nim
+                            $mq->where('mahasiswa_nim', 'like', $term)
                                 ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', $term));
                         })
-                        ->orWhereHas('dosenPembimbing', fn($dq) => $dq->where('nama', 'like', $term));
+                        ->orWhereHas('dosenPembimbing', function ($dq) use ($term) {
+                            // kolom nama dosen sesuai schema: dosen_name
+                            $dq->where('dosen_name', 'like', $term);
+                        });
                 });
             })
             ->orderBy($this->sortBy, $this->sortDirection);
@@ -104,7 +113,10 @@ class SpkPage extends Component
     #[Computed]
     public function selectedItem(): ?KerjaPraktik
     {
-        if (!$this->detailId) return null;
+        if (!$this->detailId) {
+            return null;
+        }
+
         return KerjaPraktik::with(['mahasiswa.user', 'dosenPembimbing'])->find($this->detailId);
     }
 

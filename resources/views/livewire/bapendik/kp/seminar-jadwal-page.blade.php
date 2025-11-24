@@ -1,6 +1,19 @@
 <div class="space-y-6">
+    <flux:toast />
 
-    {{-- Flash alert sederhana --}}
+    {{-- HEADER --}}
+    <div class="flex items-center justify-between">
+        <div>
+            <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
+                Penjadwalan Seminar KP (Bapendik)
+            </flux:heading>
+            <flux:subheading class="text-zinc-600 dark:text-zinc-300">
+                Atur jadwal seminar KP dan terbitkan Berita Acara (BA) untuk setiap mahasiswa.
+            </flux:subheading>
+        </div>
+    </div>
+
+    {{-- FLASH ALERT SEDERHANA --}}
     @if (session('ok'))
         <div
             class="rounded-md border border-emerald-300/60 bg-emerald-50 px-3 py-2 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-900/40 dark:text-emerald-200">
@@ -18,7 +31,8 @@
     <flux:card
         class="space-y-4 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-xs">
         <div class="flex items-start gap-2 px-1.5 -mt-1">
-            <span class="inline-flex items-center justify-center rounded-md p-1.5 bg-sky-500 text-white dark:bg-sky-400">
+            <span
+                class="inline-flex items-center justify-center rounded-md p-1.5 bg-sky-500 text-white dark:bg-sky-400">
                 <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="4" width="18" height="16" rx="2" />
                     <path d="M7 8h10M7 12h8M7 16h6" />
@@ -27,55 +41,62 @@
             <div>
                 <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">Panduan Jadwal & BA Seminar</h3>
                 <div class="mt-1 text-sm text-zinc-600 dark:text-zinc-300 space-y-1.5">
-                    <div><span class="font-medium">1)</span> Status <strong>Disetujui Pembimbing</strong> → lakukan
-                        penjadwalan.</div>
-                    <div><span class="font-medium">2)</span> Klik menu <strong>Jadwalkan / Ubah Jadwal</strong> untuk
-                        atur tanggal & ruangan.</div>
-                    <div><span class="font-medium">3)</span> Setelah seminar selesai, isi <strong>Nomor BA</strong> &
-                        <strong>Tanggal BA</strong> lalu <strong>Terbitkan BA</strong>.</div>
-                    <div><span class="font-medium">4)</span> Jika <strong>BA Terbit</strong>, tersedia tombol <em>Unduh
-                            BA (DOCX)</em>.</div>
+                    <div><span class="font-medium">1)</span> Status
+                        <strong>Disetujui Pembimbing</strong> &rarr; lakukan penjadwalan seminar.
+                    </div>
+                    <div><span class="font-medium">2)</span> Klik menu
+                        <strong>Jadwalkan / Ubah Jadwal</strong> untuk atur tanggal &amp; ruangan.
+                    </div>
+                    <div><span class="font-medium">3)</span> Setelah seminar selesai, isi
+                        <strong>Nomor BA</strong> &amp; <strong>Tanggal BA</strong>, lalu
+                        <strong>Terbitkan BA</strong>.
+                    </div>
+                    <div><span class="font-medium">4)</span> Jika status <strong>BA Terbit</strong>, tersedia tombol
+                        <em>Unduh BA (DOCX)</em>.
+                    </div>
                 </div>
             </div>
         </div>
     </flux:card>
 
-    {{-- FILTER BAR --}}
-    <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-            <h3 class="text-base font-semibold">Jadwal & BA Seminar KP</h3>
-            <p class="text-sm text-zinc-500 dark:text-zinc-300">Atur jadwal seminar, lalu terbitkan Berita Acara.</p>
-        </div>
+    <flux:separator variant="subtle" />
 
-        <div class="flex flex-col gap-2 md:flex-row md:items-end">
-            <div class="md:w-80">
-                <flux:input placeholder="Cari nama / NIM / judul / nomor BA…" wire:model.live.debounce.400ms="q"
-                    icon="magnifying-glass" />
-            </div>
-
-            <flux:select wire:model.live="statusFilter" class="md:ml-2">
-                <option value="all">Semua Status</option>
-                <option value="diajukan">Diajukan</option>
-                <option value="disetujui_pembimbing">Disetujui Pembimbing</option>
-                <option value="dijadwalkan">Dijadwalkan</option>
-                <option value="ba_terbit">BA Terbit</option>
-                <option value="ditolak">Ditolak</option>
-            </flux:select>
-
-            <flux:select wire:model.live="perPage" class="md:ml-2 w-32">
-                <option value="10">10 / halaman</option>
-                <option value="25">25 / halaman</option>
-                <option value="50">50 / halaman</option>
-            </flux:select>
-        </div>
-    </div>
-
-    {{-- TABEL LIST --}}
+    {{-- TABEL LIST + FILTER DI HEADER CARD (seperti SPK) --}}
     <flux:card class="rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-xs">
+
         {{-- Header beraksen sky --}}
         <div
-            class="px-4 py-3 border-b bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-300 border-sky-100 dark:border-sky-900/40 rounded-t-xl">
-            <div class="text-sm font-medium tracking-wide">Daftar Seminar</div>
+            class="px-4 py-3 border-b
+                   bg-sky-50 text-sky-700
+                   dark:bg-sky-900/20 dark:text-sky-300
+                   border-sky-100 dark:border-sky-900/40
+                   rounded-t-xl">
+            <div class="flex items-center justify-between gap-2">
+                <h3 class="text-sm font-medium tracking-wide">Jadwal &amp; Berita Acara Seminar KP</h3>
+
+                <div class="flex flex-wrap items-center gap-2 justify-end">
+                    {{-- SEARCH --}}
+                    <flux:input icon="magnifying-glass" placeholder="Cari nama/NIM/judul/nomor BA…"
+                        class="hidden sm:block w-40 md:w-72" wire:model.live.debounce.300ms="search" />
+
+                    {{-- FILTER STATUS --}}
+                    <flux:select wire:model.live="statusFilter" class="w-40">
+                        <flux:select.option value="all">Semua Status</flux:select.option>
+                        <flux:select.option value="diajukan">Diajukan</flux:select.option>
+                        <flux:select.option value="disetujui_pembimbing">Disetujui Pembimbing</flux:select.option>
+                        <flux:select.option value="dijadwalkan">Dijadwalkan</flux:select.option>
+                        <flux:select.option value="ba_terbit">BA Terbit</flux:select.option>
+                        <flux:select.option value="ditolak">Ditolak</flux:select.option>
+                    </flux:select>
+
+                    {{-- PER PAGE --}}
+                    <flux:select wire:model.live="perPage" class="w-32">
+                        <flux:select.option :value="10">10 / halaman</flux:select.option>
+                        <flux:select.option :value="25">25 / halaman</flux:select.option>
+                        <flux:select.option :value="50">50 / halaman</flux:select.option>
+                    </flux:select>
+                </div>
+            </div>
         </div>
 
         <div class="p-4">
@@ -114,13 +135,14 @@
                             <flux:table.cell class="whitespace-nowrap">
                                 {{ $row->kp?->mahasiswa?->user?->name ?? '—' }}
                                 <div class="text-xs text-zinc-500">
-                                    {{ $row->kp?->mahasiswa?->nim ?? ($row->kp?->mahasiswa?->mahasiswa_nim ?? '') }}
+                                    NIM: {{ $row->kp?->mahasiswa?->mahasiswa_nim ?? '—' }}
                                 </div>
                             </flux:table.cell>
 
                             <flux:table.cell class="max-w-[360px]">
-                                <span
-                                    class="line-clamp-2">{{ $row->judul_laporan ?? ($row->kp?->judul_kp ?? '—') }}</span>
+                                <span class="line-clamp-2">
+                                    {{ $row->judul_laporan ?? ($row->kp?->judul_kp ?? '—') }}
+                                </span>
                             </flux:table.cell>
 
                             <flux:table.cell>
@@ -169,7 +191,7 @@
                                     <flux:menu class="min-w-56">
                                         <flux:modal.trigger name="edit-seminar">
                                             <flux:menu.item icon="calendar" wire:click="openEdit({{ $row->id }})">
-                                                Jadwalkan / Ubah Jadwal & Terbitkan BA
+                                                Jadwalkan / Ubah Jadwal &amp; Terbitkan BA
                                             </flux:menu.item>
                                         </flux:modal.trigger>
 
@@ -180,7 +202,8 @@
                                                 Unduh BA (DOCX)
                                             </flux:menu.item>
                                         @else
-                                            <flux:menu.item icon="arrow-down-tray" disabled>Unduh BA (DOCX)
+                                            <flux:menu.item icon="arrow-down-tray" disabled>
+                                                Unduh BA (DOCX)
                                             </flux:menu.item>
                                         @endif
                                     </flux:menu>
@@ -198,9 +221,10 @@
         <div class="space-y-6">
             <div class="flex items-start justify-between gap-3">
                 <div>
-                    <h3 class="text-base font-semibold">Jadwalkan & Terbitkan BA</h3>
-                    <p class="text-sm text-zinc-500 dark:text-zinc-300">Lengkapi data di bawah, simpan jadwal, lalu
-                        terbitkan BA.</p>
+                    <h3 class="text-base font-semibold">Jadwalkan &amp; Terbitkan BA</h3>
+                    <p class="text-sm text-zinc-500 dark:text-zinc-300">
+                        Lengkapi data di bawah, simpan jadwal, lalu terbitkan BA.
+                    </p>
                 </div>
                 <flux:modal.close>
                     <flux:button variant="ghost" icon="x-mark" wire:click="$set('editId', null)"></flux:button>
@@ -209,11 +233,13 @@
 
             {{-- Jadwal --}}
             <div class="grid gap-4 md:grid-cols-2">
-                <flux:input type="datetime-local" label="Tanggal & Jam Seminar" wire:model.defer="tanggal_seminar"
+                <flux:input type="datetime-local" label="Tanggal &amp; Jam Seminar" wire:model.defer="tanggal_seminar"
                     :invalid="$errors->has('tanggal_seminar')" />
+
                 <flux:input label="Ruangan (nama)" wire:model.defer="ruangan_nama"
                     :invalid="$errors->has('ruangan_nama')" />
             </div>
+
             @error('tanggal_seminar')
                 <div class="text-sm text-red-600 -mt-2">{{ $message }}</div>
             @enderror
@@ -233,10 +259,13 @@
             {{-- BA --}}
             <div class="grid gap-4 md:grid-cols-2">
                 <flux:input label="Nomor BA" wire:model.defer="nomor_ba" :invalid="$errors->has('nomor_ba')" />
+
                 <flux:input type="date" label="Tanggal BA" wire:model.defer="tanggal_ba"
                     :invalid="$errors->has('tanggal_ba')" />
+
                 <flux:input label="Signatory ID (opsional)" wire:model.defer="signatory_id" />
             </div>
+
             @error('nomor_ba')
                 <div class="text-sm text-red-600 -mt-2">{{ $message }}</div>
             @enderror

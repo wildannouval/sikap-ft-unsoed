@@ -1,4 +1,18 @@
 <div class="space-y-6">
+    <flux:toast />
+
+    {{-- HEADER --}}
+    <div class="flex items-center justify-between">
+        <div>
+            <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
+                Rekap Nilai & Arsip BA (Bapendik)
+            </flux:heading>
+            <flux:subheading class="text-zinc-600 dark:text-zinc-300">
+                Lihat nilai akhir Kerja Praktik, arsip Berita Acara (BA), dan unduhan dokumen untuk keperluan
+                administrasi.
+            </flux:subheading>
+        </div>
+    </div>
 
     {{-- PANDUAN (aksen sky) --}}
     <flux:card
@@ -11,48 +25,64 @@
                 </svg>
             </span>
             <div>
-                <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">Panduan Nilai & Arsip BA</h3>
+                <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">
+                    Panduan Nilai & Arsip BA
+                </h3>
                 <div class="mt-1 text-sm text-zinc-600 dark:text-zinc-300 space-y-1.5">
-                    <div><span class="font-medium">1)</span> Gunakan pencarian untuk menemukan <em>nama/NIM/judul</em>.
+                    <div>
+                        <span class="font-medium">1)</span>
+                        Gunakan pencarian untuk menemukan <em>nama mahasiswa, NIM, atau judul laporan</em>.
                     </div>
-                    <div><span class="font-medium">2)</span> Status <strong>Dinilai</strong> menampilkan skor;
-                        <strong>BA Terbit</strong> menyediakan unduhan BA (DOCX).</div>
-                    <div><span class="font-medium">3)</span> <em>BA Scan</em> berasal dari unggahan dosen pembimbing;
-                        klik untuk melihat file yang tersimpan.</div>
+                    <div>
+                        <span class="font-medium">2)</span>
+                        Status <strong>Dinilai</strong> menampilkan skor akhir; status
+                        <strong>BA Terbit</strong> menyediakan tombol unduh BA (DOCX).
+                    </div>
+                    <div>
+                        <span class="font-medium">3)</span>
+                        Kolom <em>BA Scan</em> berisi unggahan dosen pembimbing (scan BA yang telah ditandatangani).
+                    </div>
                 </div>
             </div>
         </div>
     </flux:card>
 
-    {{-- FILTER BAR --}}
-    <div class="flex items-center justify-between gap-3">
-        <div>
-            <h3 class="text-base font-semibold">Nilai & Arsip BA Seminar KP</h3>
-            <p class="text-sm text-zinc-500 dark:text-zinc-300">Lihat nilai akhir, BA scan (upload dospem), dan unduh BA
-                (DOCX).</p>
-        </div>
-        <div class="flex items-center gap-2">
-            <flux:input class="md:w-72" placeholder="Cari nama / NIM / judul…" wire:model.live.debounce.400ms="q"
-                icon="magnifying-glass" />
-            <flux:select wire:model.live="statusFilter" class="w-44">
-                <option value="all">Semua Status</option>
-                <option value="ba_terbit">BA Terbit</option>
-                <option value="dinilai">Dinilai</option>
-            </flux:select>
-            <flux:select wire:model.live="perPage" class="w-24">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-            </flux:select>
-        </div>
-    </div>
+    <flux:separator variant="subtle" />
 
-    {{-- LIST TABLE --}}
+    {{-- LIST TABLE + FILTER DI HEADER CARD (gaya SPK / Seminar) --}}
     <flux:card class="rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-xs">
         {{-- Header beraksen sky --}}
         <div
-            class="px-4 py-3 border-b bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-300 border-sky-100 dark:border-sky-900/40 rounded-t-xl">
-            <div class="text-sm font-medium tracking-wide">Daftar Arsip Nilai & BA</div>
+            class="px-4 py-3 border-b
+                   bg-sky-50 text-sky-700
+                   dark:bg-sky-900/20 dark:text-sky-300
+                   border-sky-100 dark:border-sky-900/40
+                   rounded-t-xl">
+            <div class="flex items-center justify-between gap-2">
+                <div class="text-sm font-medium tracking-wide">
+                    Daftar Arsip Nilai & BA Seminar KP
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 justify-end">
+                    {{-- SEARCH --}}
+                    <flux:input class="hidden sm:block w-40 md:w-72" placeholder="Cari nama / NIM / judul…"
+                        wire:model.live.debounce.400ms="search" icon="magnifying-glass" />
+
+                    {{-- FILTER STATUS --}}
+                    <flux:select wire:model.live="statusFilter" class="w-40">
+                        <flux:select.option value="all">Semua Status</flux:select.option>
+                        <flux:select.option value="ba_terbit">BA Terbit</flux:select.option>
+                        <flux:select.option value="dinilai">Dinilai</flux:select.option>
+                    </flux:select>
+
+                    {{-- PER PAGE --}}
+                    <flux:select wire:model.live="perPage" class="w-28">
+                        <flux:select.option :value="10">10 / halaman</flux:select.option>
+                        <flux:select.option :value="25">25 / halaman</flux:select.option>
+                        <flux:select.option :value="50">50 / halaman</flux:select.option>
+                    </flux:select>
+                </div>
+            </div>
         </div>
 
         <div class="p-4">
@@ -77,17 +107,23 @@
                 <flux:table.rows>
                     @forelse ($this->items as $i => $row)
                         <flux:table.row :key="$row->id">
-                            <flux:table.cell>{{ $this->items->firstItem() + $i }}</flux:table.cell>
+                            <flux:table.cell>
+                                {{ $this->items->firstItem() + $i }}
+                            </flux:table.cell>
 
                             <flux:table.cell class="whitespace-nowrap">
-                                <div class="font-medium">{{ $row->kp?->mahasiswa?->user?->name ?? '—' }}</div>
+                                <div class="font-medium">
+                                    {{ $row->kp?->mahasiswa?->user?->name ?? '—' }}
+                                </div>
                                 <div class="text-xs text-zinc-500">
-                                    {{ $row->kp?->mahasiswa?->nim ?? ($row->kp?->mahasiswa?->mahasiswa_nim ?? '') }}
+                                    NIM: {{ $row->kp?->mahasiswa?->mahasiswa_nim ?? '—' }}
                                 </div>
                             </flux:table.cell>
 
                             <flux:table.cell class="max-w-[420px]">
-                                <div class="line-clamp-2">{{ $row->judul_laporan ?? '—' }}</div>
+                                <div class="line-clamp-2">
+                                    {{ $row->judul_laporan ?? ($row->kp?->judul_kp ?? '—') }}
+                                </div>
                             </flux:table.cell>
 
                             <flux:table.cell>

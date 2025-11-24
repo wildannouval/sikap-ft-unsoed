@@ -35,6 +35,8 @@ use App\Livewire\Komisi\Kp\NilaiIndex   as KomisiNilaiIndex;
 
 use App\Livewire\Mahasiswa\DashboardPage as MhsDashboardPage;
 use App\Livewire\Bapendik\DashboardPage  as BapDashboardPage;
+use App\Livewire\Bapendik\Kp\SpkPage;
+use App\Livewire\Bapendik\SuratPengantar\ValidasiPage;
 use App\Livewire\Dosen\DashboardPage     as DspDashboardPage;
 use App\Livewire\Komisi\DashboardPage    as KomisiDashboardPage;
 
@@ -137,10 +139,10 @@ Route::prefix('bap')
     ->middleware(['auth', 'role:Bapendik'])
     ->group(function () {
         Route::get('/dashboard', BapDashboardPage::class)->name('bap.dashboard');
-        Route::view('/surat-pengantar/validasi', 'bap.validasi-surat-pengantar.index')->name('bap.sp.validasi');
+        Route::get('/surat-pengantar/validasi', ValidasiPage::class)->name('bap.sp.validasi');
         Route::get('/surat-pengantar/{sp}/download-docx', [SpDownloadController::class, 'downloadDocxForBapendik'])->name('bap.sp.download.docx');
         Route::view('/penandatangan', 'bap.penandatangan.index')->name('bap.penandatangan.index');
-        Route::view('/kp/spk', 'bap.kp.spk')->name('bap.kp.spk');
+        Route::get('/kp/spk', SpkPage::class)->name('bap.kp.spk');
         Route::get('/kp/{kp}/download-docx', [DownloadSpkController::class, 'downloadDocxForBapendik'])->name('bap.kp.download.docx');
         Route::get('/kp/seminar/jadwal', SeminarJadwalPage::class)->name('bap.kp.seminar.jadwal');
         Route::get('/kp/seminar/{seminar}/download-ba', [BaDownloadController::class, 'downloadForBapendik'])->name('bap.kp.seminar.download.ba');

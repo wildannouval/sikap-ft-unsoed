@@ -5,6 +5,7 @@ namespace App\Livewire\Bapendik\Master;
 use App\Models\Jurusan;
 use App\Models\Mahasiswa;
 use App\Models\User;
+use Flux\Flux;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -49,6 +50,7 @@ class MahasiswaIndex extends Component
     {
         $this->resetPage();
     }
+
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -127,8 +129,14 @@ class MahasiswaIndex extends Component
 
         $this->showForm = false;
         $this->resetForm();
-        session()->flash('ok', 'Data mahasiswa disimpan.');
         $this->resetPage();
+
+        // === TOAST sukses simpan ===
+        Flux::toast(
+            heading: 'Berhasil',
+            text: 'Data mahasiswa disimpan.',
+            variant: 'success',
+        );
     }
 
     public function delete(int $id): void
@@ -136,8 +144,14 @@ class MahasiswaIndex extends Component
         $row = Mahasiswa::findOrFail($id);
         $row->delete();
 
-        session()->flash('ok', 'Data mahasiswa dihapus.');
         $this->resetPage();
+
+        // === TOAST sukses hapus ===
+        Flux::toast(
+            heading: 'Berhasil',
+            text: 'Data mahasiswa dihapus.',
+            variant: 'success',
+        );
     }
 
     public function resetUserPassword(int $id, string $newPassword = 'password'): void
@@ -148,7 +162,12 @@ class MahasiswaIndex extends Component
         $row->user->password = $newPassword;
         $row->user->save();
 
-        session()->flash('ok', 'Password akun mahasiswa direset.');
+        // === TOAST sukses reset password ===
+        Flux::toast(
+            heading: 'Berhasil',
+            text: 'Password akun mahasiswa direset.',
+            variant: 'success',
+        );
     }
 
     private function resetForm(): void

@@ -12,19 +12,21 @@ class NilaiIndex extends Component
     use WithPagination;
 
     /** Pencarian & filter */
-    public string $q = '';
+    public string $search = '';
     public string $statusFilter = 'all'; // all | ba_terbit | dinilai
     public int $perPage = 10;
 
     /** Reset pagination saat filter berubah */
-    public function updatingQ()
+    public function updatingSearch()
     {
         $this->resetPage();
     }
+
     public function updatingStatusFilter()
     {
         $this->resetPage();
     }
+
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -33,21 +35,20 @@ class NilaiIndex extends Component
     #[Computed]
     public function items()
     {
-        $term = '%' . $this->q . '%';
+        $term = '%' . $this->search . '%';
 
         return KpSeminar::query()
             ->with(['grade', 'kp.mahasiswa.user'])
-            ->whereIn('status', ['ba_terbit', 'dinilai']) // fokus arsip/nilai
+            // fokus ke seminar yang sudah ada BA / sudah dinilai
+            ->whereIn('status', ['ba_terbit', 'dinilai'])
             ->when($this->statusFilter !== 'all', fn($q) => $q->where('status', $this->statusFilter))
-            ->when($this->q !== '', function ($q) use ($term) {
+            ->when($this->search !== '', function ($q) use ($term) {
                 $q->where(function ($qq) use ($term) {
                     $qq->where('judul_laporan', 'like', $term)
                         ->orWhereHas('kp.mahasiswa.user', fn($w) => $w->where('name', 'like', $term))
                         ->orWhereHas('kp.mahasiswa', function ($w) use ($term) {
-                            $w->where(function ($x) use ($term) {
-                                $x->where('nim', 'like', $term)
-                                    ->orWhere('mahasiswa_nim', 'like', $term);
-                            });
+                            // DB hanya punya kolom `mahasiswa_nim`
+                            $w->where('mahasiswa_nim', 'like', $term);
                         });
                 });
             })

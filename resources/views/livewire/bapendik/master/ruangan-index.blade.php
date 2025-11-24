@@ -1,6 +1,20 @@
 <div class="space-y-6">
     <flux:toast />
 
+    {{-- HEADER --}}
+    <div class="flex items-center justify-between">
+        <div>
+            <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
+                Master Data Ruangan
+            </flux:heading>
+            <flux:subheading class="text-zinc-600 dark:text-zinc-300">
+                Kelola daftar ruangan untuk penjadwalan seminar dan kegiatan KP.
+            </flux:subheading>
+        </div>
+    </div>
+
+    <flux:separator variant="subtle" />
+
     {{-- PANDUAN --}}
     <flux:card class="space-y-3 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800">
         <div class="flex items-start gap-3">

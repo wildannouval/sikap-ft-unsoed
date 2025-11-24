@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
@@ -17,22 +17,13 @@ class User extends Authenticatable
 
     protected $guard_name = 'web';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'profile_photo_path', // <-- tambahkan ini
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'two_factor_secret',
@@ -40,11 +31,6 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -53,9 +39,7 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Get the user's initials
-     */
+    /** Inisial nama */
     public function initials(): string
     {
         return Str::of($this->name)
@@ -63,6 +47,20 @@ class User extends Authenticatable
             ->take(2)
             ->map(fn($word) => Str::substr($word, 0, 1))
             ->implode('');
+    }
+
+    /** URL foto profil (fallback inisial) */
+    public function profilePhotoUrl(): ?string
+    {
+        if (!$this->profile_photo_path) return null;
+
+        // Jika path sudah absolute (http...), kembalikan apa adanya.
+        if (Str::startsWith($this->profile_photo_path, ['http://', 'https://', '/storage/'])) {
+            return $this->profile_photo_path;
+        }
+
+        // Anggap disimpan di disk 'public'
+        return Storage::disk('public')->url($this->profile_photo_path);
     }
 
     public function mahasiswa()

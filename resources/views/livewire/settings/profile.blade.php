@@ -1,43 +1,108 @@
-<section class="w-full">
-    @include('partials.settings-heading')
+<x-settings.layout>
+    <x-slot name="heading">{{ __('Profile') }}</x-slot>
+    <x-slot name="subheading">{{ __('Manage your account settings') }}</x-slot>
 
-    <x-settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
-        <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
-            <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
-
-            <div>
-                <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
-
-                @if (auth()->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail &&! auth()->user()->hasVerifiedEmail())
-                    <div>
-                        <flux:text class="mt-4">
-                            {{ __('Your email address is unverified.') }}
-
-                            <flux:link class="text-sm cursor-pointer" wire:click.prevent="resendVerificationNotification">
-                                {{ __('Click here to re-send the verification email.') }}
-                            </flux:link>
-                        </flux:text>
-
-                        @if (session('status') === 'verification-link-sent')
-                            <flux:text class="mt-2 font-medium !dark:text-green-400 !text-green-600">
-                                {{ __('A new verification link has been sent to your email address.') }}
-                            </flux:text>
-                        @endif
-                    </div>
+    {{-- ===== Foto Profil ===== --}}
+    <flux:card class="mb-6">
+        <flux:heading size="sm">{{ __('Profile Photo') }}</flux:heading>
+        <div class="mt-4 flex items-center gap-4">
+            <div
+                class="h-16 w-16 overflow-hidden rounded-xl bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                @if ($photo_url)
+                    <img src="{{ $photo_url }}" alt="Profile Photo" class="h-16 w-16 object-cover" id="profile-preview">
+                @else
+                    <span class="text-sm font-semibold" id="profile-initials">{{ auth()->user()->initials() }}</span>
                 @endif
             </div>
 
-            <div class="flex items-center gap-4">
-                <div class="flex items-center justify-end">
-                    <flux:button variant="primary" type="submit" class="w-full">{{ __('Save') }}</flux:button>
+            <div class="flex flex-col gap-2">
+                <flux:input type="file" wire:model="photo" accept="image/png,image/jpeg,image/webp" />
+                @error('photo')
+                    <p class="text-sm text-red-600">{{ $message }}</p>
+                @enderror
+
+                <div class="flex gap-2">
+                    <flux:button size="sm" variant="primary" wire:click="updateProfilePhoto"
+                        :disabled="!$photo">
+                        {{ __('Upload / Update') }}
+                    </flux:button>
+
+                    <flux:button size="sm" variant="ghost" wire:click="removeProfilePhoto" :disabled="!$photo_url">
+                        {{ __('Remove Photo') }}
+                    </flux:button>
                 </div>
-
-                <x-action-message class="me-3" on="profile-updated">
-                    {{ __('Saved.') }}
-                </x-action-message>
+                <p class="text-xs text-zinc-500">{{ __('Max 2 MB. JPG, JPEG, PNG, WEBP.') }}</p>
             </div>
-        </form>
+        </div>
+    </flux:card>
 
-        <livewire:settings.delete-user-form />
-    </x-settings.layout>
-</section>
+    {{-- ===== Data Profil (Name/Email) — HANYA BAPENDIK BOLEH EDIT ===== --}}
+    <flux:card>
+        <flux:heading size="sm">{{ __('Profile Information') }}</flux:heading>
+        <div class="mt-4 grid gap-4">
+            <flux:input wire:model.defer="name" :label="__('Name')" :disabled="!$canEditProfile"
+                placeholder="Nama lengkap" />
+            <flux:input wire:model.defer="email" :label="__('Email')" type="email" :disabled="!$canEditProfile"
+                placeholder="email@example.com" />
+
+            <div class="flex items-center gap-2">
+                <flux:button variant="primary" wire:click="updateProfileInformation" :disabled="!$canEditProfile">
+                    {{ __('Save changes') }}
+                </flux:button>
+
+                @unless ($canEditProfile)
+                    <flux:badge size="sm" color="zinc" inset="top bottom">
+                        {{ __('Hanya Bapendik yang dapat mengubah nama & email') }}
+                    </flux:badge>
+                @endunless
+            </div>
+        </div>
+    </flux:card>
+
+    {{-- ===== Delete Account (opsional, hanya Bapendik) ===== --}}
+    @role('Bapendik')
+        @if (View::exists('livewire.settings.delete-user'))
+            <div class="mt-6">
+                @include('livewire.settings.delete-user')
+            </div>
+        @endif
+    @endrole
+
+    {{-- Sinkronisasi preview lokal (opsional) --}}
+    <script>
+        // Jika Livewire memancarkan event dengan URL baru, perbarui preview kecil di halaman Profile juga
+        window.addEventListener('profile-photo-updated', (e) => {
+            const url = e?.detail?.url;
+            const img = document.getElementById('profile-preview');
+            const initials = document.getElementById('profile-initials');
+
+            if (url) {
+                if (img) {
+                    img.src = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+                } else {
+                    const box = initials?.parentElement;
+                    if (box) {
+                        const el = document.createElement('img');
+                        el.id = 'profile-preview';
+                        el.className = 'h-16 w-16 object-cover';
+                        el.alt = 'Profile Photo';
+                        el.src = url + '?t=' + Date.now();
+                        box.innerHTML = '';
+                        box.appendChild(el);
+                    }
+                }
+            } else {
+                // tanpa payload URL, biar sidebar yang handle reload
+            }
+        });
+
+        window.addEventListener('profile-photo-removed', () => {
+            const img = document.getElementById('profile-preview');
+            const box = img?.parentElement;
+            if (box) {
+                box.innerHTML =
+                    `<span class="text-sm font-semibold" id="profile-initials">{{ auth()->user()->initials() }}</span>`;
+            }
+        });
+    </script>
+</x-settings.layout>

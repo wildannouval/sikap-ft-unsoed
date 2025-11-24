@@ -13,12 +13,12 @@
             {{-- Brand SIKAP (pakai logo komponen kamu + teks SIKAP) --}}
             <a href="{{ route('dashboard') }}" class="me-5 flex items-center gap-2 rtl:space-x-reverse" wire:navigate>
                 <x-app-logo class="h-8 w-auto" />
-                <span class="text-sm font-semibold tracking-wide text-zinc-800 dark:text-zinc-100">
+                {{-- <span class="text-sm font-semibold tracking-wide text-zinc-800 dark:text-zinc-100">
                     SIKAP
-                </span>
+                </span> --}}
             </a>
 
-            {{-- === Hitung badge Notifikasi (tanpa "use", pakai FQCN) === --}}
+            {{-- === Hitung badge Notifikasi (tanpa "use", pakai FQCN) --}}
             @php
                 $notifBadge = null;
 
@@ -309,7 +309,7 @@
 
             <flux:spacer />
 
-            {{-- ====== Link bawaan (disembunyikan: diminta di-comment) ====== --}}
+            {{-- ====== Link bawaan (disembunyikan: diminta di-comment) --}}
             {{--
             <flux:navlist variant="outline">
                 <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
@@ -323,21 +323,31 @@
 
             <!-- Desktop User Menu -->
             <flux:dropdown class="hidden lg:block" position="bottom" align="start">
+                {{-- hanya tambah :avatar, lainnya tetap --}}
                 <flux:profile :name="auth()->user()->name" :initials="auth()->user()->initials()"
-                    icon:trailing="chevrons-up-down" />
+                    :avatar="auth()->user()->profilePhotoUrl()" icon:trailing="chevrons-up-down" />
+
                 <flux:menu class="w-[220px]">
                     <flux:menu.radio.group>
+                        @php
+                            $user = auth()->user();
+                        @endphp
                         <div class="p-0 text-sm font-normal">
                             <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
                                 <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
-                                    <span
-                                        class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                                        {{ auth()->user()->initials() }}
-                                    </span>
+                                    @if ($user && $user->profilePhotoUrl())
+                                        <img src="{{ $user->profilePhotoUrl() }}" alt="{{ $user->name }}"
+                                            class="h-8 w-8 rounded-lg object-cover">
+                                    @else
+                                        <span
+                                            class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                                            {{ $user?->initials() }}
+                                        </span>
+                                    @endif
                                 </span>
                                 <div class="grid flex-1 text-start text-sm leading-tight">
-                                    <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
-                                    <span class="truncate text-xs">{{ auth()->user()->email }}</span>
+                                    <span class="truncate font-semibold">{{ $user?->name }}</span>
+                                    <span class="truncate text-xs">{{ $user?->email }}</span>
                                 </div>
                             </div>
                         </div>
@@ -367,20 +377,30 @@
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
             <flux:spacer />
             <flux:dropdown position="top" align="end">
-                <flux:profile :initials="auth()->user()->initials()" icon-trailing="chevron-down" />
+                {{-- hanya tambah :avatar, lainnya tetap --}}
+                <flux:profile :initials="auth()->user()->initials()" :avatar="auth()->user()->profilePhotoUrl()"
+                    icon-trailing="chevron-down" />
                 <flux:menu>
                     <flux:menu.radio.group>
+                        @php
+                            $user = auth()->user();
+                        @endphp
                         <div class="p-0 text-sm font-normal">
                             <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
                                 <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
-                                    <span
-                                        class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                                        {{ auth()->user()->initials() }}
-                                    </span>
+                                    @if ($user && $user->profilePhotoUrl())
+                                        <img src="{{ $user->profilePhotoUrl() }}" alt="{{ $user->name }}"
+                                            class="h-8 w-8 rounded-lg object-cover">
+                                    @else
+                                        <span
+                                            class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                                            {{ $user?->initials() }}
+                                        </span>
+                                    @endif
                                 </span>
                                 <div class="grid flex-1 text-start text-sm leading-tight">
-                                    <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
-                                    <span class="truncate text-xs">{{ auth()->user()->email }}</span>
+                                    <span class="truncate font-semibold">{{ $user?->name }}</span>
+                                    <span class="truncate text-xs">{{ $user?->email }}</span>
                                 </div>
                             </div>
                         </div>

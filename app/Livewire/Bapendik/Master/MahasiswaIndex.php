@@ -77,6 +77,11 @@ class MahasiswaIndex extends Component
         $this->showForm = true;
     }
 
+    public function closeForm(): void
+    {
+        $this->showForm = false;
+    }
+
     public function save(): void
     {
         $data = $this->validate();
@@ -88,7 +93,7 @@ class MahasiswaIndex extends Component
                 $user->name  = $data['mahasiswa_name'];
                 $user->email = $data['email'];
                 if (!empty($data['password'])) {
-                    $user->password = $data['password']; // auto-hash via cast
+                    $user->password = $data['password']; // cast hashed
                 }
                 $user->save();
             } else {
@@ -140,7 +145,7 @@ class MahasiswaIndex extends Component
         $row = Mahasiswa::with('user')->findOrFail($id);
         abort_if(!$row->user, 422, 'User belum ada.');
 
-        $row->user->password = $newPassword; // auto-hash via cast
+        $row->user->password = $newPassword;
         $row->user->save();
 
         session()->flash('ok', 'Password akun mahasiswa direset.');

@@ -1,9 +1,33 @@
 <div class="space-y-6">
+    <flux:toast />
+
+    {{-- PANDUAN --}}
+    <flux:card class="space-y-3 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800">
+        <div class="flex items-start gap-3">
+            <div class="rounded-md p-2 bg-sky-500 text-white dark:bg-sky-400">
+                {{-- Icon SVG inline (clipboard-document-list outline) --}}
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M9 12h6M9 16h6M9 8h6m-3.75-5.25h1.5a2.25 2.25 0 012.25 2.25v.75h1.5A2.25 2.25 0 0120 8.25v10.5A2.25 2.25 0 0117.75 21H6.25A2.25 2.25 0 014 18.75V8.25A2.25 2.25 0 016.25 6.75h1.5V6c0-1.243 1.007-2.25 2.25-2.25z" />
+                </svg>
+            </div>
+            <div>
+                <flux:heading size="md">Panduan Data Dosen</flux:heading>
+                <ul class="mt-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc ms-4 space-y-1">
+                    <li>Pencarian berdasarkan <em>nama</em> atau <em>NIP</em>.</li>
+                    <li>Centang <strong>Komisi KP</strong> untuk memberi/menarik role “Dosen Komisi”.</li>
+                    <li>Saat tambah, sistem otomatis membuat akun login “Dosen Pembimbing”.</li>
+                </ul>
+            </div>
+        </div>
+    </flux:card>
+
     {{-- HEADER + AKSI --}}
-    <flux:card class="space-y-4">
+    <flux:card class="space-y-4 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800">
         <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div class="md:w-80">
-                <flux:input placeholder="Cari nama / NIP…" wire:model.debounce.500ms="q" icon="magnifying-glass" />
+                <flux:input placeholder="Cari nama / NIP…" wire:model.live.debounce.500ms="q" icon="magnifying-glass" />
             </div>
 
             <div class="flex items-center gap-2">
@@ -13,12 +37,15 @@
                     <option value="50">50 / halaman</option>
                 </flux:select>
 
-                <flux:button icon="plus" variant="primary" wire:click="create">Tambah Dosen</flux:button>
+                {{-- Trigger modal + set state --}}
+                <flux:modal.trigger name="dosen-form">
+                    <flux:button icon="plus" variant="primary" wire:click="create">Tambah Dosen</flux:button>
+                </flux:modal.trigger>
             </div>
         </div>
 
         @if (session('ok'))
-            <div class="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+            <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
                 {{ session('ok') }}
             </div>
         @endif
@@ -51,9 +78,9 @@
                         </flux:table.cell>
                         <flux:table.cell>
                             @if ($r->is_komisi_kp)
-                                <flux:badge size="sm" color="green" inset="top bottom">Ya</flux:badge>
+                                <flux:badge size="sm" inset="top bottom" color="green">Ya</flux:badge>
                             @else
-                                <flux:badge size="sm" color="zinc" inset="top bottom">Tidak</flux:badge>
+                                <flux:badge size="sm" inset="top bottom" color="zinc">Tidak</flux:badge>
                             @endif
                         </flux:table.cell>
                         <flux:table.cell class="text-right">
@@ -61,17 +88,15 @@
                                 <flux:button size="sm" variant="ghost" icon="ellipsis-horizontal"
                                     inset="top bottom" />
                                 <flux:menu class="min-w-44">
-                                    <flux:menu.item icon="pencil-square" wire:click="edit({{ $r->dosen_id }})">
-                                        Edit
-                                    </flux:menu.item>
+                                    <flux:modal.trigger name="dosen-form">
+                                        <flux:menu.item icon="pencil-square" wire:click="edit({{ $r->dosen_id }})">Edit
+                                        </flux:menu.item>
+                                    </flux:modal.trigger>
                                     <flux:menu.item icon="key" wire:click="resetUserPassword({{ $r->dosen_id }})">
-                                        Reset Password
-                                    </flux:menu.item>
+                                        Reset Password</flux:menu.item>
                                     <flux:menu.separator />
                                     <flux:menu.item icon="trash" variant="danger"
-                                        wire:click="delete({{ $r->dosen_id }})">
-                                        Hapus
-                                    </flux:menu.item>
+                                        wire:click="delete({{ $r->dosen_id }})">Hapus</flux:menu.item>
                                 </flux:menu>
                             </flux:dropdown>
                         </flux:table.cell>
@@ -81,109 +106,54 @@
         </flux:table>
     </flux:card>
 
-    {{-- MODAL: Alpine + Livewire entangle (tanpa komponen flux:modal) --}}
-    <div x-data="{ open: @entangle('showForm').live }" x-show="open" x-cloak
-        class="fixed inset-0 z-[60] flex items-center justify-center p-4" aria-modal="true" role="dialog">
-
-        {{-- Overlay --}}
-        <div class="fixed inset-0 bg-black/40" x-show="open" x-transition.opacity></div>
-
-        {{-- Panel --}}
-        <div class="relative z-[61] w-full max-w-2xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
-            x-show="open" x-transition.scale.origin.center>
+    {{-- MODAL FORM (Flux) --}}
+    <flux:modal name="dosen-form" class="min-w-[36rem]" :show="$showForm">
+        <div class="space-y-6">
             <div class="flex items-start justify-between gap-3">
                 <div>
-                    <h2 class="text-lg font-semibold">
-                        {{ $editingId ? 'Edit Dosen' : 'Tambah Dosen' }}
-                    </h2>
-                    <p class="mt-1 text-sm text-zinc-500">Lengkapi data dosen & akun login.</p>
+                    <flux:heading size="lg">{{ $editingId ? 'Edit Dosen' : 'Tambah Dosen' }}</flux:heading>
+                    <flux:subheading class="mt-1">Lengkapi data dosen & akun login.</flux:subheading>
                 </div>
-                <button
-                    class="rounded-lg p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800"
-                    @click="open=false">
-                    ✕
-                </button>
+                <flux:modal.close>
+                    <flux:button variant="ghost" icon="x-mark" wire:click="closeForm"></flux:button>
+                </flux:modal.close>
             </div>
 
-            <div class="mt-5 space-y-6">
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div>
-                        <label class="mb-1 block text-sm">Nama</label>
-                        <input type="text" wire:model.defer="dosen_name"
-                            class="w-full rounded-md border px-3 py-2 dark:bg-zinc-800 dark:border-zinc-700">
-                        @error('dosen_name')
-                            <div class="mt-1 text-xs text-red-600">{{ $message }}</div>
-                        @enderror
-                    </div>
+            <div class="grid gap-4 md:grid-cols-2">
+                <flux:input label="Nama" wire:model.defer="dosen_name" :invalid="$errors->has('dosen_name')" />
+                <flux:input label="NIP" wire:model.defer="dosen_nip" :invalid="$errors->has('dosen_nip')" />
 
-                    <div>
-                        <label class="mb-1 block text-sm">NIP</label>
-                        <input type="text" wire:model.defer="dosen_nip"
-                            class="w-full rounded-md border px-3 py-2 dark:bg-zinc-800 dark:border-zinc-700">
-                        @error('dosen_nip')
-                            <div class="mt-1 text-xs text-red-600">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="mb-1 block text-sm">Jurusan</label>
-                        <select wire:model.defer="jurusan_id"
-                            class="w-full rounded-md border px-3 py-2 dark:bg-zinc-800 dark:border-zinc-700">
-                            <option value="">— Pilih —</option>
-                            @foreach ($jurusans as $j)
-                                <option value="{{ $j->id }}">{{ $j->nama_jurusan }}</option>
-                            @endforeach
-                        </select>
-                        @error('jurusan_id')
-                            <div class="mt-1 text-xs text-red-600">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="md:col-span-2 flex items-center gap-2">
-                        <input id="is_komisi" type="checkbox" wire:model.defer="is_komisi_kp"
-                            class="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600">
-                        <label for="is_komisi" class="text-sm">
-                            Tetapkan sebagai Dosen Komisi
-                            <span class="block text-xs text-zinc-500">Menambah/menarik role “Dosen Komisi”.</span>
-                        </label>
-                    </div>
+                <div class="md:col-span-2">
+                    <flux:select label="Jurusan" wire:model.defer="jurusan_id" :invalid="$errors->has('jurusan_id')">
+                        <option value="">— Pilih —</option>
+                        @foreach ($jurusans as $j)
+                            <option value="{{ $j->id }}">{{ $j->nama_jurusan }}</option>
+                        @endforeach
+                    </flux:select>
                 </div>
 
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div>
-                        <label class="mb-1 block text-sm">Email Login</label>
-                        <input type="email" wire:model.defer="email"
-                            class="w-full rounded-md border px-3 py-2 dark:bg-zinc-800 dark:border-zinc-700">
-                        @error('email')
-                            <div class="mt-1 text-xs text-red-600">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label class="mb-1 block text-sm">
-                            {{ $editingId ? 'Password (opsional untuk ubah)' : 'Password' }}
-                        </label>
-                        <input type="text" wire:model.defer="password"
-                            class="w-full rounded-md border px-3 py-2 dark:bg-zinc-800 dark:border-zinc-700">
-                        @error('password')
-                            <div class="mt-1 text-xs text-red-600">{{ $message }}</div>
-                        @enderror
-                    </div>
+                <div class="md:col-span-2">
+                    <flux:checkbox wire:model.defer="is_komisi_kp" label="Tetapkan sebagai Dosen Komisi"
+                        help="Menambah/menarik role “Dosen Komisi”." />
                 </div>
+            </div>
 
-                <div class="flex items-center gap-2">
-                    <div class="flex-1"></div>
-                    <button
-                        class="rounded-md px-4 py-2 text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                        @click="open=false">
-                        Batal
-                    </button>
-                    <button class="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
-                        wire:click="save">
-                        Simpan
-                    </button>
-                </div>
+            <flux:separator />
+
+            <div class="grid gap-4 md:grid-cols-2">
+                <flux:input type="email" label="Email Login" wire:model.defer="email"
+                    :invalid="$errors->has('email')" />
+                <flux:input label="{{ $editingId ? 'Password (opsional untuk ubah)' : 'Password' }}"
+                    wire:model.defer="password" :invalid="$errors->has('password')" />
+            </div>
+
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:modal.close>
+                    <flux:button variant="ghost" wire:click="closeForm">Batal</flux:button>
+                </flux:modal.close>
+                <flux:button variant="primary" icon="check" wire:click="save">Simpan</flux:button>
             </div>
         </div>
-    </div>
+    </flux:modal>
 </div>

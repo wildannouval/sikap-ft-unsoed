@@ -47,6 +47,10 @@ class SpkPage extends Component
     {
         $this->resetPage();
     }
+    public function updatingPerPage()
+    {
+        $this->resetPage();
+    }
 
     public function sort(string $column): void
     {
@@ -84,7 +88,8 @@ class SpkPage extends Component
     {
         return $this->baseQuery()
             ->where('status', KerjaPraktik::ST_REVIEW_BAPENDIK)
-            ->paginate($this->perPage);
+            ->paginate($this->perPage)
+            ->withQueryString();
     }
 
     #[Computed]
@@ -92,7 +97,8 @@ class SpkPage extends Component
     {
         return $this->baseQuery()
             ->where('status', KerjaPraktik::ST_SPK_TERBIT)
-            ->paginate($this->perPage);
+            ->paginate($this->perPage)
+            ->withQueryString();
     }
 
     #[Computed]
@@ -150,6 +156,7 @@ class SpkPage extends Component
         $row->tanggal_terbit_spk = now()->toDateString();
         $row->signatory_id = $sig->id;
 
+        // snapshot TTD
         $row->ttd_signed_at = now();
         $row->ttd_signed_by_name = $sig->name;
         $row->ttd_signed_by_position = $sig->position;
@@ -157,7 +164,7 @@ class SpkPage extends Component
         $row->save();
 
         // === NOTIF ===
-        // 1) Ke Mahasiswa
+        // 1) Mahasiswa
         Notifier::toUser(
             $row->mahasiswa?->user_id,
             'SPK KP Terbit',
@@ -169,7 +176,7 @@ class SpkPage extends Component
             ]
         );
 
-        // 2) Ke Komisi
+        // 2) Komisi
         Notifier::toRole(
             'Dosen Komisi',
             'SPK KP Terbit',
@@ -181,7 +188,7 @@ class SpkPage extends Component
             ]
         );
 
-        // 3) Opsional: Ke Dosen Pembimbing (kalau ada mapping user_id)
+        // 3) Dosen Pembimbing (jika ada mapping user)
         $dospem = $row->dosenPembimbing;
         if ($dospem && !empty($dospem->user_id)) {
             Notifier::toUser(
@@ -209,6 +216,7 @@ class SpkPage extends Component
     {
         return KerjaPraktik::badgeColor($status);
     }
+
     public function statusLabel(string $status): string
     {
         return KerjaPraktik::statusLabel($status);

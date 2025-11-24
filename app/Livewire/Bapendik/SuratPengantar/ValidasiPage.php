@@ -4,7 +4,7 @@ namespace App\Livewire\Bapendik\SuratPengantar;
 
 use App\Models\Signatory;
 use App\Models\SuratPengantar;
-use App\Services\Notifier; // [NOTIF] ⬅️ tambah
+use App\Services\Notifier;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Computed;
@@ -129,7 +129,7 @@ class ValidasiPage extends Component
             'signatory_id'        => ['required', 'integer', 'exists:signatories,id'],
         ]);
 
-        $sp = SuratPengantar::with('mahasiswa')->findOrFail($this->publish_id);
+        $sp  = SuratPengantar::with('mahasiswa')->findOrFail($this->publish_id);
         $sig = Signatory::findOrFail($this->signatory_id);
 
         $sp->nomor_surat = $this->publish_nomor_surat;
@@ -144,19 +144,18 @@ class ValidasiPage extends Component
         $sp->ttd_signed_by_nip      = $sig->nip;
         $sp->save();
 
-        // [NOTIF] Beritahu Mahasiswa bahwa SP sudah terbit
+        // NOTIF → Mahasiswa
         $mhsUserId = $sp->mahasiswa?->user_id;
         if ($mhsUserId) {
             Notifier::toUser(
                 $mhsUserId,
                 'Surat Pengantar Diterbitkan',
                 "SP untuk {$sp->lokasi_surat_pengantar} telah diterbitkan. Nomor: {$sp->nomor_surat}.",
-                // arahkan ke halaman SP mahasiswa (unduh DOCX dari menu)
                 route('mhs.sp.index'),
                 [
-                    'type'   => 'sp_published',
-                    'sp_id'  => $sp->id,
-                    'nomor'  => $sp->nomor_surat,
+                    'type'  => 'sp_published',
+                    'sp_id' => $sp->id,
+                    'nomor' => $sp->nomor_surat,
                 ]
             );
         }
@@ -187,7 +186,7 @@ class ValidasiPage extends Component
         $sp->catatan_surat = $this->catatan_tolak ?: null;
         $sp->save();
 
-        // [NOTIF] Beritahu Mahasiswa bahwa SP ditolak
+        // NOTIF → Mahasiswa
         $mhsUserId = $sp->mahasiswa?->user_id;
         if ($mhsUserId) {
             Notifier::toUser(
@@ -196,8 +195,8 @@ class ValidasiPage extends Component
                 $sp->catatan_surat ? "Catatan: {$sp->catatan_surat}" : 'Silakan perbaiki data pengajuan.',
                 route('mhs.sp.index'),
                 [
-                    'type'   => 'sp_rejected',
-                    'sp_id'  => $sp->id,
+                    'type'  => 'sp_rejected',
+                    'sp_id' => $sp->id,
                 ]
             );
         }

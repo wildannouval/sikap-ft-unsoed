@@ -16,7 +16,7 @@ class DosenIndex extends Component
 {
     use WithPagination;
 
-    // UI state (untuk modal)
+    // UI state (modal)
     public bool $showForm = false;
 
     // Filter & paging
@@ -42,7 +42,6 @@ class DosenIndex extends Component
             'dosen_nip'    => ['nullable', 'string', 'max:50', Rule::unique('dosens', 'dosen_nip')->ignore($this->editingId, 'dosen_id')],
             'jurusan_id'   => ['nullable', 'exists:jurusans,id'],
             'is_komisi_kp' => ['boolean'],
-
             'email'        => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->user_id)],
             'password'     => [$this->editingId ? 'nullable' : 'required', 'min:6'],
         ];
@@ -60,7 +59,7 @@ class DosenIndex extends Component
     public function create(): void
     {
         $this->resetForm();
-        $this->showForm = true;
+        $this->showForm = true; // dipakai oleh :show modal
     }
 
     public function edit(int $id): void
@@ -80,6 +79,11 @@ class DosenIndex extends Component
         $this->showForm = true;
     }
 
+    public function closeForm(): void
+    {
+        $this->showForm = false;
+    }
+
     public function save(): void
     {
         $data = $this->validate();
@@ -91,15 +95,14 @@ class DosenIndex extends Component
                 $user->name  = $data['dosen_name'];
                 $user->email = $data['email'];
                 if (!empty($data['password'])) {
-                    // Model User cast 'password' => 'hashed'
-                    $user->password = $data['password'];
+                    $user->password = $data['password']; // cast hashed
                 }
                 $user->save();
             } else {
                 $user = User::create([
                     'name'     => $data['dosen_name'],
                     'email'    => $data['email'],
-                    'password' => $data['password'], // auto-hash
+                    'password' => $data['password'], // cast hashed
                 ]);
                 $this->user_id = $user->id;
             }
@@ -151,7 +154,7 @@ class DosenIndex extends Component
         $row = Dosen::with('user')->findOrFail($id);
         abort_if(!$row->user, 422, 'User belum ada.');
 
-        $row->user->password = $newPassword; // auto-hash
+        $row->user->password = $newPassword;
         $row->user->save();
 
         session()->flash('ok', 'Password akun dosen direset.');

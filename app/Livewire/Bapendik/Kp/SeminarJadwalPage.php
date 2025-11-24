@@ -4,31 +4,30 @@ namespace App\Livewire\Bapendik\Kp;
 
 use App\Models\KpSeminar;
 use App\Models\Signatory;
-use App\Services\BaDocxBuilder;
+use App\Services\Notifier;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Services\Notifier;
 
 class SeminarJadwalPage extends Component
 {
     use WithPagination;
 
     public string $q = '';
-    public string $statusFilter = 'disetujui_pembimbing';
+    public string $statusFilter = 'disetujui_pembimbing'; // all | disetujui_pembimbing | dijadwalkan | ba_terbit | ditolak | diajukan
     public string $sortBy = 'created_at';
     public string $sortDirection = 'desc';
     public int $perPage = 10;
 
     // schedule/BA modal state
     public ?int $editId = null;
-    public ?string $tanggal_seminar = null;
-    public ?int $ruangan_id = null;
+    public ?string $tanggal_seminar = null; // HTML datetime-local format: Y-m-d\TH:i
+    public ?int $ruangan_id = null;        // opsional, kalau nanti mau binding ke master room
     public ?string $ruangan_nama = null;
 
     public ?string $nomor_ba = null;
-    public ?string $tanggal_ba = null;
-    public ?int $signatory_id = null;
+    public ?string $tanggal_ba = null;     // Y-m-d
+    public ?int $signatory_id = null;      // opsional: snapshot penandatangan
 
     public function updatingQ()
     {
@@ -51,15 +50,32 @@ class SeminarJadwalPage extends Component
         $this->resetPage();
     }
 
+    public function sort(string $field): void
+    {
+        if ($this->sortBy === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $field;
+            $this->sortDirection = 'asc';
+        }
+        $this->resetPage();
+    }
+
     #[Computed]
     public function items()
     {
         return KpSeminar::query()
             ->with(['kp.mahasiswa.user', 'kp.dosenPembimbing'])
             ->when($this->q !== '', function ($q) {
-                $q->where(function ($qq) {
-                    $qq->where('judul_laporan', 'like', '%' . $this->q . '%')
-                        ->orWhere('nomor_ba', 'like', '%' . $this->q . '%');
+                $term = '%' . $this->q . '%';
+                $q->where(function ($qq) use ($term) {
+                    $qq->where('judul_laporan', 'like', $term)
+                        ->orWhere('nomor_ba', 'like', $term)
+                        ->orWhereHas('kp.mahasiswa.user', fn($u) => $u->where('name', 'like', $term))
+                        ->orWhereHas('kp.mahasiswa', function ($m) use ($term) {
+                            $m->where('nim', 'like', $term)
+                                ->orWhere('mahasiswa_nim', 'like', $term);
+                        });
                 });
             })
             ->when($this->statusFilter !== 'all', fn($q) => $q->where('status', $this->statusFilter))
@@ -71,13 +87,13 @@ class SeminarJadwalPage extends Component
     public function openEdit(int $id): void
     {
         $row = KpSeminar::with(['kp.mahasiswa.user'])->findOrFail($id);
-        $this->editId = $row->id;
+        $this->editId          = $row->id;
         $this->tanggal_seminar = optional($row->tanggal_seminar)->format('Y-m-d\TH:i');
-        $this->ruangan_id = $row->ruangan_id;
-        $this->ruangan_nama = $row->ruangan_nama;
-        $this->nomor_ba = $row->nomor_ba;
-        $this->tanggal_ba = optional($row->tanggal_ba)->format('Y-m-d');
-        $this->signatory_id = $row->signatory_id;
+        $this->ruangan_id      = $row->ruangan_id;
+        $this->ruangan_nama    = $row->ruangan_nama;
+        $this->nomor_ba        = $row->nomor_ba;
+        $this->tanggal_ba      = optional($row->tanggal_ba)->format('Y-m-d');
+        $this->signatory_id    = $row->signatory_id;
     }
 
     public function saveSchedule(): void
@@ -111,9 +127,9 @@ class SeminarJadwalPage extends Component
                 ),
                 route('mhs.kp.seminar', ['kp' => $row->kerja_praktik_id]),
                 [
-                    'type' => 'kp_seminar_scheduled',
-                    'kp_id' => $row->kerja_praktik_id,
-                    'seminar_id' => $row->id,
+                    'type'        => 'kp_seminar_scheduled',
+                    'kp_id'       => $row->kerja_praktik_id,
+                    'seminar_id'  => $row->id,
                 ]
             );
         }
@@ -130,9 +146,9 @@ class SeminarJadwalPage extends Component
                 ),
                 route('dsp.kp.seminar.approval'),
                 [
-                    'type' => 'kp_seminar_scheduled_info',
-                    'kp_id' => $row->kerja_praktik_id,
-                    'seminar_id' => $row->id,
+                    'type'        => 'kp_seminar_scheduled_info',
+                    'kp_id'       => $row->kerja_praktik_id,
+                    'seminar_id'  => $row->id,
                 ]
             );
         }
@@ -145,14 +161,18 @@ class SeminarJadwalPage extends Component
     public function publishBA(): void
     {
         $this->validate([
-            'editId'       => ['required', 'exists:kp_seminars,id'],
-            'nomor_ba'     => ['required', 'string', 'max:100'],
-            'tanggal_ba'   => ['required', 'date'],
+            'editId'     => ['required', 'exists:kp_seminars,id'],
+            'nomor_ba'   => ['required', 'string', 'max:100'],
+            'tanggal_ba' => ['required', 'date'],
         ]);
 
-        $row = KpSeminar::with(['kp.mahasiswa.user', 'kp.mahasiswa.jurusan', 'kp.dosenPembimbing.user'])->findOrFail($this->editId);
+        $row = KpSeminar::with([
+            'kp.mahasiswa.user',
+            'kp.mahasiswa.jurusan',
+            'kp.dosenPembimbing.user'
+        ])->findOrFail($this->editId);
 
-        // snapshot signer bila disediakan
+        // snapshot signer bila diisi
         if ($this->signatory_id) {
             $sign = Signatory::find($this->signatory_id);
             $row->signatory_id           = $sign?->id;
@@ -166,7 +186,7 @@ class SeminarJadwalPage extends Component
         $row->status     = KpSeminar::ST_BA_TERBIT;
         $row->save();
 
-        // === NOTIFIKASI → Mahasiswa & Dosen Pembimbing (sertakan tautan unduh)
+        // === NOTIFIKASI → Mahasiswa & Dosen Pembimbing (+ tautan unduh)
         $mhsUser = $row->kp?->mahasiswa?->user;
         $dspUser = $row->kp?->dosenPembimbing?->user;
 
@@ -177,10 +197,13 @@ class SeminarJadwalPage extends Component
                 'Berita Acara Seminar KP kamu telah terbit. Silakan unduh dokumennya.',
                 route('mhs.kp.seminar', ['kp' => $row->kerja_praktik_id]),
                 [
-                    'type' => 'kp_seminar_ba_published',
-                    'kp_id' => $row->kerja_praktik_id,
-                    'seminar_id' => $row->id,
-                    'download_route' => route('mhs.kp.seminar.download.ba', ['kp' => $row->kerja_praktik_id, 'seminar' => $row->id]),
+                    'type'           => 'kp_seminar_ba_published',
+                    'kp_id'          => $row->kerja_praktik_id,
+                    'seminar_id'     => $row->id,
+                    'download_route' => route('mhs.kp.seminar.download.ba', [
+                        'kp'      => $row->kerja_praktik_id,
+                        'seminar' => $row->id
+                    ]),
                 ]
             );
         }
@@ -192,9 +215,9 @@ class SeminarJadwalPage extends Component
                 sprintf('BA untuk %s telah terbit.', $row->kp?->mahasiswa?->user?->name ?? 'mahasiswa'),
                 route('dsp.kp.seminar.approval'),
                 [
-                    'type' => 'kp_seminar_ba_published_info',
-                    'kp_id' => $row->kerja_praktik_id,
-                    'seminar_id' => $row->id,
+                    'type'           => 'kp_seminar_ba_published_info',
+                    'kp_id'          => $row->kerja_praktik_id,
+                    'seminar_id'     => $row->id,
                     'download_route' => route('dsp.kp.seminar.download.ba', $row->id),
                 ]
             );
@@ -209,6 +232,7 @@ class SeminarJadwalPage extends Component
     {
         return KpSeminar::badgeColor($st);
     }
+
     public function statusLabel(string $st): string
     {
         return KpSeminar::statusLabel($st);

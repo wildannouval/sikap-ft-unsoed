@@ -1,19 +1,49 @@
 <div class="space-y-6">
-    <flux:card class="space-y-4">
+    <flux:toast />
+
+    {{-- PANDUAN --}}
+    <flux:card class="space-y-3 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800">
+        <div class="flex items-start gap-3">
+            <div class="rounded-md p-2 bg-sky-500 text-white dark:bg-sky-400">
+                {{-- Icon SVG inline (clipboard-document-list outline) --}}
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M9 12h6M9 16h6M9 8h6m-3.75-5.25h1.5a2.25 2.25 0 012.25 2.25v.75h1.5A2.25 2.25 0 0120 8.25v10.5A2.25 2.25 0 0117.75 21H6.25A2.25 2.25 0 014 18.75V8.25A2.25 2.25 0 016.25 6.75h1.5V6c0-1.243 1.007-2.25 2.25-2.25z" />
+                </svg>
+            </div>
+            <div>
+                <flux:heading size="md">Panduan Data Ruangan</flux:heading>
+                <ul class="mt-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc ms-4 space-y-1">
+                    <li>Tambahkan ruangan beserta <em>Nomor</em> dan <em>Gedung</em>.</li>
+                    <li>Gunakan kolom pencarian untuk filter cepat.</li>
+                    <li>Kolom Catatan opsional untuk info tambahan.</li>
+                </ul>
+            </div>
+        </div>
+    </flux:card>
+
+    <flux:card class="space-y-4 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800">
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-base font-semibold">Data Ruangan</h3>
-                <p class="text-sm text-zinc-500">Kelola nomor ruangan & gedung.</p>
+                <p class="text-sm text-zinc-500 dark:text-zinc-300">Kelola nomor ruangan & gedung.</p>
             </div>
 
             <div class="flex items-center gap-2">
-                <flux:input class="md:w-80" placeholder="Cari nomor / gedung / catatan…" wire:model.debounce.400ms="q"
-                    icon="magnifying-glass" />
+                <flux:input class="md:w-80" placeholder="Cari nomor / gedung / catatan…"
+                    wire:model.live.debounce.400ms="q" icon="magnifying-glass" />
                 <flux:modal.trigger name="create-ruangan">
                     <flux:button variant="primary" icon="plus" wire:click="create">Tambah</flux:button>
                 </flux:modal.trigger>
             </div>
         </div>
+
+        @if (session('ok'))
+            <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                {{ session('ok') }}
+            </div>
+        @endif
 
         <flux:table :paginate="$this->items">
             <flux:table.columns>

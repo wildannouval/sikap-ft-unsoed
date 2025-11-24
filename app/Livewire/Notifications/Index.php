@@ -15,19 +15,18 @@ class Index extends Component
 
     #[Url] public string $tab = 'unread'; // unread | all
     #[Url] public int $perPage = 10;
-    public ?int $openId = null;
 
     protected function base()
     {
         return AppNotification::query()
-            ->where('user_id', Auth::id())
+            ->forUser(Auth::id())
             ->latest('created_at');
     }
 
     #[Computed]
     public function unreadCount(): int
     {
-        return (clone $this->base())->whereNull('read_at')->count();
+        return (clone $this->base())->unread()->count();
     }
 
     #[Computed]
@@ -35,44 +34,61 @@ class Index extends Component
     {
         $q = $this->base();
         if ($this->tab === 'unread') {
-            $q->whereNull('read_at');
+            $q->unread();
         }
         return $q->paginate($this->perPage);
     }
 
+    public function updatingPerPage(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingTab(): void
+    {
+        $this->resetPage();
+    }
+
     public function open(int $id): void
     {
-        $notif = AppNotification::where('user_id', Auth::id())->findOrFail($id);
-        if (!$notif->read_at) {
+        $notif = AppNotification::forUser(Auth::id())->findOrFail($id);
+
+        if (is_null($notif->read_at)) {
             $notif->update(['read_at' => now()]);
         }
-        $this->openId = $id;
 
-        // Jika ada link, langsung navigate (opsional)
-        if ($notif->link) {
+        if (!empty($notif->link)) {
             $this->redirect($notif->link, navigate: true);
         }
     }
 
     public function markRead(int $id): void
     {
-        $notif = AppNotification::where('user_id', Auth::id())->findOrFail($id);
-        if (!$notif->read_at) {
+        $notif = AppNotification::forUser(Auth::id())->findOrFail($id);
+
+        if (is_null($notif->read_at)) {
             $notif->update(['read_at' => now()]);
         }
     }
 
     public function markAllRead(): void
     {
-        AppNotification::where('user_id', Auth::id())
-            ->whereNull('read_at')
+        AppNotification::forUser(Auth::id())
+            ->unread()
             ->update(['read_at' => now()]);
+
         $this->resetPage();
     }
 
     public function deleteOne(int $id): void
     {
-        AppNotification::where('user_id', Auth::id())->whereKey($id)->delete();
+        AppNotification::forUser(Auth::id())->whereKey($id)->delete();
+        $this->resetPage();
+    }
+
+    public function deleteAll(): void
+    {
+        AppNotification::forUser(Auth::id())->delete();
         $this->resetPage();
     }
 

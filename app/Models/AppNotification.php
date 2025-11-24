@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class AppNotification extends Model
 {
@@ -23,13 +23,14 @@ class AppNotification extends Model
         'read_at' => 'datetime',
     ];
 
+    /* Scopes */
+    public function scopeForUser(Builder $q, int $userId): Builder
+    {
+        return $q->where('user_id', $userId);
+    }
+
     public function scopeUnread(Builder $q): Builder
     {
         return $q->whereNull('read_at');
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
     }
 }

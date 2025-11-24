@@ -1,5 +1,5 @@
 <flux:card>
-    <div class="flex items-center justify-end mb-3 gap-2">
+    <div class="mb-3 flex items-center justify-end gap-2">
         <flux:select wire:model.live="perPage" class="w-32">
             <flux:select.option :value="10">10 / halaman</flux:select.option>
             <flux:select.option :value="25">25 / halaman</flux:select.option>
@@ -13,17 +13,16 @@
             <flux:table.column>Judul</flux:table.column>
             <flux:table.column>Isi</flux:table.column>
             <flux:table.column class="w-40">Waktu</flux:table.column>
-            <flux:table.column class="w-28 text-right">Aksi</flux:table.column>
+            <flux:table.column class="w-36 text-right">Aksi</flux:table.column>
         </flux:table.columns>
 
         <flux:table.rows>
             @forelse ($rows as $i => $n)
                 @php
-                    /** @var array|null $meta */
+                    // meta opsional (untuk badge/teks tambahan)
                     $meta = is_array($n->data ?? null) ? $n->data : null;
                     $type = $meta['type'] ?? null;
 
-                    // helper badge warna per tipe
                     $badgeColor = match ($type) {
                         'sp_submitted' => 'sky',
                         'sp_published' => 'emerald',
@@ -32,17 +31,13 @@
                         default => null,
                     };
 
-                    // teks ringkas per tipe
-                    $metaLine = null;
-                    if ($meta) {
-                        $metaLine = match ($type) {
-                            'sp_submitted' => 'Pengajuan SP baru',
-                            'sp_published' => 'SP diterbitkan',
-                            'sp_rejected' => 'SP ditolak',
-                            'sp_ack' => 'Pengajuan tersimpan',
-                            default => null,
-                        };
-                    }
+                    $metaLine = match ($type) {
+                        'sp_submitted' => 'Pengajuan SP baru',
+                        'sp_published' => 'SP diterbitkan',
+                        'sp_rejected' => 'SP ditolak',
+                        'sp_ack' => 'Pengajuan tersimpan',
+                        default => null,
+                    };
                 @endphp
 
                 <flux:table.row :key="$n->id">
@@ -53,17 +48,13 @@
                             @if (is_null($n->read_at))
                                 <span class="inline-block h-2 w-2 rounded-full bg-emerald-500"></span>
                             @endif
-                            <span class="font-medium">{{ $n->title }}</span>
+                            <span class="font-medium">{{ $n->title ?? '—' }}</span>
                         </div>
                     </flux:table.cell>
 
-                    <flux:table.cell class="max-w-[520px]">
-                        {{-- body utama --}}
-                        <div class="text-sm text-zinc-700">
-                            {{ $n->body ?? '—' }}
-                        </div>
+                    <flux:table.cell class="max-w-[560px]">
+                        <div class="text-sm text-zinc-700">{{ $n->body ?? '—' }}</div>
 
-                        {{-- baris meta yang rapi (tanpa JSON mentah) --}}
                         @if ($metaLine || ($meta['sp_id'] ?? false) || ($meta['nomor'] ?? false))
                             <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-600">
                                 @if ($badgeColor)
@@ -71,11 +62,9 @@
                                         {{ $metaLine }}
                                     </flux:badge>
                                 @endif
-
                                 @if (!empty($meta['sp_id']))
                                     <span>SP# {{ $meta['sp_id'] }}</span>
                                 @endif
-
                                 @if (!empty($meta['nomor']))
                                     <span>No: {{ $meta['nomor'] }}</span>
                                 @endif
@@ -89,7 +78,7 @@
 
                     <flux:table.cell>
                         <div class="flex justify-end gap-1">
-                            @if ($n->link)
+                            @if (!empty($n->link))
                                 <flux:button size="sm" variant="outline" icon="arrow-top-right-on-square"
                                     wire:click="open({{ $n->id }})">
                                     Buka

@@ -1,5 +1,19 @@
 <div class="space-y-6">
 
+    {{-- HEADER --}}
+    <div class="flex items-center justify-between">
+        <div>
+            <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
+                Status Nilai Kerja Praktik (Komisi)
+            </flux:heading>
+            <flux:subheading class="text-zinc-600 dark:text-zinc-300">
+                Lihat status KP yang sudah dinilai, cek nilai akhir, rincian komponen nilai, dan bukti distribusi
+                ke mahasiswa / Bapendik.
+            </flux:subheading>
+        </div>
+    </div>
+    <flux:separator variant="subtle" />
+
     {{-- PANDUAN (aksen violet agar konsisten dgn Komisi) --}}
     <flux:card
         class="space-y-4 rounded-xl border
@@ -21,14 +35,24 @@
                     Panduan Status KP Dinilai
                 </h3>
                 <div class="mt-1 text-sm text-zinc-600 dark:text-zinc-300 space-y-1.5">
-                    <div><span class="font-medium">1)</span> Gunakan kolom <em>cari</em> untuk menemukan mahasiswa/judul
-                        cepat.</div>
-                    <div><span class="font-medium">2)</span> Filter <strong>BA Terbit</strong> atau
-                        <strong>Dinilai</strong> via dropdown status.</div>
-                    <div><span class="font-medium">3)</span> Cek <strong>Distribusi</strong> (bukti unggah) sebagai
-                        prasyarat menampilkan nilai ke mahasiswa.</div>
-                    <div><span class="font-medium">4)</span> Kolom <strong>Rincian</strong> memperlihatkan komponen
-                        nilai (Dospem & PL) bila tersedia.</div>
+                    <div>
+                        <span class="font-medium">1)</span>
+                        Gunakan kolom <em>cari</em> untuk menemukan mahasiswa / judul dengan cepat.
+                    </div>
+                    <div>
+                        <span class="font-medium">2)</span>
+                        Filter <strong>BA Terbit</strong> atau <strong>Dinilai</strong> melalui dropdown status.
+                    </div>
+                    <div>
+                        <span class="font-medium">3)</span>
+                        Cek <strong>Distribusi</strong> (bukti unggah) sebagai prasyarat menampilkan nilai
+                        ke mahasiswa / ke bagian administrasi.
+                    </div>
+                    <div>
+                        <span class="font-medium">4)</span>
+                        Kolom <strong>Rincian</strong> memperlihatkan komponen nilai (Dospem &amp; PL)
+                        bila data penilaian sudah lengkap.
+                    </div>
                 </div>
             </div>
         </div>
@@ -48,9 +72,9 @@
                    dark:bg-violet-900/20 dark:text-violet-300
                    border-violet-100 dark:border-violet-900/40
                    rounded-t-xl">
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <h3 class="text-sm font-medium tracking-wide">Status KP Dinilai</h3>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-col gap-2 md:flex-row md:items-center">
                     <flux:input class="md:w-80" placeholder="Cari nama / NIM / judul…"
                         wire:model.live.debounce.400ms="q" icon="magnifying-glass" />
                     <flux:select wire:model.live="statusFilter" class="w-44">
@@ -149,7 +173,9 @@
                     @empty
                         <flux:table.row>
                             <flux:table.cell colspan="8">
-                                <div class="py-6 text-center text-sm text-zinc-500">Belum ada data.</div>
+                                <div class="py-6 text-center text-sm text-zinc-500">
+                                    Belum ada data.
+                                </div>
                             </flux:table.cell>
                         </flux:table.row>
                     @endforelse

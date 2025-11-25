@@ -9,6 +9,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Flux\Flux;
 
 class ReviewPage extends Component
 {
@@ -124,6 +125,7 @@ class ReviewPage extends Component
     public function closeDetail(): void
     {
         $this->detailId = null;
+        Flux::modal('detail-kp')->close();
     }
 
     public function triggerApprove(int $id): void
@@ -141,6 +143,7 @@ class ReviewPage extends Component
         if (is_null($kp->dosen_pembimbing_id)) {
             session()->flash('err', 'Tetapkan dosen pembimbing terlebih dahulu sebelum menyetujui.');
             $this->approveId = null;
+            Flux::modal('approve-kp')->close();
             return;
         }
 
@@ -209,6 +212,8 @@ class ReviewPage extends Component
 
         $this->rejectId = null;
         $this->rejectNote = '';
+        Flux::modal('reject-kp')->close();
+        $this->resetPage();
     }
 
     public function openAssign(int $id): void
@@ -234,11 +239,11 @@ class ReviewPage extends Component
         $kp = KerjaPraktik::with(['mahasiswa.user'])->findOrFail($this->assignId);
         if ($kp->status !== KerjaPraktik::ST_REVIEW_KOMISI) {
             session()->flash('err', 'Pembimbing hanya dapat ditetapkan saat menunggu review komisi.');
+            Flux::modal('assign-mentor')->close();
             return;
         }
 
         $kp->update(['dosen_pembimbing_id' => $this->dosen_id]);
-
         $dosen = Dosen::find($this->dosen_id);
 
         // 1) Ke Mahasiswa
@@ -264,6 +269,7 @@ class ReviewPage extends Component
         session()->flash('ok', 'Dosen pembimbing berhasil ditetapkan.');
         $this->assignId = null;
         $this->dosen_id = null;
+        Flux::modal('assign-mentor')->close();
         $this->resetPage();
     }
 

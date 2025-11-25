@@ -3,24 +3,22 @@
 namespace App\Livewire\Dosen\Kp;
 
 use App\Models\Dosen;
-use App\Models\KpConsultation;
+use App\Models\KerjaPraktik;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Services\Notifier; // <— NOTIFIER
 
 class KonsultasiIndex extends Component
 {
     use WithPagination;
 
-    public string $q = '';
-    public string $status = 'all';    // all|verified|unverified
-    public string $sortBy = 'tanggal_konsultasi';
+    // Halaman ini sekarang adalah “Mahasiswa Bimbingan”
+    public string $q = '';                       // cari nama / NIM / judul / instansi
+    public string $status = 'all';               // all|review_komisi|review_bapendik|spk_terbit|kp_berjalan|ditolak|selesai (sesuaikan enum di modelmu)
+    public string $sortBy = 'updated_at';
     public string $sortDirection = 'desc';
     public int $perPage = 10;
-
-    public ?int $rowId = null;
 
     public function updatingQ()
     {
@@ -34,11 +32,11 @@ class KonsultasiIndex extends Component
     {
         $this->resetPage();
     }
-    public function updatingSortDirection()
+    public function updatingPerPage()
     {
         $this->resetPage();
     }
-    public function updatingPerPage()
+    public function updatingSortDirection()
     {
         $this->resetPage();
     }
@@ -51,115 +49,41 @@ class KonsultasiIndex extends Component
     #[Computed]
     public function items()
     {
-        $dosen = $this->meAsDosen(); // PK = dosen_id
+        $dosen = $this->meAsDosen();
+        $kw    = trim($this->q);
 
-        return KpConsultation::query()
+        return KerjaPraktik::query()
             ->with([
-                // relasi standar: mahasiswa -> user
                 'mahasiswa.user:id,name',
-                // relasi kerja praktik + minimal kolom yang perlu
-                'kerjaPraktik:id,judul_kp,lokasi_kp,mahasiswa_id,dosen_pembimbing_id',
             ])
-            // === FIX UTAMA: pakai getKey() (dosen_id), bukan "id" ===
+            // ringkasan konsultasi
+            ->withCount([
+                'consultations',
+                'consultations as verified_consultations_count' => fn($q) => $q->whereNotNull('verified_at'),
+            ])
+            // terakhir konsultasi (butuh MySQL >= 8; Laravel 12 support withMax)
+            ->withMax('consultations as last_consultation_at', 'tanggal_konsultasi')
+            // scope dosen pembimbing = saya
             ->where('dosen_pembimbing_id', $dosen->getKey())
-            ->when($this->q !== '', function ($q) {
-                $q->where(function ($qq) {
-                    $qq->where('topik_konsultasi', 'like', '%' . $this->q . '%')
-                        ->orWhere('hasil_konsultasi', 'like', '%' . $this->q . '%')
-                        ->orWhere('konsultasi_dengan', 'like', '%' . $this->q . '%');
+            // pencarian
+            ->when($kw !== '', function ($q) use ($kw) {
+                $like = "%{$kw}%";
+                $q->where(function ($qq) use ($like) {
+                    $qq->where('judul_kp', 'like', $like)
+                        ->orWhere('lokasi_kp', 'like', $like)
+                        ->orWhereHas(
+                            'mahasiswa',
+                            fn($m) =>
+                            $m->where('mahasiswa_nim', 'like', $like)
+                                ->orWhereHas('user', fn($u) => $u->where('name', 'like', $like))
+                        );
                 });
             })
-            ->when($this->status === 'verified', fn($q) => $q->whereNotNull('verified_at'))
-            ->when($this->status === 'unverified', fn($q) => $q->whereNull('verified_at'))
+            // filter status KP (gunakan konstanta dari model jika ada)
+            ->when($this->status !== 'all', fn($q) => $q->where('status', $this->status))
             ->orderBy($this->sortBy, $this->sortDirection)
             ->paginate($this->perPage)
             ->withQueryString();
-    }
-
-    public function verify(int $id): void
-    {
-        $dosen = $this->meAsDosen();
-
-        $row = KpConsultation::where('id', $id)
-            ->where('dosen_pembimbing_id', $dosen->getKey())
-            ->firstOrFail();
-
-        if (is_null($row->verified_at)) {
-            $row->forceFill([
-                'verified_at'          => now(),
-                'verified_by_dosen_id' => $dosen->getKey(),
-            ])->save();
-
-            // === NOTIFIKASI → Mahasiswa
-            $mhsUser = $row->mahasiswa?->user;
-            if ($mhsUser) {
-                $title = 'Konsultasi diverifikasi';
-                $body  = sprintf(
-                    'Dosen Pembimbing %s menyetujui konsultasi tanggal %s.',
-                    $dosen->user?->name ?? '',
-                    optional($row->tanggal_konsultasi)?->format('d M Y') ?: '-'
-                );
-                $link  = route('mhs.kp.konsultasi', $row->kerja_praktik_id);
-                Notifier::toUser(
-                    $mhsUser,
-                    $title,
-                    $body,
-                    $link,
-                    [
-                        'type' => 'kp_consultation_verified',
-                        'kp_id' => $row->kerja_praktik_id,
-                        'consultation_id' => $row->id,
-                        'verified' => true,
-                    ]
-                );
-            }
-        }
-
-        session()->flash('ok', 'Konsultasi diverifikasi.');
-        $this->resetPage();
-    }
-
-    public function unverify(int $id): void
-    {
-        $dosen = $this->meAsDosen();
-
-        $row = KpConsultation::where('id', $id)
-            ->where('dosen_pembimbing_id', $dosen->getKey())
-            ->firstOrFail();
-
-        if (! is_null($row->verified_at)) {
-            $row->forceFill([
-                'verified_at'          => null,
-                'verified_by_dosen_id' => null,
-            ])->save();
-
-            // === NOTIFIKASI → Mahasiswa
-            $mhsUser = $row->mahasiswa?->user;
-            if ($mhsUser) {
-                $title = 'Verifikasi konsultasi dibatalkan';
-                $body  = sprintf(
-                    'Dosen Pembimbing %s membatalkan verifikasi konsultasi tanggal %s.',
-                    $dosen->user?->name ?? '',
-                    optional($row->tanggal_konsultasi)?->format('d M Y') ?: '-'
-                );
-                $link  = route('mhs.kp.konsultasi', $row->kerja_praktik_id);
-                Notifier::toUser(
-                    $mhsUser,
-                    $title,
-                    $body,
-                    $link,
-                    [
-                        'type' => 'kp_consultation_unverified',
-                        'kp_id' => $row->kerja_praktik_id,
-                        'consultation_id' => $row->id,
-                        'verified' => false,
-                    ]
-                );
-            }
-        }
-
-        session()->flash('ok', 'Verifikasi dibatalkan.');
-        $this->resetPage();
     }
 
     public function sort(string $field): void
@@ -170,6 +94,16 @@ class KonsultasiIndex extends Component
             $this->sortBy = $field;
             $this->sortDirection = 'asc';
         }
+    }
+
+    // helper badge/label tetap delegasi ke model
+    public function badgeColor(string $status): string
+    {
+        return \App\Models\KerjaPraktik::badgeColor($status);
+    }
+    public function statusLabel(string $status): string
+    {
+        return \App\Models\KerjaPraktik::statusLabel($status);
     }
 
     public function render()

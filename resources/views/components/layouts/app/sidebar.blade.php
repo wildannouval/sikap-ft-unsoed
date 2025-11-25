@@ -203,7 +203,7 @@
                 @endrole
 
                 {{-- ===================== DOSEN PEMBIMBING ===================== --}}
-                @role('Dosen Pembimbing')
+                @hasanyrole('Dosen Pembimbing|Dosen Komisi') {{-- ✅ Komisi juga melihat menu pembimbing --}}
                     <flux:navlist.group heading="Dosen Pembimbing" class="grid">
                         @if (Route::has('dsp.dashboard'))
                             <flux:navlist.item icon="home" :href="route('dsp.dashboard')"
@@ -220,18 +220,15 @@
                             <flux:navlist.item icon="academic-cap" disabled>Mahasiswa Bimbingan</flux:navlist.item>
                         @endif
 
-                        {{-- Konsultasi (index dosen) --}}
                         @if (Route::has('dsp.kp.konsultasi'))
                             <flux:navlist.item icon="chat-bubble-left-right" :href="route('dsp.kp.konsultasi')"
                                 :current="request()->routeIs('dsp.kp.konsultasi')" wire:navigate>Konsultasi Mahasiswa
                             </flux:navlist.item>
                         @else
-                            <flux:navlist.item icon="chat-bubble-left-right" disabled>
-                                Konsultasi Mahasiswa
+                            <flux:navlist.item icon="chat-bubble-left-right" disabled>Konsultasi Mahasiswa
                             </flux:navlist.item>
                         @endif
 
-                        {{-- Persetujuan Seminar --}}
                         @if (Route::has('dsp.kp.seminar.approval'))
                             <flux:navlist.item icon="check-circle" :href="route('dsp.kp.seminar.approval')"
                                 :current="request()->routeIs('dsp.kp.seminar.approval')" wire:navigate>Persetujuan Seminar
@@ -240,7 +237,6 @@
                             <flux:navlist.item icon="check-circle" disabled>Persetujuan Seminar</flux:navlist.item>
                         @endif
 
-                        {{-- Penilaian & Laporan --}}
                         @if (Route::has('dsp.nilai'))
                             <flux:navlist.item icon="pencil-square" :href="route('dsp.nilai')"
                                 :current="request()->routeIs('dsp.nilai')" wire:navigate>Penilaian KP</flux:navlist.item>
@@ -252,19 +248,17 @@
                             </flux:navlist.item>
                         @endif
 
-                        {{-- Notifikasi (Inbox-style badge) --}}
                         @if (Route::has('notifications'))
                             <flux:navlist.item icon="inbox" :href="route('notifications')"
                                 :current="request()->routeIs('notifications')" badge="{{ $notifBadge }}"
                                 badge:color="blue" wire:navigate>Notifikasi</flux:navlist.item>
                         @else
-                            <flux:navlist.item icon="inbox" :badge="$notifBadge" badge:color="blue" disabled>
-                                Notifikasi
+                            <flux:navlist.item icon="inbox" :badge="$notifBadge" badge:color="blue" disabled>Notifikasi
                             </flux:navlist.item>
                         @endif
-
                     </flux:navlist.group>
-                @endrole
+                @endhasanyrole
+
 
                 {{-- ===================== DOSEN KOMISI ===================== --}}
                 @role('Dosen Komisi')

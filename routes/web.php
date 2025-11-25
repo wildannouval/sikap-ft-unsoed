@@ -39,6 +39,7 @@ use App\Livewire\Bapendik\Kp\SpkPage;
 use App\Livewire\Bapendik\SuratPengantar\ValidasiPage;
 use App\Livewire\Dosen\DashboardPage     as DspDashboardPage;
 use App\Livewire\Komisi\DashboardPage    as KomisiDashboardPage;
+use App\Livewire\Komisi\Kp\ReviewPage;
 use App\Livewire\Mahasiswa\Kp\Page as MhsKpPage;
 use App\Livewire\Mahasiswa\SuratPengantar\Page as SuratPengantarPage;
 use App\Livewire\Notifications\Index as NotificationsIndex;
@@ -51,23 +52,15 @@ use App\Livewire\Notifications\Index as NotificationsIndex;
 
 $goToRoleDashboard = function () {
     $user = Auth::user();
+    if (!$user) return redirect()->route('login');
 
-    if (!$user) {
-        return redirect()->route('login');
-    }
+    // Prioritas ketika punya dua role
+    if ($user->hasRole('Mahasiswa')) return redirect()->route('mhs.dashboard');
+    if ($user->hasRole('Bapendik'))  return redirect()->route('bap.dashboard');
 
-    if ($user->hasRole('Mahasiswa')) {
-        return redirect()->route('mhs.dashboard');
-    }
-    if ($user->hasRole('Bapendik')) {
-        return redirect()->route('bap.dashboard');
-    }
-    if ($user->hasRole('Dosen Pembimbing')) {
-        return redirect()->route('dsp.dashboard');
-    }
-    if ($user->hasRole('Dosen Komisi')) {
-        return redirect()->route('komisi.dashboard');
-    }
+    // ✅ Jika punya dua-duanya (Komisi & Pembimbing), arahkan ke Komisi
+    if ($user->hasRole('Dosen Komisi')) return redirect()->route('komisi.dashboard');
+    if ($user->hasRole('Dosen Pembimbing')) return redirect()->route('dsp.dashboard');
 
     return redirect()->route('login');
 };
@@ -161,13 +154,13 @@ Route::prefix('bap')
 
 /** =================== Dosen Pembimbing =================== */
 Route::prefix('dsp')
-    ->middleware(['auth', 'role:Dosen Pembimbing']) // <-- tanpa tanda kutip
+    ->middleware(['auth', 'role:Dosen Pembimbing|Dosen Komisi']) // <-- tanpa tanda kutip
     ->group(function () {
         Route::get('/dashboard', \App\Livewire\Dosen\DashboardPage::class)->name('dsp.dashboard');
         Route::get('/kp/konsultasi', \App\Livewire\Dosen\Kp\KonsultasiIndex::class)->name('dsp.kp.konsultasi');
         Route::get('/kp/seminar', \App\Livewire\Dosen\Kp\SeminarApprovalIndex::class)->name('dsp.kp.seminar.approval');
         Route::get('/kp/seminar/{seminar}/download-ba', [\App\Http\Controllers\KP\DownloadBaController::class, 'downloadForDospem'])->name('dsp.kp.seminar.download.ba');
-        Route::view('/mhs', 'dsp.mhs.index')->name('dsp.mhs');
+        Route::redirect('/mhs', '/dsp/kp/konsultasi')->name('dsp.mhs');
         Route::view('/laporan', 'dsp.laporan.index')->name('dsp.laporan');
         Route::view('/kalender', 'dsp.kalender.index')->name('dsp.kalender');
         Route::get('/nilai', \App\Livewire\Dosen\Kp\PenilaianForm::class)->name('dsp.nilai');
@@ -180,7 +173,7 @@ Route::prefix('komisi')
     ->middleware(['auth', 'permission:kp.review'])
     ->group(function () {
         Route::get('/dashboard', KomisiDashboardPage::class)->name('komisi.dashboard');
-        Route::view('/kp/review', 'komisi.kp.index')->name('komisi.kp.review');
+        Route::get('/kp/review', ReviewPage::class)->name('komisi.kp.review');
         Route::get('/kp/{kp}/download-docx', [DownloadSpkController::class, 'downloadDocxForKomisi'])->name('komisi.kp.download.docx');
         Route::get('/kp/nilai', KomisiNilaiIndex::class)->name('komisi.kp.nilai');
 

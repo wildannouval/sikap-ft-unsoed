@@ -1,4 +1,51 @@
 <div class="space-y-6">
+    {{-- TOAST GLOBAL --}}
+    <flux:toast />
+
+    {{-- HEADER HALAMAN --}}
+    <div class="flex items-center justify-between">
+        <div>
+            <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
+                Pengajuan Kerja Praktik
+            </flux:heading>
+            <flux:subheading class="text-zinc-600 dark:text-zinc-300">
+                Kelola pengajuan KP mahasiswa.
+            </flux:subheading>
+        </div>
+    </div>
+
+    <flux:separator variant="subtle" />
+
+    {{-- CARD PANDUAN --}}
+    <flux:card class="space-y-3 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800">
+        <div class="flex items-start gap-3">
+            <div class="rounded-md p-2 bg-sky-500 text-white dark:bg-sky-400">
+                {{-- Icon clipboard-document-list --}}
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M9 12h6M9 16h6M9 8h6m-3.75-5.25h1.5a2.25 2.25 0 012.25 2.25v.75h1.5A2.25 2.25 0 0120 8.25v10.5A2.25 2.25 0 0117.75 21H6.25A2.25 2.25 0 014 18.75V8.25A2.25 2.25 0 016.25 6.75h1.5V6c0-1.243 1.007-2.25 2.25-2.25z" />
+                </svg>
+            </div>
+            <div>
+                <flux:heading size="md">Panduan Pengajuan Kerja Praktik</flux:heading>
+                <ul class="mt-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc ms-4 space-y-1">
+                    <li>Pastikan sudah memiliki <strong>Surat Pengantar</strong> dengan status
+                        <strong>Diterbitkan</strong>.</li>
+                    <li>Gunakan pilihan <em>“Ambil dari SP terbit”</em> untuk mengisi data instansi secara otomatis.
+                    </li>
+                    <li>Isi <strong>Judul Kerja Praktik</strong> dan <strong>Instansi / Lokasi KP</strong> sesuai
+                        rencana kegiatan.</li>
+                    <li>Upload <strong>Proposal KP</strong> dalam format PDF (maksimal 2MB).</li>
+                    <li>Upload <strong>Surat Diterima / Bukti diterima</strong> (PDF/JPG/PNG, maksimal 2MB).</li>
+                    <li>Setelah diajukan, status awal biasanya <strong>Menunggu Review Komisi</strong>, dilanjutkan
+                        <strong>Menunggu Terbit SPK</strong>, lalu <strong>SPK Terbit</strong>.</li>
+                    <li>Pengajuan hanya bisa diubah / dihapus saat masih <strong>Menunggu Review Komisi</strong>.</li>
+                    <li>Jika status sudah <strong>SPK Terbit</strong>, SPK bisa diunduh melalui menu aksi di tabel.</li>
+                </ul>
+            </div>
+        </div>
+    </flux:card>
 
     {{-- ALERTS --}}
     @if (session('ok'))
@@ -34,10 +81,12 @@
                         </svg>
                     </span>
                     <div>
-                        <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">Pengajuan Kerja Praktik
+                        <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">
+                            Pengajuan Kerja Praktik
                         </h3>
-                        <p class="text-sm text-zinc-500 dark:text-zinc-300">Isi data di bawah lalu ajukan ke Komisi
-                            &amp; Bapendik.</p>
+                        <p class="text-sm text-zinc-500 dark:text-zinc-300">
+                            Isi data di bawah lalu ajukan ke Komisi &amp; Bapendik.
+                        </p>
                     </div>
                 </div>
 
@@ -99,10 +148,12 @@
                         @if ($proposal_kp && !$errors->has('proposal_kp'))
                             <div
                                 class="mt-1 flex items-center justify-between rounded-lg border bg-zinc-50 p-2 text-sm
-                   dark:border-zinc-700 dark:bg-zinc-800">
+                                       dark:border-zinc-700 dark:bg-zinc-800">
                                 <span class="truncate">{{ $proposal_kp->getClientOriginalName() }}</span>
                                 <button type="button" wire:click="removeProposal"
-                                    class="text-rose-500 hover:text-rose-700 font-bold text-lg flex-shrink-0 ml-2">&times;</button>
+                                    class="text-rose-500 hover:text-rose-700 font-bold text-lg flex-shrink-0 ml-2">
+                                    &times;
+                                </button>
                             </div>
                         @endif
                     </div>
@@ -124,10 +175,12 @@
                         @if ($surat_keterangan_kp && !$errors->has('surat_keterangan_kp'))
                             <div
                                 class="mt-1 flex items-center justify-between rounded-lg border bg-zinc-50 p-2 text-sm
-                   dark:border-zinc-700 dark:bg-zinc-800">
+                                       dark:border-zinc-700 dark:bg-zinc-800">
                                 <span class="truncate">{{ $surat_keterangan_kp->getClientOriginalName() }}</span>
                                 <button type="button" wire:click="removeSuratKeterangan"
-                                    class="text-rose-500 hover:text-rose-700 font-bold text-lg flex-shrink-0 ml-2">&times;</button>
+                                    class="text-rose-500 hover:text-rose-700 font-bold text-lg flex-shrink-0 ml-2">
+                                    &times;
+                                </button>
                             </div>
                         @endif
                     </div>
@@ -188,7 +241,8 @@
 
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex items-center gap-2">
-                            <flux:badge size="sm" inset="top bottom" :color="$this->badgeColor('review_bapendik')"
+                            <flux:badge size="sm" inset="top bottom"
+                                :color="$this->badgeColor('review_bapendik')"
                                 class="border border-sky-200 dark:border-sky-900/40
                                        bg-sky-50 text-sky-700
                                        dark:bg-sky-900/20 dark:text-sky-300">
@@ -367,7 +421,8 @@
                 <flux:heading size="lg" class="text-stone-900 dark:text-stone-100">Hapus pengajuan?
                 </flux:heading>
                 <flux:text class="mt-2 text-zinc-700 dark:text-stone-300">
-                    Anda akan menghapus pengajuan KP ini.<br> Tindakan ini tidak dapat dibatalkan.
+                    Anda akan menghapus pengajuan KP ini.<br>
+                    Tindakan ini tidak dapat dibatalkan.
                 </flux:text>
             </div>
             <div class="flex gap-2">

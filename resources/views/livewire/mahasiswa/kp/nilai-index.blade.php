@@ -1,5 +1,18 @@
 <div class="space-y-6">
 
+    {{-- HEADER --}}
+    <div class="flex items-center justify-between">
+        <div>
+            <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
+                Nilai Kerja Praktik
+            </flux:heading>
+            <flux:subheading class="text-zinc-600 dark:text-zinc-300">
+                Lihat rekap nilai, unggah bukti distribusi, dan akses BA scan bila tersedia.
+            </flux:subheading>
+        </div>
+    </div>
+    <flux:separator variant="subtle" />
+
     {{-- FLASH OK --}}
     @if (session('ok'))
         <div class="rounded-md border border-emerald-300/60 bg-emerald-50 px-3 py-2 text-emerald-800">
@@ -26,8 +39,8 @@
             <div>
                 <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">Panduan Nilai KP</h3>
                 <p class="text-sm text-zinc-600 dark:text-zinc-300">
-                    1) Nilai hanya terlihat <em>setelah</em> bukti distribusi diunggah. 2) Klik <strong>Upload
-                        Bukti</strong> pada baris seminar yang berstatus
+                    1) Nilai hanya terlihat <em>setelah</em> bukti distribusi diunggah. 2) Klik
+                    <strong>Upload Bukti</strong> pada baris seminar berstatus
                     <span class="font-medium">Dinilai</span> atau <span class="font-medium">BA Terbit</span>.
                     3) Jika sudah mengunggah, Anda bisa membuka <strong>BA Scan</strong> bila tersedia.
                 </p>
@@ -107,7 +120,6 @@
                                 </div>
                             @else
                                 @if (in_array($row->status, ['dinilai', 'ba_terbit']))
-                                    {{-- Fallback modal attr memastikan modal muncul walau reaktivitas sempat delay --}}
                                     <flux:button size="xs" variant="primary" icon="arrow-up-tray"
                                         modal="mhs-upload-distribusi" wire:click="openUpload({{ $row->id }})">
                                         Upload Bukti
@@ -146,8 +158,9 @@
                         <flux:table.cell>
                             @if ($row->grade?->ba_scan_path)
                                 <a class="text-sm underline hover:no-underline"
-                                    href="{{ asset('storage/' . $row->grade->ba_scan_path) }}" target="_blank">Lihat BA
-                                    Scan</a>
+                                    href="{{ asset('storage/' . $row->grade->ba_scan_path) }}" target="_blank">
+                                    Lihat BA Scan
+                                </a>
                             @else
                                 <span class="text-xs text-zinc-400 dark:text-stone-500">—</span>
                             @endif
@@ -168,7 +181,6 @@
 
     {{-- Modal Global: kombinasi :show (Livewire) + name (fallback modal attr) --}}
     <flux:modal name="mhs-upload-distribusi" :show="$showUploadModal" dismissable class="min-w-[34rem]">
-        {{-- Saat tombol diklik, modal bisa muncul dulu via "modal" attr; konten akan mengisi saat $uploadSeminarId sudah diset --}}
         @if ($uploadSeminarId)
             <div class="p-1">
                 <flux:card class="space-y-4 border-indigo-200/70 dark:border-indigo-900/40">
@@ -194,7 +206,6 @@
                 </flux:card>
             </div>
         @else
-            {{-- Skeleton ringan saat id belum tersetel (klik via fallback modal duluan) --}}
             <div class="p-6 text-sm text-zinc-500 dark:text-stone-400">Memuat formulir…</div>
         @endif
     </flux:modal>

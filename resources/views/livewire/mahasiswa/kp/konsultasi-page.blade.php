@@ -8,75 +8,160 @@
         </div>
     @endif
 
-    {{-- FORM KONSULTASI --}}
-    <flux:card
-        class="space-y-6 rounded-xl border
-               bg-white dark:bg-stone-950
-               border-zinc-200 dark:border-stone-800
-               shadow-xs">
+    {{-- BARIS ATAS: FORM (kiri) + PANDUAN (kanan) --}}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-10">
 
-        {{-- Header kartu dengan aksen indigo --}}
-        <div class="flex items-center gap-2 px-1.5 -mt-1">
-            <span
-                class="inline-flex items-center justify-center rounded-md p-1.5
-                       bg-indigo-500 text-white dark:bg-indigo-400">
-                <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M8 10h8M8 14h5" />
-                    <rect x="3" y="4" width="18" height="16" rx="2" />
-                </svg>
-            </span>
-            <div>
-                <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">
-                    Catat Konsultasi KP
-                </h3>
-                <p class="text-sm text-zinc-500 dark:text-zinc-300">
-                    Simpan topik & hasil diskusi dengan Dosen Pembimbing.
-                </p>
-            </div>
+        {{-- FORM KONSULTASI --}}
+        <div class="lg:col-span-7">
+            <flux:card
+                class="space-y-6 rounded-xl border
+                       bg-white dark:bg-stone-950
+                       border-zinc-200 dark:border-stone-800
+                       shadow-xs">
+
+                {{-- Header kartu dengan aksen indigo --}}
+                <div class="flex items-center gap-2 px-1.5 -mt-1">
+                    <span
+                        class="inline-flex items-center justify-center rounded-md p-1.5
+                               bg-indigo-500 text-white dark:bg-indigo-400">
+                        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 10h8M8 14h5" />
+                            <rect x="3" y="4" width="18" height="16" rx="2" />
+                        </svg>
+                    </span>
+                    <div>
+                        <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">
+                            Catat Konsultasi KP
+                        </h3>
+                        <p class="text-sm text-zinc-500 dark:text-zinc-300">
+                            Simpan topik & hasil diskusi dengan Dosen Pembimbing.
+                        </p>
+                    </div>
+                </div>
+
+                <flux:separator />
+
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                        <flux:input label="Konsultasi dengan" wire:model.defer="konsultasi_dengan"
+                            placeholder="Dosen/WA/Zoom/Offline" />
+                    </div>
+
+                    <div>
+                        <flux:input type="date" label="Tanggal konsultasi" wire:model.defer="tanggal_konsultasi"
+                            :invalid="$errors->has('tanggal_konsultasi')" />
+                        @error('tanggal_konsultasi')
+                            <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <flux:input label="Topik konsultasi" wire:model.defer="topik_konsultasi"
+                            :invalid="$errors->has('topik_konsultasi')" />
+                        @error('topik_konsultasi')
+                            <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <flux:textarea rows="4" label="Hasil konsultasi" wire:model.defer="hasil_konsultasi"
+                            :invalid="$errors->has('hasil_konsultasi')" />
+                        @error('hasil_konsultasi')
+                            <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2">
+                    @if ($editingId)
+                        <flux:button variant="ghost" wire:click="cancelEdit" icon="x-mark">Batal</flux:button>
+                        <flux:button variant="primary" icon="check" wire:click="updateItem">Simpan</flux:button>
+                    @else
+                        <flux:button variant="primary" icon="plus" wire:click="submit">Tambah</flux:button>
+                    @endif
+                </div>
+            </flux:card>
         </div>
 
-        <flux:separator />
+        {{-- CARD PANDUAN (baru) --}}
+        <div class="lg:col-span-3">
+            <flux:card
+                class="space-y-4 rounded-xl border
+                       bg-white dark:bg-stone-950
+                       border-zinc-200 dark:border-stone-800
+                       shadow-xs">
 
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-                <flux:input label="Konsultasi dengan" wire:model.defer="konsultasi_dengan"
-                    placeholder="Dosen/WA/Zoom/Offline" />
-            </div>
+                <div class="flex items-center gap-2 px-1.5 -mt-1">
+                    <span
+                        class="inline-flex items-center justify-center rounded-md p-1.5 bg-amber-500 text-white dark:bg-amber-400">
+                        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 9v4" />
+                            <path d="M12 17h.01" />
+                            <path d="M10 2h4l7 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
+                        </svg>
+                    </span>
+                    <div>
+                        <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">
+                            Panduan Konsultasi
+                        </h3>
+                        <p class="text-sm text-zinc-500 dark:text-zinc-300">Tips ringkas & progres verifikasi</p>
+                    </div>
+                </div>
 
-            <div>
-                <flux:input type="date" label="Tanggal konsultasi" wire:model.defer="tanggal_konsultasi"
-                    :invalid="$errors->has('tanggal_konsultasi')" />
-                @error('tanggal_konsultasi')
-                    <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                @enderror
-            </div>
+                <flux:separator />
 
-            <div class="md:col-span-2">
-                <flux:input label="Topik konsultasi" wire:model.defer="topik_konsultasi"
-                    :invalid="$errors->has('topik_konsultasi')" />
-                @error('topik_konsultasi')
-                    <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                @enderror
-            </div>
+                {{-- PROGRES SINGKAT (x/6) --}}
+                <div
+                    class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800
+                            dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
+                    <div class="flex items-center justify-between">
+                        <div class="text-xs">Terverifikasi</div>
+                        <div class="text-xs font-semibold">
+                            {{ $kp->verifiedConsultationsCount() }} / 6
+                        </div>
+                    </div>
+                    <div class="mt-2 h-2 overflow-hidden rounded bg-amber-200/60 dark:bg-amber-800/40">
+                        @php
+                            $v = (int) $kp->verifiedConsultationsCount();
+                            $pct = max(0, min(100, ($v / 6) * 100));
+                        @endphp
+                        <div class="h-2 bg-amber-500 dark:bg-amber-400" style="width: {{ $pct }}%"></div>
+                    </div>
+                    <p class="mt-2 text-[11px] leading-4">
+                        Minimal <span class="font-semibold">6</span> konsultasi terverifikasi untuk daftar seminar.
+                    </p>
+                </div>
 
-            <div class="md:col-span-2">
-                <flux:textarea rows="4" label="Hasil konsultasi" wire:model.defer="hasil_konsultasi"
-                    :invalid="$errors->has('hasil_konsultasi')" />
-                @error('hasil_konsultasi')
-                    <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                @enderror
-            </div>
+                {{-- LIST TIPS --}}
+                <div class="space-y-3 text-sm leading-6 text-zinc-700 dark:text-stone-300">
+                    <div class="flex items-start gap-2">
+                        <flux:badge size="xs" inset="top bottom" color="zinc">1</flux:badge>
+                        <p><span class="font-medium">Tanggal</span> isi sesuai pertemuan, bukan tanggal input.</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <flux:badge size="xs" inset="top bottom" color="zinc">2</flux:badge>
+                        <p><span class="font-medium">Topik</span> singkat & spesifik (mis. “Validasi ERD”, “Uji SUS”).
+                        </p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <flux:badge size="xs" inset="top bottom" color="zinc">3</flux:badge>
+                        <p><span class="font-medium">Hasil konsultasi</span> tulis keputusan/aksi lanjut (action items).
+                        </p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <flux:badge size="xs" inset="top bottom" color="zinc">4</flux:badge>
+                        <p>Catatan hanya bisa <span class="font-medium">diubah/hapus</span> sebelum diverifikasi dosen.
+                        </p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <flux:badge size="xs" inset="top bottom" color="zinc">5</flux:badge>
+                        <p>Jika status masih <em>Menunggu</em>, gunakan menu <span class="font-medium">⋯</span> untuk
+                            Edit/Hapus.</p>
+                    </div>
+                </div>
+            </flux:card>
         </div>
-
-        <div class="flex justify-end gap-2">
-            @if ($editingId)
-                <flux:button variant="ghost" wire:click="cancelEdit" icon="x-mark">Batal</flux:button>
-                <flux:button variant="primary" icon="check" wire:click="updateItem">Simpan</flux:button>
-            @else
-                <flux:button variant="primary" icon="plus" wire:click="submit">Tambah</flux:button>
-            @endif
-        </div>
-    </flux:card>
+    </div>
 
     {{-- TABEL KONSULTASI --}}
     <flux:card

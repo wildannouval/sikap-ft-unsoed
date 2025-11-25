@@ -1,4 +1,48 @@
 <div class="space-y-6">
+    {{-- TOAST GLOBAL --}}
+    <flux:toast />
+
+    {{-- HEADER HALAMAN --}}
+    <div class="flex items-center justify-between">
+        <div>
+            <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
+                Pengajuan Surat Pengantar
+            </flux:heading>
+            <flux:subheading class="text-zinc-600 dark:text-zinc-300">
+                Kelola pengajuan surat pengantar KP ke Bapendik.
+            </flux:subheading>
+        </div>
+    </div>
+
+    <flux:separator variant="subtle" />
+
+    {{-- CARD PANDUAN --}}
+    <flux:card class="space-y-3 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800">
+        <div class="flex items-start gap-3">
+            <div class="rounded-md p-2 bg-sky-500 text-white dark:bg-sky-400">
+                {{-- Icon clipboard-document-list --}}
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M9 12h6M9 16h6M9 8h6m-3.75-5.25h1.5a2.25 2.25 0 012.25 2.25v.75h1.5A2.25 2.25 0 0120 8.25v10.5A2.25 2.25 0 0117.75 21H6.25A2.25 2.25 0 014 18.75V8.25A2.25 2.25 0 016.25 6.75h1.5V6c0-1.243 1.007-2.25 2.25-2.25z" />
+                </svg>
+            </div>
+            <div>
+                <flux:heading size="md">Panduan Pengajuan Surat Pengantar</flux:heading>
+                <ul class="mt-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc ms-4 space-y-1">
+                    <li>Isi <em>Perusahaan / Instansi</em>, <em>Penerima Surat</em>, dan <em>Alamat</em> sesuai tujuan
+                        KP.</li>
+                    <li>Kolom <strong>Tembusan</strong> opsional, bisa diisi misalnya “Dekan” atau “Ketua Jurusan”.</li>
+                    <li>Setelah menekan <strong>Ajukan</strong>, status awal menjadi <strong>Diajukan</strong> dan
+                        menunggu verifikasi Bapendik.</li>
+                    <li>Jika status <strong>Ditolak</strong>, cek kolom <em>Catatan</em> pada tabel lalu perbaiki dan
+                        ajukan ulang.</li>
+                    <li>Jika status <strong>Diterbitkan</strong>, surat dapat diunduh dalam format DOCX melalui menu
+                        aksi.</li>
+                </ul>
+            </div>
+        </div>
+    </flux:card>
 
     {{-- BARIS ATAS: FORM (kiri) + RINGKASAN (kanan) --}}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-10">
@@ -10,7 +54,7 @@
                               bg-white dark:bg-stone-950
                               border-zinc-200 dark:border-stone-800
                               shadow-xs">
-                {{-- Header kartu dengan aksen indigo (seragam dgn dashboard) --}}
+                {{-- Header kartu --}}
                 <div class="flex items-center gap-2 px-1.5 -mt-1">
                     <span
                         class="inline-flex items-center justify-center rounded-md p-1.5

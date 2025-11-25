@@ -39,7 +39,8 @@ use App\Livewire\Bapendik\Kp\SpkPage;
 use App\Livewire\Bapendik\SuratPengantar\ValidasiPage;
 use App\Livewire\Dosen\DashboardPage     as DspDashboardPage;
 use App\Livewire\Komisi\DashboardPage    as KomisiDashboardPage;
-
+use App\Livewire\Mahasiswa\Kp\Page as MhsKpPage;
+use App\Livewire\Mahasiswa\SuratPengantar\Page as SuratPengantarPage;
 use App\Livewire\Notifications\Index as NotificationsIndex;
 
 /*
@@ -121,9 +122,9 @@ Route::prefix('mhs')
     ->middleware(['auth', 'role:Mahasiswa'])
     ->group(function () {
         Route::get('/dashboard', MhsDashboardPage::class)->name('mhs.dashboard');
-        Route::view('/surat-pengantar', 'mhs.surat-pengantar.index')->name('mhs.sp.index');
+        Route::get('/surat-pengantar', SuratPengantarPage::class)->name('mhs.sp.index');
         Route::get('/surat-pengantar/{sp}/download-docx', [SpDownloadController::class, 'downloadDocxForMahasiswa'])->name('mhs.sp.download.docx');
-        Route::view('/kp', 'mhs.kp.index')->name('mhs.kp.index');
+        Route::get('/kp', MhsKpPage::class)->name('mhs.kp.index');
         Route::get('/kp/{kp}/download-docx', [DownloadSpkController::class, 'downloadDocxForMahasiswa'])->name('mhs.kp.download.docx');
         Route::get('/kp/{kp}/konsultasi', MhsKpKonsultasiPage::class)->name('mhs.kp.konsultasi');
         Route::get('/kp/{kp}/seminar', SeminarDaftarPage::class)->name('mhs.kp.seminar');

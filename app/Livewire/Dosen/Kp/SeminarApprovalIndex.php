@@ -3,11 +3,13 @@
 namespace App\Livewire\Dosen\Kp;
 
 use App\Models\KpSeminar;
+use App\Models\KerjaPraktik;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Services\Notifier;
+use Flux\Flux;
 
 class SeminarApprovalIndex extends Component
 {
@@ -17,7 +19,6 @@ class SeminarApprovalIndex extends Component
     public string $sortBy = 'created_at';
     public string $sortDirection = 'desc';
     public int $perPage = 10;
-
     public string $statusFilter = 'diajukan';
 
     public ?int $rejectId = null;
@@ -27,19 +28,15 @@ class SeminarApprovalIndex extends Component
     {
         $this->resetPage();
     }
+    public function updatingStatusFilter()
+    {
+        $this->resetPage();
+    }
     public function updatingSortBy()
     {
         $this->resetPage();
     }
-    public function updatingSortDirection()
-    {
-        $this->resetPage();
-    }
     public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
-    public function updatingStatusFilter()
     {
         $this->resetPage();
     }
@@ -63,18 +60,37 @@ class SeminarApprovalIndex extends Component
                 $q->where(function ($qq) use ($term) {
                     $qq->where('judul_laporan', 'like', $term)
                         ->orWhereHas('kp.mahasiswa.user', fn($w) => $w->where('name', 'like', $term))
-                        // FIX NIM: dukung nim atau mahasiswa_nim
                         ->orWhereHas('kp.mahasiswa', function ($w) use ($term) {
-                            $w->where(function ($x) use ($term) {
-                                $x->where('nim', 'like', $term)
-                                    ->orWhere('mahasiswa_nim', 'like', $term);
-                            });
+                            $w->where('mahasiswa_nim', 'like', $term);
                         });
                 });
             })
             ->orderBy($this->sortBy, $this->sortDirection)
             ->paginate($this->perPage)
             ->withQueryString();
+    }
+
+    // --- Helper Badge ---
+    public function badgeColor(string $status): string
+    {
+        return KpSeminar::badgeColor($status);
+    }
+
+    public function badgeIcon(string $status): string
+    {
+        return match ($status) {
+            KpSeminar::ST_DIAJUKAN => 'clock',
+            KpSeminar::ST_DISETUJUI_PEMBIMBING => 'check-circle',
+            KpSeminar::ST_DIJADWALKAN => 'calendar',
+            KpSeminar::ST_BA_TERBIT => 'document-text',
+            KpSeminar::ST_DITOLAK => 'x-circle',
+            default => 'minus',
+        };
+    }
+
+    public function statusLabel(string $status): string
+    {
+        return KpSeminar::statusLabel($status);
     }
 
     public function approve(int $id): void
@@ -92,36 +108,14 @@ class SeminarApprovalIndex extends Component
             'rejected_reason'       => null,
         ]);
 
-        // === NOTIFIKASI
-        // 1) ke Mahasiswa
+        // Notif Mahasiswa & Bapendik
         $mhsUser = $row->kp?->mahasiswa?->user;
         if ($mhsUser) {
-            Notifier::toUser(
-                $mhsUser,
-                'Pengajuan Seminar disetujui Dosen Pembimbing',
-                'Pengajuan seminar kamu sudah disetujui dan akan diteruskan ke Bapendik untuk penjadwalan.',
-                route('mhs.kp.seminar', ['kp' => $row->kerja_praktik_id]),
-                [
-                    'type' => 'kp_seminar_approved_by_advisor',
-                    'kp_id' => $row->kerja_praktik_id,
-                    'seminar_id' => $row->id,
-                ]
-            );
+            Notifier::toUser($mhsUser, 'Seminar Disetujui Dospem', 'Pengajuan seminar disetujui, menunggu penjadwalan.', route('mhs.kp.seminar', $row->kerja_praktik_id));
         }
-        // 2) broadcast ke Bapendik
-        Notifier::toRole(
-            'Bapendik',
-            'Perlu Penjadwalan Seminar KP',
-            sprintf('Seminar KP untuk %s perlu dijadwalkan.', $row->kp?->mahasiswa?->user?->name ?? 'mahasiswa'),
-            route('bap.kp.seminar.jadwal'),
-            [
-                'type' => 'kp_seminar_need_schedule',
-                'kp_id' => $row->kerja_praktik_id,
-                'seminar_id' => $row->id,
-            ]
-        );
+        Notifier::toRole('Bapendik', 'Jadwalkan Seminar KP', "Seminar {$row->kp?->mahasiswa?->user?->name} perlu dijadwalkan.", route('bap.kp.seminar.jadwal'));
 
-        session()->flash('ok', 'Pengajuan seminar disetujui.');
+        Flux::toast(heading: 'Disetujui', text: 'Pengajuan disetujui.', variant: 'success');
         $this->resetPage();
     }
 
@@ -129,13 +123,12 @@ class SeminarApprovalIndex extends Component
     {
         $this->rejectId = $id;
         $this->rejectReason = '';
+        Flux::modal('reject-seminar')->show();
     }
 
     public function confirmReject(): void
     {
-        $this->validate([
-            'rejectReason' => ['required', 'string', 'min:5', 'max:1000'],
-        ]);
+        $this->validate(['rejectReason' => 'required|string|min:5|max:1000']);
 
         $row = KpSeminar::where('id', $this->rejectId)
             ->where('dosen_pembimbing_id', $this->dosenId)
@@ -144,42 +137,22 @@ class SeminarApprovalIndex extends Component
         if ($row->status !== KpSeminar::ST_DIAJUKAN) return;
 
         $row->update([
-            'status'                 => KpSeminar::ST_DITOLAK,
-            'rejected_by_dospem_at'  => now(),
-            'rejected_reason'        => $this->rejectReason,
+            'status'                => KpSeminar::ST_DITOLAK,
+            'rejected_by_dospem_at' => now(),
+            'rejected_reason'       => $this->rejectReason,
         ]);
 
-        // === NOTIFIKASI → Mahasiswa
         $mhsUser = $row->kp?->mahasiswa?->user;
         if ($mhsUser) {
-            Notifier::toUser(
-                $mhsUser,
-                'Pengajuan Seminar ditolak Dosen Pembimbing',
-                'Alasan: ' . $this->rejectReason,
-                route('mhs.kp.seminar', ['kp' => $row->kerja_praktik_id]),
-                [
-                    'type' => 'kp_seminar_rejected_by_advisor',
-                    'kp_id' => $row->kerja_praktik_id,
-                    'seminar_id' => $row->id,
-                    'reason' => $this->rejectReason,
-                ]
-            );
+            Notifier::toUser($mhsUser, 'Seminar Ditolak', 'Alasan: ' . $this->rejectReason, route('mhs.kp.seminar', $row->kerja_praktik_id));
         }
 
-        session()->flash('ok', 'Pengajuan seminar ditolak.');
+        Flux::modal('reject-seminar')->close();
+        Flux::toast(heading: 'Ditolak', text: 'Pengajuan ditolak.', variant: 'warning');
+
         $this->rejectId = null;
         $this->rejectReason = '';
         $this->resetPage();
-    }
-
-    public function badgeColor(string $status): string
-    {
-        return KpSeminar::badgeColor($status);
-    }
-
-    public function statusLabel(string $status): string
-    {
-        return KpSeminar::statusLabel($status);
     }
 
     public function render()

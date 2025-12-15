@@ -1,209 +1,222 @@
-{{-- resources/views/livewire/mahasiswa/kp/konsultasi-page.blade.php --}}
 <div class="space-y-6">
+    {{-- TOAST GLOBAL --}}
+    <flux:toast />
 
-    {{-- ALERTS --}}
-    @if (session('ok'))
-        <div class="rounded-md border border-emerald-300/60 bg-emerald-50 px-3 py-2 text-emerald-800">
-            <div class="font-medium">{{ session('ok') }}</div>
+    {{-- HEADER HALAMAN --}}
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
+                Log Konsultasi KP
+            </flux:heading>
+            <flux:subheading class="text-zinc-600 dark:text-zinc-300">
+                Catatan bimbingan Kerja Praktik dengan Dosen Pembimbing.
+            </flux:subheading>
         </div>
-    @endif
+    </div>
 
-    {{-- BARIS ATAS: FORM (kiri) + PANDUAN (kanan) --}}
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-10">
+    <flux:separator variant="subtle" />
 
-        {{-- FORM KONSULTASI --}}
-        <div class="lg:col-span-7">
+    {{-- GRID UTAMA: Form (Kiri) + Info (Kanan) --}}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+        {{-- KOLOM KIRI: FORMULIR --}}
+        <div class="lg:col-span-2 space-y-6">
             <flux:card
-                class="space-y-6 rounded-xl border
-                       bg-white dark:bg-stone-950
-                       border-zinc-200 dark:border-stone-800
-                       shadow-xs">
+                class="space-y-6 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm">
 
-                {{-- Header kartu dengan aksen indigo --}}
-                <div class="flex items-center gap-2 px-1.5 -mt-1">
-                    <span
-                        class="inline-flex items-center justify-center rounded-md p-1.5
-                               bg-indigo-500 text-white dark:bg-indigo-400">
-                        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M8 10h8M8 14h5" />
-                            <rect x="3" y="4" width="18" height="16" rx="2" />
-                        </svg>
-                    </span>
+                {{-- Header Kartu Form --}}
+                <div class="flex items-center gap-3">
+                    <div
+                        class="flex items-center justify-center rounded-lg p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                        <flux:icon.pencil-square class="size-5" />
+                    </div>
                     <div>
                         <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">
-                            Catat Konsultasi KP
+                            Catat Konsultasi Baru
                         </h3>
-                        <p class="text-sm text-zinc-500 dark:text-zinc-300">
-                            Simpan topik & hasil diskusi dengan Dosen Pembimbing.
+                        <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                            Simpan topik & hasil diskusi bimbingan Anda.
                         </p>
                     </div>
                 </div>
 
                 <flux:separator />
 
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    {{-- Konsultasi Dengan --}}
                     <div>
-                        <flux:input label="Konsultasi dengan" wire:model.defer="konsultasi_dengan"
-                            placeholder="Dosen/WA/Zoom/Offline" />
+                        <flux:input label="Konsultasi Dengan" wire:model.defer="konsultasi_dengan"
+                            placeholder="Contoh: Dosen Pembimbing / Praktisi" />
                     </div>
 
+                    {{-- Tanggal --}}
                     <div>
-                        <flux:input type="date" label="Tanggal konsultasi" wire:model.defer="tanggal_konsultasi"
+                        <flux:input type="date" label="Tanggal Konsultasi" wire:model.defer="tanggal_konsultasi"
                             :invalid="$errors->has('tanggal_konsultasi')" />
-                        @error('tanggal_konsultasi')
+                        {{-- @error('tanggal_konsultasi')
                             <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                        @enderror
+                        @enderror --}}
                     </div>
 
+                    {{-- Topik --}}
                     <div class="md:col-span-2">
-                        <flux:input label="Topik konsultasi" wire:model.defer="topik_konsultasi"
+                        <flux:input label="Topik Bimbingan" wire:model.defer="topik_konsultasi"
+                            placeholder="Contoh: Pembahasan Database Schema..."
                             :invalid="$errors->has('topik_konsultasi')" />
-                        @error('topik_konsultasi')
+                        {{-- @error('topik_konsultasi')
                             <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                        @enderror
+                        @enderror --}}
                     </div>
 
+                    {{-- Hasil --}}
                     <div class="md:col-span-2">
-                        <flux:textarea rows="4" label="Hasil konsultasi" wire:model.defer="hasil_konsultasi"
+                        <flux:textarea rows="4" label="Hasil / Arahan Dosen" wire:model.defer="hasil_konsultasi"
+                            placeholder="Catat poin-poin revisi atau arahan selanjutnya..."
                             :invalid="$errors->has('hasil_konsultasi')" />
-                        @error('hasil_konsultasi')
+                        {{-- @error('hasil_konsultasi')
                             <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                        @enderror
+                        @enderror --}}
                     </div>
                 </div>
 
-                <div class="flex justify-end gap-2">
+                <div class="flex items-center justify-end gap-3 pt-2">
                     @if ($editingId)
                         <flux:button variant="ghost" wire:click="cancelEdit" icon="x-mark">Batal</flux:button>
-                        <flux:button variant="primary" icon="check" wire:click="updateItem">Simpan</flux:button>
+                        <flux:button variant="primary" icon="check" wire:click="updateItem">Simpan Perubahan
+                        </flux:button>
                     @else
-                        <flux:button variant="primary" icon="plus" wire:click="submit">Tambah</flux:button>
+                        <flux:button variant="primary" icon="plus" wire:click="submit">Tambah Catatan</flux:button>
                     @endif
                 </div>
             </flux:card>
         </div>
 
-        {{-- CARD PANDUAN (baru) --}}
-        <div class="lg:col-span-3">
+        {{-- KOLOM KANAN: STATUS & PANDUAN --}}
+        <div class="lg:col-span-1 space-y-6">
+
+            {{-- 1. RINGKASAN STATUS (Boxed Style) --}}
             <flux:card
-                class="space-y-4 rounded-xl border
-                       bg-white dark:bg-stone-950
-                       border-zinc-200 dark:border-stone-800
-                       shadow-xs">
-
-                <div class="flex items-center gap-2 px-1.5 -mt-1">
-                    <span
-                        class="inline-flex items-center justify-center rounded-md p-1.5 bg-amber-500 text-white dark:bg-amber-400">
-                        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 9v4" />
-                            <path d="M12 17h.01" />
-                            <path d="M10 2h4l7 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
-                        </svg>
-                    </span>
-                    <div>
-                        <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">
-                            Panduan Konsultasi
-                        </h3>
-                        <p class="text-sm text-zinc-500 dark:text-zinc-300">Tips ringkas & progres verifikasi</p>
+                class="rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm">
+                <div class="mb-5">
+                    <div class="flex items-center gap-2">
+                        <flux:icon.chart-bar class="size-5 text-zinc-500" />
+                        <h3 class="font-semibold text-stone-900 dark:text-stone-100">Progres Bimbingan</h3>
                     </div>
-                </div>
-
-                <flux:separator />
-
-                {{-- PROGRES SINGKAT (x/6) --}}
-                <div
-                    class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800
-                            dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
-                    <div class="flex items-center justify-between">
-                        <div class="text-xs">Terverifikasi</div>
-                        <div class="text-xs font-semibold">
-                            {{ $kp->verifiedConsultationsCount() }} / 6
-                        </div>
-                    </div>
-                    <div class="mt-2 h-2 overflow-hidden rounded bg-amber-200/60 dark:bg-amber-800/40">
-                        @php
-                            $v = (int) $kp->verifiedConsultationsCount();
-                            $pct = max(0, min(100, ($v / 6) * 100));
-                        @endphp
-                        <div class="h-2 bg-amber-500 dark:bg-amber-400" style="width: {{ $pct }}%"></div>
-                    </div>
-                    <p class="mt-2 text-[11px] leading-4">
-                        Minimal <span class="font-semibold">6</span> konsultasi terverifikasi untuk daftar seminar.
+                    <p class="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400 pl-7">
+                        Target minimal {{ $this->stats['target'] }} kali bimbingan.
                     </p>
                 </div>
 
-                {{-- LIST TIPS --}}
-                <div class="space-y-3 text-sm leading-6 text-zinc-700 dark:text-stone-300">
-                    <div class="flex items-start gap-2">
-                        <flux:badge size="xs" inset="top bottom" color="zinc">1</flux:badge>
-                        <p><span class="font-medium">Tanggal</span> isi sesuai pertemuan, bukan tanggal input.</p>
+                <div class="space-y-3">
+                    {{-- Status: Terverifikasi --}}
+                    <div
+                        class="flex items-center justify-between p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30">
+                        <div class="flex items-center gap-3">
+                            <div class="size-2 rounded-full bg-emerald-500"></div>
+                            <div>
+                                <p class="text-sm font-medium text-stone-700 dark:text-stone-300">Terverifikasi</p>
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400">Sudah disetujui dosen</p>
+                            </div>
+                        </div>
+                        <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                            {{ $this->stats['verified'] ?? 0 }}
+                        </span>
                     </div>
-                    <div class="flex items-start gap-2">
-                        <flux:badge size="xs" inset="top bottom" color="zinc">2</flux:badge>
-                        <p><span class="font-medium">Topik</span> singkat & spesifik (mis. “Validasi ERD”, “Uji SUS”).
-                        </p>
+
+                    {{-- Status: Menunggu --}}
+                    <div
+                        class="flex items-center justify-between p-2 rounded-lg bg-zinc-50/50 dark:bg-zinc-900/10 border border-zinc-100 dark:border-zinc-800/30">
+                        <div class="flex items-center gap-3">
+                            <div class="size-2 rounded-full bg-zinc-400"></div>
+                            <div>
+                                <p class="text-sm font-medium text-stone-700 dark:text-stone-300">Menunggu</p>
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400">Belum divalidasi</p>
+                            </div>
+                        </div>
+                        <span class="text-lg font-bold text-zinc-600 dark:text-zinc-400">
+                            {{ $this->stats['pending'] ?? 0 }}
+                        </span>
                     </div>
-                    <div class="flex items-start gap-2">
-                        <flux:badge size="xs" inset="top bottom" color="zinc">3</flux:badge>
-                        <p><span class="font-medium">Hasil konsultasi</span> tulis keputusan/aksi lanjut (action items).
-                        </p>
+
+                    {{-- Status: Total Log --}}
+                    <div
+                        class="flex items-center justify-between p-2 rounded-lg bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-800/30">
+                        <div class="flex items-center gap-3">
+                            <div class="size-2 rounded-full bg-indigo-500"></div>
+                            <div>
+                                <p class="text-sm font-medium text-stone-700 dark:text-stone-300">Total Log</p>
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400">Semua catatan</p>
+                            </div>
+                        </div>
+                        <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                            {{ $this->stats['total_log'] ?? 0 }}
+                        </span>
                     </div>
-                    <div class="flex items-start gap-2">
-                        <flux:badge size="xs" inset="top bottom" color="zinc">4</flux:badge>
-                        <p>Catatan hanya bisa <span class="font-medium">diubah/hapus</span> sebelum diverifikasi dosen.
-                        </p>
+                </div>
+
+                {{-- Progress Bar Simple --}}
+                <div class="mt-4">
+                    <div class="flex justify-between text-xs mb-1.5">
+                        <span class="text-zinc-500">Kelayakan Seminar</span>
+                        <span
+                            class="font-medium text-stone-900 dark:text-stone-100">{{ $this->stats['progress_pct'] }}%</span>
                     </div>
-                    <div class="flex items-start gap-2">
-                        <flux:badge size="xs" inset="top bottom" color="zinc">5</flux:badge>
-                        <p>Jika status masih <em>Menunggu</em>, gunakan menu <span class="font-medium">⋯</span> untuk
-                            Edit/Hapus.</p>
+                    <div class="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-500 transition-all duration-500"
+                            style="width: {{ $this->stats['progress_pct'] }}%"></div>
+                    </div>
+                </div>
+            </flux:card>
+
+            {{-- 2. PANDUAN --}}
+            <flux:card
+                class="rounded-xl border bg-amber-50/50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/30 shadow-sm">
+                <div class="flex items-start gap-3">
+                    <flux:icon.information-circle class="mt-0.5 size-5 text-amber-600 dark:text-amber-400" />
+                    <div>
+                        <h3 class="font-semibold text-amber-900 dark:text-amber-100 text-sm">Tips Pengisian</h3>
+                        <ul
+                            class="mt-2 text-xs text-amber-800 dark:text-amber-200 list-disc list-outside ml-3 space-y-1.5 leading-relaxed">
+                            <li>Isi <strong>Tanggal</strong> sesuai pertemuan aktual.</li>
+                            <li><strong>Topik</strong> harus spesifik (mis: "Revisi ERD").</li>
+                            <li><strong>Hasil</strong> berisi poin arahan dosen.</li>
+                            <li>Data hanya bisa diedit sebelum <strong>Diverifikasi</strong>.</li>
+                        </ul>
                     </div>
                 </div>
             </flux:card>
         </div>
     </div>
 
-    {{-- TABEL KONSULTASI --}}
+    {{-- BARIS BAWAH: TABEL --}}
     <flux:card
-        class="space-y-4 rounded-xl border
-               bg-white dark:bg-stone-950
-               border-zinc-200 dark:border-stone-800
-               shadow-xs">
+        class="rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm overflow-hidden">
 
-        {{-- Header tabel dengan aksen indigo, + search & perPage --}}
         <div
-            class="px-4 py-3 border-b
-                   bg-indigo-50 text-indigo-700
-                   dark:bg-indigo-900/20 dark:text-indigo-300
-                   border-indigo-100 dark:border-indigo-900/40
-                   rounded-t-xl">
-            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <h4 class="text-sm font-medium tracking-wide">Daftar Konsultasi</h4>
-                <div class="flex items-center gap-2">
-                    <div class="hidden md:flex text-xs md:text-sm text-indigo-800 dark:text-indigo-200">
-                        Terverifikasi: {{ $kp->verifiedConsultationsCount() }} / 6
-                    </div>
-                    <div class="md:w-80">
-                        <flux:input placeholder="Cari topik / hasil…" wire:model.debounce.400ms="q"
-                            icon="magnifying-glass" />
-                    </div>
-                    <flux:select wire:model="perPage" class="w-36">
-                        <option value="10">10 / halaman</option>
-                        <option value="25">25 / halaman</option>
-                        <option value="50">50 / halaman</option>
+            class="flex flex-col gap-4 px-6 py-4 border-b border-zinc-200 dark:border-stone-800 bg-zinc-50/50 dark:bg-stone-900/50 md:flex-row md:items-center md:justify-between">
+            <h4 class="text-base font-semibold text-stone-900 dark:text-stone-100">Daftar Log Konsultasi</h4>
+
+            <div class="flex flex-col gap-3 md:flex-row md:items-center">
+                {{-- Search --}}
+                <div class="w-full md:w-64">
+                    <flux:input icon="magnifying-glass" placeholder="Cari topik / hasil..."
+                        wire:model.live.debounce.300ms="q" class="bg-white dark:bg-stone-900" />
+                </div>
+
+                {{-- Per Page --}}
+                <div class="w-full md:w-32 hidden md:block">
+                    <flux:select wire:model.live="perPage" class="bg-white dark:bg-stone-900">
+                        <flux:select.option value="10">10 / hal</flux:select.option>
+                        <flux:select.option value="25">25 / hal</flux:select.option>
+                        <flux:select.option value="50">50 / hal</flux:select.option>
                     </flux:select>
                 </div>
             </div>
         </div>
 
-        <flux:table
-            class="[&_thead_th]:bg-zinc-50 [&_thead_th]:dark:bg-stone-900/40
-                   [&_thead_th]:text-zinc-600 [&_thead_th]:dark:text-stone-200
-                   [&_tbody_tr]:hover:bg-zinc-50/60 [&_tbody_tr]:dark:hover:bg-stone-900/30"
-            :paginate="$this->items">
-
+        <flux:table class="[&_thead_th]:bg-zinc-50 [&_thead_th]:dark:bg-stone-900/40" :paginate="$this->items">
             <flux:table.columns>
-                <flux:table.column class="w-12">#</flux:table.column>
+                <flux:table.column class="w-12 text-center">No</flux:table.column>
 
                 <flux:table.column sortable :sorted="$sortBy === 'tanggal_konsultasi'" :direction="$sortDirection"
                     wire:click="sort('tanggal_konsultasi')">
@@ -215,71 +228,85 @@
                     Topik
                 </flux:table.column>
 
-                <flux:table.column>Hasil</flux:table.column>
+                <flux:table.column>Hasil Diskusi</flux:table.column>
 
-                <flux:table.column class="w-32" sortable :sorted="$sortBy === 'verified_at'"
-                    :direction="$sortDirection" wire:click="sort('verified_at')">
+                <flux:table.column sortable :sorted="$sortBy === 'verified_at'" :direction="$sortDirection"
+                    wire:click="sort('verified_at')">
                     Status
                 </flux:table.column>
 
-                <flux:table.column class="w-28 text-right">Aksi</flux:table.column>
+                <flux:table.column class="w-20 text-center">Aksi</flux:table.column>
             </flux:table.columns>
 
             <flux:table.rows>
                 @forelse ($this->items as $i => $row)
+                    @php
+                        $isVerified = $row->verified_at !== null;
+                        $statusData = $isVerified
+                            ? ['label' => 'Terverifikasi', 'color' => 'emerald', 'icon' => 'check-circle']
+                            : ['label' => 'Menunggu', 'color' => 'zinc', 'icon' => 'clock'];
+                    @endphp
+
                     <flux:table.row :key="$row->id">
-                        <flux:table.cell>{{ $this->items->firstItem() + $i }}</flux:table.cell>
+                        <flux:table.cell class="text-center text-zinc-500">
+                            {{ $this->items->firstItem() + $i }}
+                        </flux:table.cell>
 
                         <flux:table.cell class="whitespace-nowrap">
-                            {{ optional($row->tanggal_konsultasi)->format('d M Y') ?: '—' }}
+                            <div class="font-medium text-stone-900 dark:text-stone-100">
+                                {{ optional($row->tanggal_konsultasi)->translatedFormat('d M Y') ?: '-' }}
+                            </div>
                         </flux:table.cell>
 
-                        <flux:table.cell class="max-w-[280px]">
-                            <span class="line-clamp-2 text-stone-900 dark:text-stone-100">
+                        <flux:table.cell class="max-w-[200px]">
+                            <div class="font-medium text-stone-900 dark:text-stone-100 line-clamp-2 leading-snug">
                                 {{ $row->topik_konsultasi }}
-                            </span>
+                            </div>
+                            <div class="text-xs text-zinc-500 mt-0.5">
+                                {{ $row->konsultasi_dengan ?? 'Dosen Pembimbing' }}
+                            </div>
                         </flux:table.cell>
 
-                        <flux:table.cell class="max-w-[420px]">
-                            <span class="line-clamp-2 text-zinc-700 dark:text-stone-300">
+                        <flux:table.cell class="max-w-[300px]">
+                            <span class="text-sm text-zinc-700 dark:text-zinc-300 line-clamp-2">
                                 {{ $row->hasil_konsultasi }}
                             </span>
                         </flux:table.cell>
 
                         <flux:table.cell>
-                            @if ($row->verified_at)
-                                <flux:badge size="sm"
-                                    class="border border-emerald-200 dark:border-emerald-900/40
-                                           bg-emerald-50 text-emerald-700
-                                           dark:bg-emerald-900/20 dark:text-emerald-300">
-                                    Terverifikasi
-                                </flux:badge>
-                            @else
-                                <flux:badge size="sm"
-                                    class="border border-zinc-200 dark:border-stone-700
-                                           bg-zinc-100 text-zinc-700
-                                           dark:bg-stone-900/30 dark:text-stone-200">
-                                    Menunggu
-                                </flux:badge>
-                            @endif
+                            <flux:badge size="sm" inset="top bottom" :color="$statusData['color']"
+                                icon="{{ $statusData['icon'] }}">
+                                {{ $statusData['label'] }}
+                            </flux:badge>
                         </flux:table.cell>
 
-                        <flux:table.cell class="text-right">
-                            @if (!$row->verified_at)
-                                <flux:button size="sm" variant="ghost" icon="pencil-square" title="Edit"
-                                    wire:click="edit({{ $row->id }})" />
-                                <flux:button size="sm" variant="ghost" icon="trash" title="Hapus"
-                                    wire:click="deleteItem({{ $row->id }})" />
+                        <flux:table.cell>
+                            @if (!$isVerified)
+                                <flux:dropdown position="bottom" align="end">
+                                    <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
+
+                                    <flux:menu class="min-w-32">
+                                        <flux:menu.item icon="pencil-square" wire:click="edit({{ $row->id }})">
+                                            Edit
+                                        </flux:menu.item>
+                                        <flux:menu.item icon="trash" variant="danger"
+                                            wire:click="deleteItem({{ $row->id }})">
+                                            Hapus
+                                        </flux:menu.item>
+                                    </flux:menu>
+                                </flux:dropdown>
                             @else
-                                <span class="text-xs text-zinc-500">—</span>
+                                <div class="flex justify-center">
+                                    <flux:icon.check class="size-4 text-emerald-500" />
+                                </div>
                             @endif
                         </flux:table.cell>
                     </flux:table.row>
                 @empty
                     <flux:table.row>
                         <flux:table.cell colspan="6">
-                            <div class="py-6 text-center text-sm text-zinc-500">
-                                Belum ada catatan konsultasi.
+                            <div class="py-8 text-center">
+                                <p class="text-sm text-zinc-500">Belum ada catatan konsultasi.</p>
                             </div>
                         </flux:table.cell>
                     </flux:table.row>

@@ -38,24 +38,28 @@ class DashboardPage extends Component
     #[Computed]
     public function seminarStats(): array
     {
-        if (!$this->mahasiswaId) return [
-            'total' => 0,
-            'diajukan' => 0,
-            'disetujui' => 0,
-            'dijadwalkan' => 0,
-            'ba_terbit' => 0,
-            'dinilai' => 0,
-        ];
+        if (!$this->mahasiswaId) {
+            return [
+                'total'       => 0,
+                'diajukan'    => 0,
+                'disetujui'   => 0,
+                'dijadwalkan' => 0,
+                'ba_terbit'   => 0,
+                'dinilai'     => 0,
+                'selesai'     => 0,
+            ];
+        }
 
         $base = KpSeminar::query()->whereHas('kp', fn($q) => $q->where('mahasiswa_id', $this->mahasiswaId));
 
         return [
-            'total'      => (clone $base)->count(),
-            'diajukan'   => (clone $base)->where('status', 'diajukan')->count(),
-            'disetujui'  => (clone $base)->where('status', 'disetujui_pembimbing')->count(),
-            'dijadwalkan' => (clone $base)->where('status', 'dijadwalkan')->count(),
-            'ba_terbit'  => (clone $base)->where('status', 'ba_terbit')->count(),
-            'dinilai'    => (clone $base)->where('status', 'dinilai')->count(),
+            'total'       => (clone $base)->count(),
+            'diajukan'    => (clone $base)->where('status', KpSeminar::ST_DIAJUKAN)->count(),
+            'disetujui'   => (clone $base)->where('status', KpSeminar::ST_DISETUJUI_PEMBIMBING)->count(),
+            'dijadwalkan' => (clone $base)->where('status', KpSeminar::ST_DIJADWALKAN)->count(),
+            'ba_terbit'   => (clone $base)->where('status', KpSeminar::ST_BA_TERBIT)->count(),
+            'dinilai'     => (clone $base)->where('status', KpSeminar::ST_DINILAI)->count(),
+            'selesai'     => (clone $base)->where('status', KpSeminar::ST_SELESAI)->count(),
         ];
     }
 
@@ -66,7 +70,7 @@ class DashboardPage extends Component
 
         return KpSeminar::query()
             ->whereHas('kp', fn($q) => $q->where('mahasiswa_id', $this->mahasiswaId))
-            ->whereNotNull('ba_scan_path')
+            ->whereIn('status', [KpSeminar::ST_BA_TERBIT, KpSeminar::ST_DINILAI])
             ->whereNull('distribusi_proof_path')
             ->count();
     }
@@ -80,7 +84,7 @@ class DashboardPage extends Component
             ->with(['grade'])
             ->whereHas('kp', fn($q) => $q->where('mahasiswa_id', $this->mahasiswaId))
             ->latest('updated_at')
-            ->limit(6)
+            ->limit(5)
             ->get();
     }
 

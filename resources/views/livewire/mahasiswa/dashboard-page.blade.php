@@ -1,161 +1,164 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
-        <h2 class="text-lg font-semibold">Dashboard Mahasiswa</h2>
+        <h2 class="text-lg font-semibold text-stone-900 dark:text-stone-100">Dashboard Mahasiswa</h2>
         <flux:badge size="sm"
             class="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
             SIKAP FT UNSOED
         </flux:badge>
     </div>
 
-    {{-- STAT TILES (accent Indigo) --}}
+    {{-- STAT TILES --}}
     @php
-        // label, key, color classes, icon (inline svg)
         $cards = [
-            ['label' => 'Total Seminar', 'key' => 'total', 'cls' => 'indigo', 'icon' => 'chart'],
-            ['label' => 'Menunggu ACC', 'key' => 'diajukan', 'cls' => 'amber', 'icon' => 'clock'],
-            ['label' => 'Dijadwalkan', 'key' => 'dijadwalkan', 'cls' => 'sky', 'icon' => 'calendar'],
-            ['label' => 'BA Terbit', 'key' => 'ba_terbit', 'cls' => 'emerald', 'icon' => 'file-check'],
+            [
+                'label' => 'Total Seminar',
+                'val' => $this->seminarStats['total'],
+                'color' => 'indigo',
+                'icon' => 'chart-bar',
+            ],
+            [
+                'label' => 'Menunggu ACC',
+                'val' => $this->seminarStats['diajukan'],
+                'color' => 'amber',
+                'icon' => 'clock',
+            ],
+            [
+                'label' => 'Dijadwalkan',
+                'val' => $this->seminarStats['dijadwalkan'],
+                'color' => 'sky',
+                'icon' => 'calendar',
+            ],
+            [
+                'label' => 'Selesai / BA',
+                'val' => $this->seminarStats['ba_terbit'] + $this->seminarStats['selesai'],
+                'color' => 'emerald',
+                'icon' => 'check-circle',
+            ],
         ];
-
-        $clsHeader = [
-            'indigo' =>
-                'bg-indigo-50 border-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:border-indigo-900/40 dark:text-indigo-300',
-            'amber' =>
-                'bg-amber-50  border-amber-100  text-amber-700  dark:bg-amber-900/20  dark:border-amber-900/40  dark:text-amber-300',
-            'sky' =>
-                'bg-sky-50    border-sky-100    text-sky-700    dark:bg-sky-900/20    dark:border-sky-900/40    dark:text-sky-300',
-            'emerald' =>
-                'bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-900/40 dark:text-emerald-300',
-            'rose' =>
-                'bg-rose-50   border-rose-100   text-rose-700   dark:bg-rose-900/20   dark:border-rose-900/40   dark:text-rose-300',
-            'stone' =>
-                'bg-stone-100 border-stone-200  text-stone-700  dark:bg-stone-900/30  dark:border-stone-800     dark:text-stone-300',
-        ];
-
-        $clsIcon = [
-            'indigo' => 'bg-indigo-500 text-white dark:bg-indigo-400',
-            'amber' => 'bg-amber-500  text-white dark:bg-amber-400',
-            'sky' => 'bg-sky-500    text-white dark:bg-sky-400',
-            'emerald' => 'bg-emerald-500 text-white dark:bg-emerald-400',
-            'rose' => 'bg-rose-500   text-white dark:bg-rose-400',
-            'stone' => 'bg-stone-500  text-white dark:bg-stone-400',
-        ];
-
-        function svgIcon($name)
-        {
-            $icons = [
-                'chart' =>
-                    '<svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 13v5"/><path d="M12 9v9"/><path d="M17 5v13"/></svg>',
-                'clock' =>
-                    '<svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>',
-                'calendar' =>
-                    '<svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
-                'file-check' =>
-                    '<svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>',
-            ];
-            return $icons[$name] ?? '';
-        }
     @endphp
 
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         @foreach ($cards as $c)
-            <div class="rounded-xl border shadow-xs bg-white dark:bg-stone-950 dark:border-stone-800 overflow-hidden">
-                <div class="px-4 py-3 border-b flex items-center gap-2 {{ $clsHeader[$c['cls']] }}">
-                    <span class="inline-flex items-center justify-center rounded-md {{ $clsIcon[$c['cls']] }} p-1.5">
-                        {!! svgIcon($c['icon']) !!}
-                    </span>
-                    <div class="text-xs font-medium tracking-wide">{{ strtoupper($c['label']) }}</div>
-                </div>
-                <div class="px-4 py-5">
-                    <div class="text-3xl font-bold text-stone-900 dark:text-stone-100">
-                        {{ number_format($this->seminarStats[$c['key']] ?? 0) }}
+            <div class="rounded-xl border shadow-sm bg-white dark:bg-stone-950 dark:border-stone-800 overflow-hidden">
+                <div class="p-4 flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-medium text-zinc-500 uppercase tracking-wide">{{ $c['label'] }}</div>
+                        <div class="mt-1 text-2xl font-bold text-stone-900 dark:text-stone-100">{{ $c['val'] }}</div>
+                    </div>
+                    <div
+                        class="p-2 rounded-lg bg-{{ $c['color'] }}-100 dark:bg-{{ $c['color'] }}-900/30 text-{{ $c['color'] }}-600 dark:text-{{ $c['color'] }}-400">
+                        <flux:icon :name="$c['icon']" class="size-6" />
                     </div>
                 </div>
             </div>
         @endforeach
     </div>
 
-    {{-- STATUS KP AKTIF --}}
-    <flux:card class="space-y-3">
-        <div class="flex items-center gap-2">
-            <h3 class="text-base font-semibold">Status KP Aktif</h3>
-            <flux:spacer />
-            @if (($this->activeKp?->verified_consultations_count ?? 0) >= 6)
-                <flux:badge size="sm"
-                    class="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                    Siap Daftar Seminar
-                </flux:badge>
-            @endif
-        </div>
+    <div class="grid gap-6 lg:grid-cols-3">
 
-        <div class="grid gap-4 md:grid-cols-3">
-            <div class="space-y-1">
-                <div class="text-sm text-zinc-500">Status KP</div>
-                <div class="font-medium">{{ $this->activeKp->status ?? '—' }}</div>
-            </div>
-            <div class="space-y-1">
-                <div class="text-sm text-zinc-500">Konsultasi Terverifikasi</div>
-                <div class="font-medium">{{ $this->activeKp->verified_consultations_count ?? 0 }}</div>
-            </div>
-            <div class="space-y-1">
-                <div class="text-sm text-zinc-500">Butuh Upload Distribusi</div>
-                <div class="font-medium">
-                    @if ($this->needDistribusi)
-                        <span class="inline-flex items-center gap-1">
-                            <span class="size-2 rounded-full bg-amber-500 animate-pulse"></span> Ya
-                        </span>
-                    @else
-                        Tidak
+        {{-- KOLOM KIRI (2): STATUS KP AKTIF --}}
+        <div class="lg:col-span-2 space-y-6">
+            <flux:card
+                class="space-y-4 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm">
+                <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="p-1.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-md text-indigo-600">
+                            <flux:icon.briefcase class="size-5" />
+                        </div>
+                        <h3 class="font-semibold text-stone-900 dark:text-stone-100">Status KP Aktif</h3>
+                    </div>
+
+                    @if (($this->activeKp?->verified_consultations_count ?? 0) >= 6)
+                        <flux:badge size="sm" color="emerald" icon="check-circle">Siap Seminar</flux:badge>
                     @endif
                 </div>
-            </div>
-        </div>
-    </flux:card>
 
-    {{-- AKTIVITAS SEMINAR TERBARU --}}
-    <flux:card>
-        <div class="flex items-center justify-between">
-            <h3 class="text-base font-semibold">Aktivitas Seminar Terbaru</h3>
-            <a class="text-sm underline" href="{{ route('mhs.nilai') }}" wire:navigate>Lihat Nilai</a>
+                @if ($this->activeKp)
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div
+                            class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
+                            <div class="text-xs text-zinc-500 mb-1">Judul KP</div>
+                            <div
+                                class="font-medium text-stone-900 dark:text-stone-100 text-sm leading-snug line-clamp-2">
+                                {{ $this->activeKp->judul_kp }}
+                            </div>
+                        </div>
+                        <div
+                            class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
+                            <div class="text-xs text-zinc-500 mb-1">Lokasi</div>
+                            <div class="font-medium text-stone-900 dark:text-stone-100 text-sm">
+                                {{ $this->activeKp->lokasi_kp }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-zinc-500">Progres Konsultasi</span>
+                            <span class="font-medium">{{ $this->activeKp->verified_consultations_count }} / 6</span>
+                        </div>
+                        @php $pct = min(100, ($this->activeKp->verified_consultations_count / 6) * 100); @endphp
+                        <div class="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-indigo-500 transition-all duration-500"
+                                style="width: {{ $pct }}%"></div>
+                        </div>
+                    </div>
+
+                    @if ($this->needDistribusi)
+                        <div
+                            class="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 flex items-start gap-3">
+                            <flux:icon.exclamation-triangle class="size-5 text-amber-600 mt-0.5" />
+                            <div>
+                                <div class="text-sm font-medium text-amber-800 dark:text-amber-200">Perhatian</div>
+                                <div class="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                                    Anda memiliki seminar yang belum diunggah bukti distribusinya.
+                                    <a href="{{ route('mhs.nilai') }}"
+                                        class="underline font-medium hover:text-amber-900">Upload Sekarang</a>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @else
+                    <div class="py-6 text-center text-sm text-zinc-500">
+                        Tidak ada Kerja Praktik yang sedang aktif.
+                    </div>
+                @endif
+            </flux:card>
         </div>
 
-        <flux:table>
-            <flux:table.columns>
-                <flux:table.column>Judul</flux:table.column>
-                <flux:table.column>Status</flux:table.column>
-                <flux:table.column>Nilai</flux:table.column>
-                <flux:table.column>Diperbarui</flux:table.column>
-            </flux:table.columns>
-            <flux:table.rows>
-                @forelse ($this->recentSeminars as $row)
-                    <flux:table.row :key="$row->id">
-                        <flux:table.cell class="max-w-[420px]">
-                            <span class="line-clamp-2">{{ $row->judul_laporan ?? '—' }}</span>
-                        </flux:table.cell>
-                        <flux:table.cell>
-                            <flux:badge size="sm" :color="$row::badgeColor($row->status)">
-                                {{ $row::statusLabel($row->status) }}
-                            </flux:badge>
-                        </flux:table.cell>
-                        <flux:table.cell>
-                            @if ($row->distribusi_proof_path && $row->grade)
-                                {{ number_format($row->grade->final_score, 2) }} ({{ $row->grade->final_letter }})
-                            @else
-                                <span class="text-xs text-zinc-400">—</span>
-                            @endif
-                        </flux:table.cell>
-                        <flux:table.cell class="text-xs text-zinc-500">
-                            {{ $row->updated_at?->format('d M Y H:i') ?? '—' }}
-                        </flux:table.cell>
-                    </flux:table.row>
-                @empty
-                    <flux:table.row>
-                        <flux:table.cell colspan="4">
-                            <div class="py-6 text-center text-sm text-zinc-500">Belum ada aktivitas.</div>
-                        </flux:table.cell>
-                    </flux:table.row>
-                @endforelse
-            </flux:table.rows>
-        </flux:table>
-    </flux:card>
+        {{-- KOLOM KANAN (1): AKTIVITAS --}}
+        <div class="lg:col-span-1 space-y-6">
+            <flux:card
+                class="h-full rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-stone-900 dark:text-stone-100">Seminar Terbaru</h3>
+                    <a href="{{ route('mhs.kp.seminar', ['kp' => $this->activeKp->id ?? 0]) }}"
+                        class="text-xs text-indigo-600 hover:underline">Lihat Semua</a>
+                </div>
+
+                <div class="space-y-0 flex-1">
+                    @forelse ($this->recentSeminars as $row)
+                        <div
+                            class="flex items-center gap-3 py-3 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">
+                                    {{ $row->judul_laporan ?? 'Tanpa Judul' }}
+                                </div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <flux:badge size="xs" :color="$row::badgeColor($row->status)">
+                                        {{ $row::statusLabel($row->status) }}
+                                    </flux:badge>
+                                    <span class="text-[10px] text-zinc-400">
+                                        {{ $row->updated_at->diffForHumans() }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="py-8 text-center text-xs text-zinc-500">Belum ada aktivitas seminar.</div>
+                    @endforelse
+                </div>
+            </flux:card>
+        </div>
+    </div>
 </div>

@@ -31,12 +31,20 @@ class ValidasiPage extends Component
     public ?int $reject_id = null;
     public string $catatan_tolak = '';
 
+    // detail modal state
+    public ?int $detailId = null;
+
     public function mount(): void
     {
         $this->signatory_id = Signatory::query()->orderBy('position')->value('id');
     }
 
     public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingTab(): void
     {
         $this->resetPage();
     }
@@ -52,20 +60,31 @@ class ValidasiPage extends Component
         $this->resetPage();
     }
 
+    // Helper Badge (Sama dengan KP)
     public function badgeColor(string $status): string
     {
         return match ($status) {
-            'Diajukan'    => 'sky',
-            'Diterbitkan' => 'emerald',
-            'Ditolak'     => 'rose',
+            'Diajukan'    => 'sky',      // Menunggu (Warna Sky utk Bapendik)
+            'Diterbitkan' => 'emerald',  // Selesai
+            'Ditolak'     => 'rose',     // Gagal
             default       => 'zinc',
+        };
+    }
+
+    public function badgeIcon(string $status): string
+    {
+        return match ($status) {
+            'Diajukan'    => 'clock',
+            'Diterbitkan' => 'check-circle',
+            'Ditolak'     => 'x-circle',
+            default       => 'minus',
         };
     }
 
     protected function baseQuery(): Builder
     {
         return SuratPengantar::query()
-            ->with(['mahasiswa.jurusan'])
+            ->with(['mahasiswa.jurusan', 'mahasiswa.user'])
             ->when($this->search !== '', function ($q) {
                 $term = "%{$this->search}%";
                 $q->where(function ($qq) use ($term) {
@@ -74,8 +93,8 @@ class ValidasiPage extends Component
                         ->orWhere('alamat_surat_pengantar', 'like', $term)
                         ->orWhere('nomor_surat', 'like', $term)
                         ->orWhereHas('mahasiswa', function ($mq) use ($term) {
-                            $mq->where('mahasiswa_name', 'like', $term)
-                                ->orWhere('mahasiswa_nim', 'like', $term);
+                            $mq->where('mahasiswa_nim', 'like', $term)
+                                ->orWhereHas('user', fn($u) => $u->where('name', 'like', $term));
                         });
                 });
             })
@@ -87,7 +106,7 @@ class ValidasiPage extends Component
     {
         return $this->baseQuery()
             ->where('status_surat_pengantar', 'Diajukan')
-            ->paginate($this->perPage);
+            ->paginate($this->perPage, ['*'], 'pendingPage');
     }
 
     #[Computed]
@@ -95,19 +114,36 @@ class ValidasiPage extends Component
     {
         return $this->baseQuery()
             ->where('status_surat_pengantar', 'Diterbitkan')
-            ->paginate($this->perPage);
+            ->paginate($this->perPage, ['*'], 'publishedPage');
     }
 
     #[Computed]
-    public function pendingCount(): int
+    public function stats(): array
     {
-        return SuratPengantar::where('status_surat_pengantar', 'Diajukan')->count();
+        return [
+            'pending'   => SuratPengantar::where('status_surat_pengantar', 'Diajukan')->count(),
+            'published' => SuratPengantar::where('status_surat_pengantar', 'Diterbitkan')->count(),
+            'rejected'  => SuratPengantar::where('status_surat_pengantar', 'Ditolak')->count(),
+        ];
     }
 
     #[Computed]
-    public function publishedCount(): int
+    public function selectedItem(): ?SuratPengantar
     {
-        return SuratPengantar::where('status_surat_pengantar', 'Diterbitkan')->count();
+        if (!$this->detailId) return null;
+        return SuratPengantar::with(['mahasiswa.user', 'mahasiswa.jurusan'])->find($this->detailId);
+    }
+
+    public function openDetail(int $id): void
+    {
+        $this->detailId = $id;
+        Flux::modal('sp-detail')->show();
+    }
+
+    public function closeDetail(): void
+    {
+        $this->detailId = null;
+        Flux::modal('sp-detail')->close();
     }
 
     public function openPublish(int $id): void
@@ -152,11 +188,7 @@ class ValidasiPage extends Component
                 'Surat Pengantar Diterbitkan',
                 "SP untuk {$sp->lokasi_surat_pengantar} telah diterbitkan. Nomor: {$sp->nomor_surat}.",
                 route('mhs.sp.index'),
-                [
-                    'type'  => 'sp_published',
-                    'sp_id' => $sp->id,
-                    'nomor' => $sp->nomor_surat,
-                ]
+                ['type' => 'sp_published', 'sp_id' => $sp->id, 'nomor' => $sp->nomor_surat]
             );
         }
 
@@ -165,8 +197,6 @@ class ValidasiPage extends Component
 
         $this->publish_id = null;
         $this->publish_nomor_surat = '';
-        $this->signatory_id = Signatory::query()->orderBy('position')->value('id');
-
         $this->resetPage();
     }
 
@@ -194,10 +224,7 @@ class ValidasiPage extends Component
                 'Pengajuan SP Ditolak',
                 $sp->catatan_surat ? "Catatan: {$sp->catatan_surat}" : 'Silakan perbaiki data pengajuan.',
                 route('mhs.sp.index'),
-                [
-                    'type'  => 'sp_rejected',
-                    'sp_id' => $sp->id,
-                ]
+                ['type' => 'sp_rejected', 'sp_id' => $sp->id]
             );
         }
 

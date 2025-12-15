@@ -9,6 +9,7 @@ use Flux\Flux;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -17,11 +18,14 @@ class MahasiswaIndex extends Component
 {
     use WithPagination;
 
-    // UI state (modal)
+    // UI state
     public bool $showForm = false;
 
+    // Filter & paging
     public string $q = '';
     public int $perPage = 10;
+    public string $sortBy = 'mahasiswa_name';
+    public string $sortDirection = 'asc';
 
     // PK tabel mahasiswas = mahasiswa_id
     public ?int $editingId = null;
@@ -41,8 +45,8 @@ class MahasiswaIndex extends Component
             'mahasiswa_nim'            => ['required', 'string', 'max:30', Rule::unique('mahasiswas', 'mahasiswa_nim')->ignore($this->editingId, 'mahasiswa_id')],
             'mahasiswa_tahun_angkatan' => ['nullable', 'integer', 'min:2000', 'max:2100'],
             'jurusan_id'               => ['nullable', 'exists:jurusans,id'],
-            'email'    => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->user_id)],
-            'password' => [$this->editingId ? 'nullable' : 'required', 'min:6'],
+            'email'                    => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->user_id)],
+            'password'                 => [$this->editingId ? 'nullable' : 'required', 'min:6'],
         ];
     }
 
@@ -56,10 +60,22 @@ class MahasiswaIndex extends Component
         $this->resetPage();
     }
 
+    public function sort(string $column): void
+    {
+        if ($this->sortBy === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDirection = 'asc';
+        }
+        $this->resetPage();
+    }
+
     public function create(): void
     {
         $this->resetForm();
         $this->showForm = true;
+        Flux::modal('mhs-form')->show();
     }
 
     public function edit(int $id): void
@@ -77,11 +93,13 @@ class MahasiswaIndex extends Component
         $this->password = '';
 
         $this->showForm = true;
+        Flux::modal('mhs-form')->show();
     }
 
     public function closeForm(): void
     {
         $this->showForm = false;
+        Flux::modal('mhs-form')->close();
     }
 
     public function save(): void
@@ -95,7 +113,7 @@ class MahasiswaIndex extends Component
                 $user->name  = $data['mahasiswa_name'];
                 $user->email = $data['email'];
                 if (!empty($data['password'])) {
-                    $user->password = $data['password']; // cast hashed
+                    $user->password = $data['password'];
                 }
                 $user->save();
             } else {
@@ -127,16 +145,11 @@ class MahasiswaIndex extends Component
             }
         });
 
-        $this->showForm = false;
+        $this->closeForm();
         $this->resetForm();
         $this->resetPage();
 
-        // === TOAST sukses simpan ===
-        Flux::toast(
-            heading: 'Berhasil',
-            text: 'Data mahasiswa disimpan.',
-            variant: 'success',
-        );
+        Flux::toast(heading: 'Berhasil', text: 'Data mahasiswa disimpan.', variant: 'success');
     }
 
     public function delete(int $id): void
@@ -145,13 +158,7 @@ class MahasiswaIndex extends Component
         $row->delete();
 
         $this->resetPage();
-
-        // === TOAST sukses hapus ===
-        Flux::toast(
-            heading: 'Berhasil',
-            text: 'Data mahasiswa dihapus.',
-            variant: 'success',
-        );
+        Flux::toast(heading: 'Terhapus', text: 'Data mahasiswa dihapus.', variant: 'success');
     }
 
     public function resetUserPassword(int $id, string $newPassword = 'password'): void
@@ -162,12 +169,7 @@ class MahasiswaIndex extends Component
         $row->user->password = $newPassword;
         $row->user->save();
 
-        // === TOAST sukses reset password ===
-        Flux::toast(
-            heading: 'Berhasil',
-            text: 'Password akun mahasiswa direset.',
-            variant: 'success',
-        );
+        Flux::toast(heading: 'Berhasil', text: 'Password akun mahasiswa direset.', variant: 'success');
     }
 
     private function resetForm(): void
@@ -177,13 +179,13 @@ class MahasiswaIndex extends Component
         $this->mahasiswa_name = '';
         $this->mahasiswa_nim  = '';
         $this->mahasiswa_tahun_angkatan = null;
-
         $this->user_id = null;
         $this->email   = '';
         $this->password = '';
     }
 
-    public function getItemsProperty()
+    #[Computed]
+    public function items()
     {
         return Mahasiswa::query()
             ->with(['user:id,email', 'jurusan:id,nama_jurusan'])
@@ -194,14 +196,13 @@ class MahasiswaIndex extends Component
                         ->orWhere('mahasiswa_nim', 'like', $term);
                 });
             })
-            ->orderBy('mahasiswa_name')
+            ->orderBy($this->sortBy, $this->sortDirection)
             ->paginate($this->perPage);
     }
 
     public function render()
     {
         return view('livewire.bapendik.master.mahasiswa-index', [
-            'rows'     => $this->items,
             'jurusans' => Jurusan::orderBy('nama_jurusan')->get(),
         ]);
     }

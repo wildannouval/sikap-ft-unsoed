@@ -22,6 +22,7 @@ class Page extends Component
     public ?int $deleteId  = null;
     public ?int $detailId  = null;
 
+    // Form Inputs
     public string $judul_kp = '';
     public string $lokasi_kp = '';
 
@@ -33,7 +34,9 @@ class Page extends Component
 
     public ?int $selectedSpId = null;
 
-    public string $q = '';
+    // Table & Filters
+    public string $search = ''; // Diganti dari $q agar konsisten
+    public string $filterStatus = '';
     public string $sortBy = 'created_at';
     public string $sortDirection = 'desc';
     public int $perPage = 10;
@@ -48,7 +51,6 @@ class Page extends Component
             'proposal_kp' => [$this->editingId ? 'nullable' : 'required', 'file', 'mimes:pdf', 'max:2048'],
             'surat_keterangan_kp' => [$this->editingId ? 'nullable' : 'required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
 
-            // SP milik mahasiswa login & sudah Diterbitkan (opsional saja)
             'selectedSpId' => [
                 'nullable',
                 Rule::exists('surat_pengantars', 'id')->where(function ($q) {
@@ -60,21 +62,12 @@ class Page extends Component
         ];
     }
 
-    public function updatingQ()
+    // Reset pagination saat filter/search berubah
+    public function updating($name, $value): void
     {
-        $this->resetPage();
-    }
-    public function updatingSortBy()
-    {
-        $this->resetPage();
-    }
-    public function updatingSortDirection()
-    {
-        $this->resetPage();
-    }
-    public function updatingPerPage()
-    {
-        $this->resetPage();
+        if (in_array($name, ['search', 'filterStatus', 'sortBy', 'sortDirection', 'perPage'])) {
+            $this->resetPage();
+        }
     }
 
     public function sort(string $field): void
@@ -105,6 +98,18 @@ class Page extends Component
                 'lokasi_surat_pengantar' => $sp->lokasi_surat_pengantar,
                 'tanggal' => optional($sp->created_at)->toDateString(),
             ])->all();
+    }
+
+    // Opsi untuk Dropdown Filter Status
+    #[Computed]
+    public function statusOptions(): array
+    {
+        return [
+            ['value' => KerjaPraktik::ST_REVIEW_KOMISI, 'label' => 'Menunggu Review Komisi'],
+            ['value' => KerjaPraktik::ST_REVIEW_BAPENDIK, 'label' => 'Menunggu Terbit SPK'],
+            ['value' => KerjaPraktik::ST_SPK_TERBIT, 'label' => 'SPK Terbit'],
+            ['value' => KerjaPraktik::ST_DITOLAK, 'label' => 'Ditolak'],
+        ];
     }
 
     public function fillFromSP(): void
@@ -180,7 +185,7 @@ class Page extends Component
             ->firstOrFail();
 
         if ($kp->status !== KerjaPraktik::ST_REVIEW_KOMISI) {
-            session()->flash('err', 'Pengajuan dengan status saat ini tidak dapat diedit.');
+            Flux::toast(heading: 'Gagal', text: 'Pengajuan dengan status saat ini tidak dapat diedit.', variant: 'danger');
             return;
         }
 
@@ -203,7 +208,7 @@ class Page extends Component
             ->firstOrFail();
 
         if ($kp->status !== KerjaPraktik::ST_REVIEW_KOMISI) {
-            session()->flash('err', 'Pengajuan dengan status saat ini tidak dapat diperbarui.');
+            Flux::toast(heading: 'Gagal', text: 'Pengajuan dengan status saat ini tidak dapat diperbarui.', variant: 'danger');
             return;
         }
 
@@ -238,7 +243,7 @@ class Page extends Component
         if (!$kp) return;
 
         if ($kp->status !== KerjaPraktik::ST_REVIEW_KOMISI) {
-            session()->flash('err', 'Pengajuan dengan status saat ini tidak dapat dihapus.');
+            Flux::toast(heading: 'Gagal', text: 'Pengajuan dengan status saat ini tidak dapat dihapus.', variant: 'danger');
             return;
         }
 
@@ -255,9 +260,9 @@ class Page extends Component
 
         if ($kp && $kp->status === KerjaPraktik::ST_REVIEW_KOMISI) {
             $kp->delete();
-            session()->flash('ok', 'Pengajuan KP berhasil dihapus.');
+            Flux::toast(heading: 'Terhapus', text: 'Pengajuan KP berhasil dihapus.', variant: 'success');
         } else {
-            session()->flash('err', 'Pengajuan tidak dapat dihapus.');
+            Flux::toast(heading: 'Gagal', text: 'Pengajuan tidak dapat dihapus.', variant: 'danger');
         }
 
         $this->deleteId = null;
@@ -299,11 +304,16 @@ class Page extends Component
 
         return KerjaPraktik::query()
             ->where('mahasiswa_id', $mhs?->getKey() ?? 0)
-            ->when($this->q !== '', function ($q) {
+            // Logic Search
+            ->when($this->search, function ($q) {
                 $q->where(function ($qq) {
-                    $qq->where('judul_kp', 'like', '%' . $this->q . '%')
-                        ->orWhere('lokasi_kp', 'like', '%' . $this->q . '%');
+                    $qq->where('judul_kp', 'like', '%' . $this->search . '%')
+                        ->orWhere('lokasi_kp', 'like', '%' . $this->search . '%');
                 });
+            })
+            // Logic Filter Status
+            ->when($this->filterStatus, function ($q) {
+                $q->where('status', $this->filterStatus);
             })
             ->orderBy($this->sortBy, $this->sortDirection)
             ->paginate($this->perPage);
@@ -313,8 +323,8 @@ class Page extends Component
     public function stats(): array
     {
         $mhs = Mahasiswa::where('user_id', Auth::id())->first();
-
         $base = KerjaPraktik::where('mahasiswa_id', $mhs?->getKey() ?? 0);
+
         return [
             'review_komisi'   => (clone $base)->where('status', KerjaPraktik::ST_REVIEW_KOMISI)->count(),
             'review_bapendik' => (clone $base)->where('status', KerjaPraktik::ST_REVIEW_BAPENDIK)->count(),

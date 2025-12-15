@@ -2,425 +2,363 @@
     <flux:toast />
 
     {{-- HEADER --}}
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
             <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
-                Penerbitan SPK (Bapendik)
+                Penerbitan SPK
             </flux:heading>
             <flux:subheading class="text-zinc-600 dark:text-zinc-300">
-                Terbitkan SPK untuk pengajuan KP yang sudah disetujui Komisi.
+                Kelola penerbitan Surat Perintah Kerja (SPK) KP.
             </flux:subheading>
         </div>
     </div>
 
-    {{-- PANDUAN (aksen sky untuk Bapendik) --}}
-    <flux:card
-        class="space-y-4 rounded-xl border
-               bg-white dark:bg-stone-950
-               border-zinc-200 dark:border-stone-800 shadow-xs">
-        <div class="flex items-start gap-2 px-1.5 -mt-1">
-            <span
-                class="inline-flex items-center justify-center rounded-md p-1.5
-                         bg-sky-500 text-white dark:bg-sky-400">
-                <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="16" rx="2" />
-                    <path d="M7 8h10M7 12h8M7 16h6" />
-                </svg>
-            </span>
-            <div>
-                <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">
-                    Panduan Penerbitan SPK
-                </h3>
-                <div class="mt-1 text-sm text-zinc-600 dark:text-zinc-300 space-y-1.5">
-                    <div><span class="font-medium">1)</span> Tab <strong>Belum Diterbitkan</strong> berisi pengajuan
-                        berstatus <em>Menunggu Bapendik</em>.</div>
-                    <div><span class="font-medium">2)</span> Gunakan menu <strong>Detail</strong> untuk memeriksa
-                        data/berkas.</div>
-                    <div><span class="font-medium">3)</span> Klik <strong>Terbitkan SPK</strong> untuk mengisi nomor &
-                        penandatangan (bisa ubah di riwayat).</div>
-                    <div><span class="font-medium">4)</span> Tab <strong>Sudah Diterbitkan</strong> mendukung <em>Unduh
-                            SPK (DOCX)</em> dan <em>Ubah Nomor</em>.</div>
-                </div>
-            </div>
-        </div>
-    </flux:card>
-
     <flux:separator variant="subtle" />
 
-    <flux:tab.group wire:model.live="tab">
-        <flux:tabs>
-            <flux:tab name="pending" icon="inbox-arrow-down">
-                Belum Diterbitkan
-            </flux:tab>
-            <flux:tab name="published" icon="check-badge">
-                Sudah Diterbitkan
-            </flux:tab>
-        </flux:tabs>
+    {{-- GRID UTAMA 3:1 --}}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
 
-        {{-- ===== PENDING ===== --}}
-        <flux:tab.panel name="pending" class="pt-4">
-            <flux:card
-                class="rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-xs">
+        {{-- KOLOM KIRI: TABEL (3) --}}
+        <div class="lg:col-span-3 space-y-6">
 
-                {{-- Header beraksen sky --}}
-                <div
-                    class="px-4 py-3 border-b
-                           bg-sky-50 text-sky-700
-                           dark:bg-sky-900/20 dark:text-sky-300
-                           border-sky-100 dark:border-sky-900/40
-                           rounded-t-xl">
-                    <div class="flex items-center justify-between gap-2">
-                        <h3 class="text-sm font-medium tracking-wide">Menunggu Penerbitan</h3>
-                        <div class="flex items-center gap-2">
-                            {{-- SEARCH di dalam header tabel --}}
-                            <flux:input icon="magnifying-glass" placeholder="Cari judul/instansi/nama/NIM/nomor SPK…"
-                                class="hidden sm:block w-40 md:w-72" wire:model.live.debounce.300ms="search" />
-                            <flux:select wire:model.live="perPage" class="w-32">
-                                <flux:select.option :value="10">10 / halaman</flux:select.option>
-                                <flux:select.option :value="25">25 / halaman</flux:select.option>
-                                <flux:select.option :value="50">50 / halaman</flux:select.option>
-                            </flux:select>
+            <flux:tab.group wire:model.live="tab">
+                <flux:tabs>
+                    <flux:tab name="pending" icon="inbox-arrow-down">
+                        Belum Diterbitkan
+                        <flux:badge size="sm" inset="top bottom" class="ml-2">{{ $this->stats['pending'] }}
+                        </flux:badge>
+                    </flux:tab>
+                    <flux:tab name="published" icon="check-badge">
+                        Sudah Diterbitkan
+                        <flux:badge size="sm" inset="top bottom" class="ml-2">{{ $this->stats['published'] }}
+                        </flux:badge>
+                    </flux:tab>
+                </flux:tabs>
+
+                {{-- PANEL PENDING --}}
+                <flux:tab.panel name="pending" class="pt-4">
+                    <flux:card
+                        class="space-y-4 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm overflow-hidden">
+                        {{-- Header Tabel --}}
+                        <div
+                            class="flex flex-col gap-4 px-6 py-4 border-b border-zinc-200 dark:border-stone-800 bg-amber-50/50 dark:bg-amber-900/10 md:flex-row md:items-center md:justify-between">
+                            <h4 class="text-base font-semibold text-stone-900 dark:text-stone-100">Antrean Penerbitan
+                            </h4>
+
+                            <div class="flex items-center gap-3">
+                                <flux:input icon="magnifying-glass" placeholder="Cari..."
+                                    wire:model.live.debounce.300ms="search"
+                                    class="w-full md:w-64 bg-white dark:bg-stone-900" />
+                                <flux:select wire:model.live="perPage" class="w-20">
+                                    <flux:select.option :value="10">10</flux:select.option>
+                                    <flux:select.option :value="25">25</flux:select.option>
+                                    <flux:select.option :value="50">50</flux:select.option>
+                                </flux:select>
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="p-4">
-                    <flux:table
-                        class="[&_thead_th]:bg-zinc-50 [&_thead_th]:dark:bg-stone-900/40
-                               [&_thead_th]:text-zinc-600 [&_thead_th]:dark:text-stone-200
-                               [&_tbody_tr]:hover:bg-zinc-50/60 [&_tbody_tr]:dark:hover:bg-stone-900/30"
-                        :paginate="$this->itemsPending">
+                        <flux:table :paginate="$this->itemsPending">
+                            <flux:table.columns>
+                                <flux:table.column class="w-12 text-center">No</flux:table.column>
+                                <flux:table.column sortable wire:click="sort('updated_at')"
+                                    :sorted="$sortBy === 'updated_at'" :direction="$sortDirection">Tgl Masuk
+                                </flux:table.column>
+                                <flux:table.column>Mahasiswa</flux:table.column>
+                                <flux:table.column>Judul & Instansi</flux:table.column>
+                                <flux:table.column>Status</flux:table.column>
+                                <flux:table.column class="text-right">Aksi</flux:table.column>
+                            </flux:table.columns>
 
-                        <flux:table.columns>
-                            <flux:table.column class="w-12">#</flux:table.column>
-                            <flux:table.column sortable :sorted="$sortBy === 'updated_at'" :direction="$sortDirection"
-                                wire:click="sort('updated_at')">Tgl</flux:table.column>
-                            <flux:table.column>Mahasiswa</flux:table.column>
-                            <flux:table.column>Judul</flux:table.column>
-                            <flux:table.column>Instansi</flux:table.column>
-                            <flux:table.column>Status</flux:table.column>
-                            <flux:table.column>Dosen Pembimbing</flux:table.column>
-                            <flux:table.column class="w-28 text-right">Aksi</flux:table.column>
-                        </flux:table.columns>
+                            <flux:table.rows>
+                                @foreach ($this->itemsPending as $i => $row)
+                                    <flux:table.row :key="$row->id">
+                                        <flux:table.cell class="text-center text-zinc-500">
+                                            {{ $this->itemsPending->firstItem() + $i }}</flux:table.cell>
 
-                        <flux:table.rows>
-                            @foreach ($this->itemsPending as $i => $row)
-                                <flux:table.row :key="'p-'.$row->id">
-                                    <flux:table.cell>{{ $this->itemsPending->firstItem() + $i }}</flux:table.cell>
+                                        <flux:table.cell class="whitespace-nowrap">
+                                            {{ optional($row->updated_at)->format('d M Y') }}
+                                        </flux:table.cell>
 
-                                    <flux:table.cell class="whitespace-nowrap">
-                                        {{ optional($row->updated_at)->format('d M Y') ?: '—' }}
-                                    </flux:table.cell>
+                                        <flux:table.cell>
+                                            <div class="font-medium text-stone-900 dark:text-stone-100">
+                                                {{ $row->mahasiswa?->user?->name }}</div>
+                                            <div class="text-xs text-zinc-500">{{ $row->mahasiswa?->mahasiswa_nim }}
+                                            </div>
+                                        </flux:table.cell>
 
-                                    <flux:table.cell class="whitespace-nowrap">
-                                        {{ $row->mahasiswa?->user?->name }}
-                                        <div class="text-xs text-zinc-500">
-                                            NIM: {{ $row->mahasiswa?->mahasiswa_nim }}
-                                        </div>
-                                    </flux:table.cell>
+                                        <flux:table.cell class="max-w-[250px]">
+                                            <div class="line-clamp-1 text-sm font-medium">{{ $row->judul_kp }}</div>
+                                            <div class="text-xs text-zinc-500 truncate">{{ $row->lokasi_kp }}</div>
+                                        </flux:table.cell>
 
-                                    <flux:table.cell class="whitespace-nowrap">
-                                        {{ $row->judul_kp }}
-                                    </flux:table.cell>
+                                        <flux:table.cell>
+                                            <flux:badge size="sm" :color="$this->badgeColor($row->status)"
+                                                :icon="$this->badgeIcon($row->status)">
+                                                {{ $this->statusLabel($row->status) }}
+                                            </flux:badge>
+                                        </flux:table.cell>
 
-                                    <flux:table.cell class="whitespace-nowrap">
-                                        {{ $row->lokasi_kp }}
-                                    </flux:table.cell>
-
-                                    <flux:table.cell>
-                                        <flux:badge size="sm" inset="top bottom"
-                                            :color="$this->badgeColor($row->status)">
-                                            {{ $this->statusLabel($row->status) }}
-                                        </flux:badge>
-                                    </flux:table.cell>
-
-                                    <flux:table.cell class="whitespace-nowrap">
-                                        {{ $row->dosenPembimbing?->dosen_name ?? '—' }}
-                                    </flux:table.cell>
-
-                                    <flux:table.cell class="text-right">
-                                        <flux:dropdown position="bottom" align="end">
-                                            <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal"
-                                                inset="top bottom"></flux:button>
-                                            <flux:menu class="min-w-52">
-                                                <flux:modal.trigger name="detail-spk">
+                                        <flux:table.cell class="text-right">
+                                            <flux:dropdown position="bottom" align="end">
+                                                <flux:button variant="ghost" size="sm"
+                                                    icon="ellipsis-horizontal" />
+                                                <flux:menu>
                                                     <flux:menu.item icon="eye"
-                                                        wire:click="openDetail({{ $row->id }})">
-                                                        Detail
+                                                        wire:click="openDetail({{ $row->id }})">Detail
                                                     </flux:menu.item>
-                                                </flux:modal.trigger>
-
-                                                <flux:modal.trigger name="spk-publish">
                                                     <flux:menu.item icon="check"
-                                                        wire:click="openPublish({{ $row->id }})">
-                                                        Terbitkan SPK
+                                                        wire:click="openPublish({{ $row->id }})">Terbitkan
                                                     </flux:menu.item>
-                                                </flux:modal.trigger>
-                                            </flux:menu>
-                                        </flux:dropdown>
-                                    </flux:table.cell>
-                                </flux:table.row>
-                            @endforeach
-                        </flux:table.rows>
-                    </flux:table>
-                </div>
-            </flux:card>
-        </flux:tab.panel>
+                                                </flux:menu>
+                                            </flux:dropdown>
+                                        </flux:table.cell>
+                                    </flux:table.row>
+                                @endforeach
+                            </flux:table.rows>
+                        </flux:table>
 
-        {{-- ===== PUBLISHED ===== --}}
-        <flux:tab.panel name="published" class="pt-4">
-            <flux:card
-                class="rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-xs">
+                        {{-- Empty State Pending --}}
+                        @if ($this->itemsPending->isEmpty())
+                            <div class="flex flex-col items-center justify-center py-12 text-center">
+                                <div class="rounded-full bg-zinc-100 p-4 dark:bg-stone-900">
+                                    <flux:icon.inbox class="size-8 text-zinc-400" />
+                                </div>
+                                <h3 class="mt-4 text-base font-semibold text-stone-900 dark:text-stone-100">
+                                    Tidak ada antrean
+                                </h3>
+                                <p class="mt-1 text-sm text-zinc-500">
+                                    @if ($search)
+                                        Tidak ditemukan data yang cocok dengan pencarian "{{ $search }}".
+                                    @else
+                                        Belum ada pengajuan KP yang menunggu penerbitan SPK.
+                                    @endif
+                                </p>
+                            </div>
+                        @endif
+                    </flux:card>
+                </flux:tab.panel>
 
-                {{-- Header beraksen sky --}}
-                <div
-                    class="px-4 py-3 border-b
-                           bg-sky-50 text-sky-700
-                           dark:bg-sky-900/20 dark:text-sky-300
-                           border-sky-100 dark:border-sky-900/40
-                           rounded-t-xl">
-                    <div class="flex items-center justify-between gap-2">
-                        <h3 class="text-sm font-medium tracking-wide">Riwayat SPK Terbit</h3>
-                        <div class="flex items-center gap-2">
-                            {{-- SEARCH di dalam header tabel --}}
-                            <flux:input icon="magnifying-glass" placeholder="Cari judul/instansi/nama/NIM/nomor SPK…"
-                                class="hidden sm:block w-40 md:w-72" wire:model.live.debounce.300ms="search" />
-                            <flux:select wire:model.live="perPage" class="w-32">
-                                <flux:select.option :value="10">10 / halaman</flux:select.option>
-                                <flux:select.option :value="25">25 / halaman</flux:select.option>
-                                <flux:select.option :value="50">50 / halaman</flux:select.option>
-                            </flux:select>
+                {{-- PANEL PUBLISHED --}}
+                <flux:tab.panel name="published" class="pt-4">
+                    <flux:card
+                        class="space-y-4 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm overflow-hidden">
+                        {{-- Header Tabel --}}
+                        <div
+                            class="flex flex-col gap-4 px-6 py-4 border-b border-zinc-200 dark:border-stone-800 bg-emerald-50/50 dark:bg-emerald-900/10 md:flex-row md:items-center md:justify-between">
+                            <h4 class="text-base font-semibold text-stone-900 dark:text-stone-100">Riwayat Terbit</h4>
+
+                            <div class="flex items-center gap-3">
+                                <flux:input icon="magnifying-glass" placeholder="Cari..."
+                                    wire:model.live.debounce.300ms="search"
+                                    class="w-full md:w-64 bg-white dark:bg-stone-900" />
+                                <flux:select wire:model.live="perPage" class="w-20">
+                                    <flux:select.option :value="10">10</flux:select.option>
+                                    <flux:select.option :value="25">25</flux:select.option>
+                                    <flux:select.option :value="50">50</flux:select.option>
+                                </flux:select>
+                            </div>
                         </div>
+
+                        <flux:table :paginate="$this->itemsPublished">
+                            <flux:table.columns>
+                                <flux:table.column class="w-12 text-center">No</flux:table.column>
+                                <flux:table.column sortable wire:click="sort('tanggal_terbit_spk')"
+                                    :sorted="$sortBy === 'tanggal_terbit_spk'" :direction="$sortDirection">Tgl Terbit
+                                </flux:table.column>
+                                <flux:table.column>Nomor SPK</flux:table.column>
+                                <flux:table.column>Mahasiswa</flux:table.column>
+                                <flux:table.column>Status</flux:table.column>
+                                <flux:table.column class="text-right">Aksi</flux:table.column>
+                            </flux:table.columns>
+
+                            <flux:table.rows>
+                                @foreach ($this->itemsPublished as $i => $row)
+                                    <flux:table.row :key="$row->id">
+                                        <flux:table.cell class="text-center text-zinc-500">
+                                            {{ $this->itemsPublished->firstItem() + $i }}</flux:table.cell>
+
+                                        <flux:table.cell class="whitespace-nowrap">
+                                            {{ optional($row->tanggal_terbit_spk)->format('d M Y') }}
+                                        </flux:table.cell>
+
+                                        <flux:table.cell>
+                                            <span class="font-mono text-xs">{{ $row->nomor_spk }}</span>
+                                        </flux:table.cell>
+
+                                        <flux:table.cell>
+                                            <div class="font-medium text-stone-900 dark:text-stone-100">
+                                                {{ $row->mahasiswa?->user?->name }}</div>
+                                        </flux:table.cell>
+
+                                        <flux:table.cell>
+                                            <flux:badge size="sm" :color="$this->badgeColor($row->status)"
+                                                :icon="$this->badgeIcon($row->status)">
+                                                {{ $this->statusLabel($row->status) }}
+                                            </flux:badge>
+                                        </flux:table.cell>
+
+                                        <flux:table.cell class="text-right">
+                                            <flux:dropdown position="bottom" align="end">
+                                                <flux:button variant="ghost" size="sm"
+                                                    icon="ellipsis-horizontal" />
+                                                <flux:menu>
+                                                    <flux:menu.item icon="eye"
+                                                        wire:click="openDetail({{ $row->id }})">Detail
+                                                    </flux:menu.item>
+                                                    <flux:menu.item icon="pencil-square"
+                                                        wire:click="openPublish({{ $row->id }})">Ubah Nomor
+                                                    </flux:menu.item>
+                                                    <flux:menu.separator />
+                                                    <flux:menu.item icon="arrow-down-tray"
+                                                        href="{{ route('bap.kp.download.docx', $row->id) }}"
+                                                        target="_blank">Unduh SPK</flux:menu.item>
+                                                </flux:menu>
+                                            </flux:dropdown>
+                                        </flux:table.cell>
+                                    </flux:table.row>
+                                @endforeach
+                            </flux:table.rows>
+                        </flux:table>
+
+                        {{-- Empty State Published --}}
+                        @if ($this->itemsPublished->isEmpty())
+                            <div class="flex flex-col items-center justify-center py-12 text-center">
+                                <div class="rounded-full bg-zinc-100 p-4 dark:bg-stone-900">
+                                    <flux:icon.document-text class="size-8 text-zinc-400" />
+                                </div>
+                                <h3 class="mt-4 text-base font-semibold text-stone-900 dark:text-stone-100">
+                                    Belum ada data
+                                </h3>
+                                <p class="mt-1 text-sm text-zinc-500">
+                                    @if ($search)
+                                        Tidak ditemukan data yang cocok dengan pencarian "{{ $search }}".
+                                    @else
+                                        Belum ada SPK yang diterbitkan.
+                                    @endif
+                                </p>
+                            </div>
+                        @endif
+                    </flux:card>
+                </flux:tab.panel>
+            </flux:tab.group>
+        </div>
+
+        {{-- KOLOM KANAN: SIDEBAR (1) --}}
+        <div class="lg:col-span-1 space-y-6">
+
+            {{-- 1. RINGKASAN STATUS --}}
+            <flux:card
+                class="rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm">
+                <div class="mb-4 flex items-center gap-2">
+                    <flux:icon.chart-bar class="size-5 text-zinc-500" />
+                    <h3 class="font-semibold text-stone-900 dark:text-stone-100">Ringkasan</h3>
+                </div>
+
+                <div class="space-y-3">
+                    <div
+                        class="flex items-center justify-between p-2 rounded-lg bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30">
+                        <div class="flex items-center gap-2">
+                            <div class="size-2 rounded-full bg-amber-500"></div>
+                            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Pending</span>
+                        </div>
+                        <span
+                            class="text-lg font-bold text-amber-600 dark:text-amber-400">{{ $this->stats['pending'] }}</span>
+                    </div>
+
+                    <div
+                        class="flex items-center justify-between p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30">
+                        <div class="flex items-center gap-2">
+                            <div class="size-2 rounded-full bg-emerald-500"></div>
+                            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Terbit</span>
+                        </div>
+                        <span
+                            class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ $this->stats['published'] }}</span>
                     </div>
                 </div>
+            </flux:card>
 
-                <div class="p-4">
-                    <flux:table
-                        class="[&_thead_th]:bg-zinc-50 [&_thead_th]:dark:bg-stone-900/40
-                               [&_thead_th]:text-zinc-600 [&_thead_th]:dark:text-stone-200
-                               [&_tbody_tr]:hover:bg-zinc-50/60 [&_tbody_tr]:dark:hover:bg-stone-900/30"
-                        :paginate="$this->itemsPublished">
-
-                        <flux:table.columns>
-                            <flux:table.column class="w-12">#</flux:table.column>
-                            <flux:table.column sortable :sorted="$sortBy === 'tanggal_terbit_spk'"
-                                :direction="$sortDirection" wire:click="sort('tanggal_terbit_spk')">
-                                Tgl Terbit
-                            </flux:table.column>
-                            <flux:table.column>Mahasiswa</flux:table.column>
-                            <flux:table.column>Nomor SPK</flux:table.column>
-                            <flux:table.column>Judul</flux:table.column>
-                            <flux:table.column>Status</flux:table.column>
-                            <flux:table.column>Dosen Pembimbing</flux:table.column>
-                            <flux:table.column class="w-36 text-right">Aksi</flux:table.column>
-                        </flux:table.columns>
-
-                        <flux:table.rows>
-                            @foreach ($this->itemsPublished as $i => $row)
-                                <flux:table.row :key="'pb-'.$row->id">
-                                    <flux:table.cell>{{ $this->itemsPublished->firstItem() + $i }}</flux:table.cell>
-
-                                    <flux:table.cell class="whitespace-nowrap">
-                                        {{ optional($row->tanggal_terbit_spk)->format('d M Y') ?: '—' }}
-                                    </flux:table.cell>
-
-                                    <flux:table.cell class="whitespace-nowrap">
-                                        {{ $row->mahasiswa?->user?->name }}
-                                        <div class="text-xs text-zinc-500">
-                                            NIM: {{ $row->mahasiswa?->mahasiswa_nim }}
-                                        </div>
-                                    </flux:table.cell>
-
-                                    <flux:table.cell class="whitespace-nowrap">
-                                        {{ $row->nomor_spk ?: '—' }}
-                                    </flux:table.cell>
-
-                                    <flux:table.cell class="whitespace-nowrap">
-                                        {{ $row->judul_kp }}
-                                    </flux:table.cell>
-
-                                    <flux:table.cell>
-                                        <flux:badge size="sm" inset="top bottom"
-                                            :color="$this->badgeColor($row->status)">
-                                            {{ $this->statusLabel($row->status) }}
-                                        </flux:badge>
-                                    </flux:table.cell>
-
-                                    <flux:table.cell class="whitespace-nowrap">
-                                        {{ $row->dosenPembimbing?->dosen_name ?? '—' }}
-                                    </flux:table.cell>
-
-                                    <flux:table.cell class="text-right">
-                                        <flux:dropdown position="bottom" align="end">
-                                            <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal"
-                                                inset="top bottom"></flux:button>
-                                            <flux:menu class="min-w-56">
-                                                <flux:modal.trigger name="detail-spk">
-                                                    <flux:menu.item icon="eye"
-                                                        wire:click="openDetail({{ $row->id }})">
-                                                        Detail
-                                                    </flux:menu.item>
-                                                </flux:modal.trigger>
-
-                                                <flux:menu.item icon="arrow-down-tray"
-                                                    href="{{ route('bap.kp.download.docx', $row->id) }}"
-                                                    target="_blank">
-                                                    Unduh SPK (DOCX)
-                                                </flux:menu.item>
-
-                                                <flux:modal.trigger name="spk-publish">
-                                                    <flux:menu.item icon="pencil-square"
-                                                        wire:click="openPublish({{ $row->id }})">
-                                                        Ubah Nomor SPK
-                                                    </flux:menu.item>
-                                                </flux:modal.trigger>
-                                            </flux:menu>
-                                        </flux:dropdown>
-                                    </flux:table.cell>
-                                </flux:table.row>
-                            @endforeach
-                        </flux:table.rows>
-                    </flux:table>
+            {{-- 2. PANDUAN --}}
+            <flux:card
+                class="rounded-xl border bg-sky-50/50 dark:bg-sky-900/10 border-sky-100 dark:border-sky-800/30 shadow-sm">
+                <div class="flex items-start gap-3">
+                    <flux:icon.information-circle class="mt-0.5 size-5 text-sky-600 dark:text-sky-400" />
+                    <div>
+                        <h3 class="font-semibold text-sky-900 dark:text-sky-100 text-sm">Alur Penerbitan</h3>
+                        <ul class="mt-3 text-xs text-sky-800 dark:text-sky-200 space-y-2 list-disc list-inside">
+                            <li>Cek data pengajuan di tab <strong>Belum Diterbitkan</strong>.</li>
+                            <li>Pastikan judul dan lokasi KP sudah sesuai.</li>
+                            <li>Klik <strong>Terbitkan</strong> dan masukkan Nomor SPK.</li>
+                            <li>SPK yang terbit akan muncul di tab <strong>Sudah Diterbitkan</strong>.</li>
+                        </ul>
+                    </div>
                 </div>
             </flux:card>
-        </flux:tab.panel>
-    </flux:tab.group>
+        </div>
+    </div>
 
-    {{-- ===== MODAL DETAIL SPK ===== --}}
-    <flux:modal name="detail-spk" :show="$detailId !== null">
-        @php $item = $this->selectedItem; @endphp
-
-        <div class="space-y-5">
-            <div class="flex items-start justify-between gap-3">
-                <div>
-                    <flux:heading size="lg">Detail Pengajuan / SPK</flux:heading>
-                    <p class="text-sm text-zinc-500">Periksa data & dokumen mahasiswa.</p>
-                </div>
-                <flux:modal.close>
-                    <flux:button variant="ghost" icon="x-mark" wire:click="closeDetail"></flux:button>
-                </flux:modal.close>
+    {{-- MODAL DETAIL --}}
+    <flux:modal name="detail-spk" :show="$detailId !== null" class="md:w-[32rem]">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Detail Pengajuan</flux:heading>
+                <p class="text-sm text-zinc-500">Informasi lengkap pengajuan KP.</p>
             </div>
 
-            @if ($item)
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <flux:card class="space-y-2">
-                        <div class="text-sm text-zinc-500">Mahasiswa</div>
-                        <div class="font-semibold">
-                            {{ $item->mahasiswa?->user?->name }}
-                            <div class="text-sm text-zinc-500">
-                                NIM: {{ $item->mahasiswa?->mahasiswa_nim }}
-                            </div>
-                        </div>
-                    </flux:card>
+            @if ($selectedItem = $this->selectedItem)
+                <div class="space-y-4">
+                    <div class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                        <div class="text-xs text-zinc-500">Mahasiswa</div>
+                        <div class="font-medium">{{ $selectedItem->mahasiswa->user->name }}</div>
+                        <div class="text-xs">{{ $selectedItem->mahasiswa->mahasiswa_nim }}</div>
+                    </div>
 
-                    <flux:card class="space-y-2">
-                        <div class="text-sm text-zinc-500">Status</div>
-                        <flux:badge size="sm" inset="top bottom" :color="$this->badgeColor($item->status)">
-                            {{ $this->statusLabel($item->status) }}
-                        </flux:badge>
-                    </flux:card>
+                    <div class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                        <div class="text-xs text-zinc-500">Judul KP</div>
+                        <div class="font-medium">{{ $selectedItem->judul_kp }}</div>
+                    </div>
 
-                    <flux:card class="space-y-2">
-                        <div class="text-sm text-zinc-500">Dosen Pembimbing</div>
-                        <div class="font-medium">{{ $item->dosenPembimbing?->dosen_name ?? '—' }}</div>
-                    </flux:card>
+                    <div class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                        <div class="text-xs text-zinc-500">Lokasi</div>
+                        <div class="font-medium">{{ $selectedItem->lokasi_kp }}</div>
+                    </div>
 
-                    @if ($item->nomor_spk || $item->tanggal_terbit_spk)
-                        <flux:card class="space-y-2">
-                            <div class="text-sm text-zinc-500">SPK</div>
-                            <div class="text-sm">
-                                Nomor: <span class="font-medium">{{ $item->nomor_spk ?: '—' }}</span><br>
-                                Tanggal Terbit:
-                                <span class="font-medium">
-                                    {{ optional($item->tanggal_terbit_spk)->format('d M Y') ?: '—' }}
-                                </span>
-                            </div>
-                        </flux:card>
-                    @endif
-
-                    @if ($item->catatan)
-                        <flux:card class="space-y-2 md:col-span-2">
-                            <div class="text-sm text-zinc-500">Catatan</div>
-                            <div class="text-sm">{{ $item->catatan }}</div>
-                        </flux:card>
-                    @endif
-
-                    <flux:card class="space-y-2 md:col-span-2">
-                        <div class="text-sm text-zinc-500">Judul Kerja Praktik</div>
-                        <div class="font-medium">{{ $item->judul_kp }}</div>
-                    </flux:card>
-
-                    <flux:card class="space-y-2 md:col-span-2">
-                        <div class="text-sm text-zinc-500">Instansi / Lokasi KP</div>
-                        <div class="font-medium">{{ $item->lokasi_kp }}</div>
-                    </flux:card>
-
-                    <flux:card class="space-y-3 md:col-span-2">
-                        <div class="text-sm text-zinc-500">Dokumen</div>
-                        <div class="flex flex-col gap-2">
-                            <a class="text-sm underline hover:no-underline"
-                                href="{{ $item->proposal_path ? asset('storage/' . $item->proposal_path) : '#' }}"
-                                target="_blank"
-                                @if (!$item->proposal_path) aria-disabled="true" class="pointer-events-none opacity-50" @endif>
-                                Lihat Proposal (PDF)
-                            </a>
-
-                            <a class="text-sm underline hover:no-underline"
-                                href="{{ $item->surat_keterangan_path ? asset('storage/' . $item->surat_keterangan_path) : '#' }}"
-                                target="_blank"
-                                @if (!$item->surat_keterangan_path) aria-disabled="true" class="pointer-events-none opacity-50" @endif>
-                                Lihat Surat Diterima (PDF/JPG/PNG)
-                            </a>
-                        </div>
-                    </flux:card>
+                    <div class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                        <div class="text-xs text-zinc-500">Dosen Pembimbing</div>
+                        <div class="font-medium">{{ $selectedItem->dosenPembimbing->dosen_name ?? '-' }}</div>
+                    </div>
                 </div>
-            @else
-                <div class="text-sm text-red-600">Data tidak ditemukan.</div>
             @endif
 
             <div class="flex justify-end">
-                <flux:modal.close>
-                    <flux:button variant="primary" wire:click="closeDetail">Tutup</flux:button>
-                </flux:modal.close>
+                <flux:button variant="ghost" wire:click="closeDetail">Tutup</flux:button>
             </div>
         </div>
     </flux:modal>
 
-    {{-- ===== MODAL TERBITKAN / UBAH NOMOR SPK ===== --}}
-    <flux:modal name="spk-publish" class="min-w-[32rem]">
+    {{-- MODAL PUBLISH --}}
+    <flux:modal name="spk-publish" class="md:w-96">
         <div class="space-y-6">
             <div>
-                <flux:heading size="lg">Terbitkan / Ubah Nomor SPK</flux:heading>
-                <flux:subheading class="mt-1">Masukkan nomor SPK dan pilih penandatangan.</flux:subheading>
+                <flux:heading size="lg">Terbitkan SPK</flux:heading>
+                <p class="text-sm text-zinc-500">Masukkan nomor surat untuk menerbitkan.</p>
             </div>
 
-            <div class="grid gap-4">
-                <flux:input label="Nomor SPK" wire:model.defer="nomor_spk"
-                    placeholder="cth: 012/UNSOED/FT/SPK/10/2025" :invalid="$errors->has('nomor_spk')" />
-                @error('nomor_spk')
-                    <p class="text-sm text-red-600 -mt-2">{{ $message }}</p>
-                @enderror
+            <div class="space-y-4">
+                <flux:input label="Nomor SPK" placeholder="Contoh: 001/UNSOED/2025" wire:model="nomor_spk" />
 
                 <flux:select label="Penandatangan" wire:model="signatory_id">
-                    @foreach (\App\Models\Signatory::query()->orderBy('position')->get() as $opt)
-                        <flux:select.option :value="$opt->id">
-                            {{ $opt->position }} — {{ $opt->name }}
+                    @foreach (\App\Models\Signatory::orderBy('position')->get() as $sig)
+                        <flux:select.option :value="$sig->id">{{ $sig->name }} ({{ $sig->position }})
                         </flux:select.option>
                     @endforeach
                 </flux:select>
-                @error('signatory_id')
-                    <p class="text-sm text-red-600">{{ $message }}</p>
-                @enderror
             </div>
 
-            <div class="flex gap-2">
-                <flux:spacer />
+            <div class="flex justify-end gap-2">
                 <flux:modal.close>
                     <flux:button variant="ghost">Batal</flux:button>
                 </flux:modal.close>
-                <flux:button variant="primary" icon="check" wire:click="publishSave" wire:loading.attr="disabled">
-                    Simpan & Terbitkan
-                </flux:button>
+                <flux:button variant="primary" wire:click="publishSave">Simpan & Terbitkan</flux:button>
             </div>
         </div>
     </flux:modal>

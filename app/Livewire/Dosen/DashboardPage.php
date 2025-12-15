@@ -26,10 +26,12 @@ class DashboardPage extends Component
         $base = KpSeminar::where('dosen_pembimbing_id', $dosenId);
 
         return [
-            'menungguAcc' => (clone $base)->where('status', 'diajukan')->count(),
-            'dijadwalkan' => (clone $base)->where('status', 'dijadwalkan')->count(),
-            'baTerbit'    => (clone $base)->where('status', 'ba_terbit')->count(),
-            'perluNilai'  => (clone $base)->whereIn('status', ['ba_terbit'])->whereDoesntHave('grade')->count(),
+            'menungguAcc' => (clone $base)->where('status', KpSeminar::ST_DIAJUKAN)->count(),
+            'dijadwalkan' => (clone $base)->where('status', KpSeminar::ST_DIJADWALKAN)->count(),
+            'baTerbit'    => (clone $base)->where('status', KpSeminar::ST_BA_TERBIT)->count(),
+            // Perlu nilai: Sudah BA terbit tapi belum ada nilai (grade)
+            'perluNilai'  => (clone $base)->where('status', KpSeminar::ST_BA_TERBIT)
+                ->whereDoesntHave('grade')->count(),
         ];
     }
 
@@ -43,7 +45,7 @@ class DashboardPage extends Component
             ->with(['grade', 'kp.mahasiswa.user'])
             ->where('dosen_pembimbing_id', $dosenId)
             ->latest('updated_at')
-            ->limit(8)
+            ->limit(5)
             ->get();
     }
 
@@ -53,7 +55,9 @@ class DashboardPage extends Component
         $dosenId = $this->dosenId();
         if (!$dosenId) return 0;
 
-        return KerjaPraktik::where('dosen_pembimbing_id', $dosenId)->count();
+        return KerjaPraktik::where('dosen_pembimbing_id', $dosenId)
+            ->whereIn('status', [KerjaPraktik::ST_SPK_TERBIT, KerjaPraktik::ST_KP_BERJALAN])
+            ->count();
     }
 
     public function render()

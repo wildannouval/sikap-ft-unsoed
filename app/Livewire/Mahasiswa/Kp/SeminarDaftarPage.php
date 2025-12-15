@@ -13,54 +13,43 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Services\Notifier;
+use Flux\Flux;
 
 class SeminarDaftarPage extends Component
 {
     use WithFileUploads;
 
-    /** KP milik mahasiswa */
     public KerjaPraktik $kp;
-
-    /** Entity seminar (jika sudah ada) */
     public ?KpSeminar $seminar = null;
 
-    /** Form fields */
     public string $judul_kp_final = '';
-    public ?string $tanggal_seminar = null; // YYYY-MM-DD
+    public ?string $tanggal_seminar = null;
     public ?int $ruangan_id = null;
-    public ?string $jam_mulai = null;   // HH:MM
-    public ?string $jam_selesai = null; // HH:MM
-
-    /** Optional tambahan */
+    public ?string $jam_mulai = null;
+    public ?string $jam_selesai = null;
     public ?string $abstrak = null;
 
-    /** Upload (opsional) */
-    public $berkas_laporan; // UploadedFile (PDF)
+    public $berkas_laporan;
     public ?string $berkas_laporan_path = null;
 
-    /** Status string */
     public string $status = KpSeminar::ST_DIAJUKAN;
 
     public function mount(KerjaPraktik $kp): void
     {
         $mhs = Mahasiswa::where('user_id', Auth::id())->firstOrFail();
 
-        // Pastikan KP milik mahasiswa login (bandingkan dengan PK sebenarnya)
         abort_unless((int)$kp->mahasiswa_id === (int)$mhs->getKey(), 403, 'KP bukan milik Anda.');
 
-        // Status KP harus aktif
         abort_unless(
             in_array($kp->status, [KerjaPraktik::ST_SPK_TERBIT, KerjaPraktik::ST_KP_BERJALAN], true),
             403,
             'Daftar seminar hanya untuk KP aktif.'
         );
 
-        // Minimal 6 konsultasi terverifikasi
         abort_unless($kp->verifiedConsultationsCount() >= 6, 403, 'Minimal 6 konsultasi terverifikasi.');
 
         $this->kp = $kp;
 
-        // Ambil/isi seminar yang sudah ada
         $this->seminar = KpSeminar::where('kerja_praktik_id', $kp->id)
             ->where('mahasiswa_id', $mhs->getKey())
             ->latest('id')
@@ -87,9 +76,8 @@ class SeminarDaftarPage extends Component
             'ruangan_id'      => ['required', Rule::exists('rooms', 'id')],
             'jam_mulai'       => ['required', 'date_format:H:i'],
             'jam_selesai'     => ['required', 'date_format:H:i', 'after:jam_mulai'],
-
             'abstrak'         => ['nullable', 'string', 'max:5000'],
-            'berkas_laporan'  => ['nullable', 'file', 'mimes:pdf', 'max:10240'], // 10MB
+            'berkas_laporan'  => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ];
     }
 
@@ -100,11 +88,29 @@ class SeminarDaftarPage extends Component
     }
 
     #[Computed]
+    public function statusBadge(): array
+    {
+        return match ($this->status) {
+            KpSeminar::ST_DIAJUKAN             => ['color' => 'indigo',  'icon' => 'clock',        'desc' => 'Menunggu persetujuan Dosen'],
+            KpSeminar::ST_DISETUJUI_PEMBIMBING => ['color' => 'sky',     'icon' => 'check-circle', 'desc' => 'Menunggu penjadwalan Koordinator'],
+            KpSeminar::ST_DIJADWALKAN          => ['color' => 'emerald', 'icon' => 'calendar',     'desc' => 'Jadwal & Ruangan dikonfirmasi'],
+            KpSeminar::ST_SELESAI              => ['color' => 'teal',    'icon' => 'check-badge',  'desc' => 'Seminar telah dilaksanakan'],
+            KpSeminar::ST_REVISI               => ['color' => 'amber',   'icon' => 'pencil',       'desc' => 'Perlu perbaikan laporan'],
+            KpSeminar::ST_BA_TERBIT            => ['color' => 'violet',  'icon' => 'document-text', 'desc' => 'Berita Acara diterbitkan'],
+            KpSeminar::ST_DITOLAK              => ['color' => 'rose',    'icon' => 'x-circle',     'desc' => 'Pengajuan ditolak, silakan cek.'],
+            KpSeminar::ST_GAGAL                => ['color' => 'rose',    'icon' => 'x-circle',     'desc' => 'Seminar dibatalkan/gagal'],
+            default                            => ['color' => 'zinc',    'icon' => 'minus',        'desc' => 'Status belum tersedia'],
+        };
+    }
+
+    #[Computed]
     public function isLocked(): bool
     {
         return in_array($this->status, [
             KpSeminar::ST_DISETUJUI_PEMBIMBING,
             KpSeminar::ST_DIJADWALKAN,
+            KpSeminar::ST_SELESAI,
+            KpSeminar::ST_REVISI,
             KpSeminar::ST_BA_TERBIT,
         ], true);
     }
@@ -122,7 +128,6 @@ class SeminarDaftarPage extends Component
             ->all();
     }
 
-    /** Gabung tanggal + jam_mulai jadi datetime untuk kolom `tanggal_seminar` */
     private function buildSeminarDateTime(): ?string
     {
         if (!$this->tanggal_seminar || !$this->jam_mulai) return null;
@@ -132,16 +137,12 @@ class SeminarDaftarPage extends Component
     public function saveDraft(): void
     {
         $this->validate();
-
         $mhs = Mahasiswa::where('user_id', Auth::id())->firstOrFail();
 
-        // Snapshot nama ruangan
         $ruanganNama = null;
         if ($this->ruangan_id) {
             $room = Room::find($this->ruangan_id);
-            if ($room) {
-                $ruanganNama = "{$room->room_number} — {$room->building}";
-            }
+            if ($room) $ruanganNama = "{$room->room_number} — {$room->building}";
         }
 
         $payload = [
@@ -164,7 +165,7 @@ class SeminarDaftarPage extends Component
 
         if ($this->seminar) {
             if ($this->isLocked()) {
-                session()->flash('err', 'Tidak dapat mengubah data pada status saat ini.');
+                Flux::toast(heading: 'Gagal', text: 'Data terkunci, tidak bisa diubah.', variant: 'danger');
                 return;
             }
             $this->seminar->update($payload);
@@ -174,60 +175,43 @@ class SeminarDaftarPage extends Component
             $this->status  = $this->seminar->status;
         }
 
-        session()->flash('ok', 'Draf pendaftaran tersimpan.');
+        Flux::toast(heading: 'Tersimpan', text: 'Draf pendaftaran disimpan.', variant: 'success');
     }
 
     public function submitToAdvisor(): void
     {
         $this->validate();
-
-        // Pastikan draf tersimpan (agar path/file & snapshot ruangan terisi)
         $this->saveDraft();
 
-        // Tetapkan status "diajukan" (nanti dospem yang setujui/menolak)
-        $this->seminar->update([
-            'status' => KpSeminar::ST_DIAJUKAN,
-        ]);
+        $this->seminar->update(['status' => KpSeminar::ST_DIAJUKAN]);
         $this->status = KpSeminar::ST_DIAJUKAN;
 
-        // Notif → Dosen Pembimbing
         $dosenUser = $this->kp->dosenPembimbing?->user;
-        $mhs = $this->kp->mahasiswa;
         if ($dosenUser) {
             Notifier::toUser(
                 $dosenUser,
-                'Pengajuan Seminar KP baru',
-                sprintf(
-                    '%s (%s) mengajukan seminar: %s.',
-                    $mhs?->user?->name ?? 'Mahasiswa',
-                    $mhs?->nim ?? '-',
-                    $this->judul_kp_final
-                ),
+                'Pengajuan Seminar KP',
+                "Mahasiswa {$this->kp->mahasiswa->user->name} mengajukan seminar KP.",
                 route('dsp.kp.seminar.approval'),
-                [
-                    'type' => 'kp_seminar_submitted',
-                    'kp_id' => $this->kp->id,
-                    'seminar_id' => $this->seminar->id,
-                ]
+                ['type' => 'kp_seminar_submitted', 'kp_id' => $this->kp->id, 'seminar_id' => $this->seminar->id]
             );
         }
 
-        session()->flash('ok', 'Pengajuan dikirim ke Dosen Pembimbing.');
+        Flux::toast(heading: 'Terkirim', text: 'Pengajuan dikirim ke Dosen.', variant: 'success');
     }
 
     public function removeFile(): void
     {
         if (!$this->seminar || $this->isLocked()) return;
 
-        $path = $this->berkas_laporan_path;
-        if ($path && Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
+        if ($this->berkas_laporan_path && Storage::disk('public')->exists($this->berkas_laporan_path)) {
+            Storage::disk('public')->delete($this->berkas_laporan_path);
         }
 
         $this->berkas_laporan_path = null;
         $this->seminar->update(['berkas_laporan_path' => null]);
 
-        session()->flash('ok', 'Berkas laporan dihapus.');
+        Flux::toast(heading: 'Terhapus', text: 'Berkas dihapus.', variant: 'success');
     }
 
     public function render()

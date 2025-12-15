@@ -4,10 +4,12 @@ namespace App\Livewire\Bapendik\Master;
 
 use App\Models\Room;
 use Flux\Flux;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\Computed;
 
+#[Layout('components.layouts.app')]
 class RuanganIndex extends Component
 {
     use WithPagination;
@@ -18,6 +20,7 @@ class RuanganIndex extends Component
     public int    $perPage = 10;
 
     // form state
+    public bool $showForm = false; // Untuk kontrol modal
     public ?int $editId = null;
     public string $room_number = '';
     public string $building = '';
@@ -28,18 +31,19 @@ class RuanganIndex extends Component
         $this->resetPage();
     }
 
-    public function updatingSortBy()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingSortDirection()
-    {
-        $this->resetPage();
-    }
-
     public function updatingPerPage()
     {
+        $this->resetPage();
+    }
+
+    public function sort(string $column): void
+    {
+        if ($this->sortBy === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDirection = 'asc';
+        }
         $this->resetPage();
     }
 
@@ -76,58 +80,55 @@ class RuanganIndex extends Component
     public function create(): void
     {
         $this->resetForm();
-    }
-
-    public function store(): void
-    {
-        $this->validate();
-
-        Room::create([
-            'room_number' => $this->room_number,
-            'building'    => $this->building,
-            'notes'       => $this->notes,
-        ]);
-
-        $this->resetForm();
-        $this->resetPage();
-
-        // === TOAST sukses tambah ===
-        Flux::toast(
-            heading: 'Berhasil',
-            text: 'Ruangan ditambahkan.',
-            variant: 'success',
-        );
+        $this->showForm = true;
+        Flux::modal('ruangan-form')->show();
     }
 
     public function edit(int $id): void
     {
         $r = Room::findOrFail($id);
+
         $this->editId      = $r->id;
         $this->room_number = $r->room_number;
         $this->building    = $r->building;
         $this->notes       = $r->notes;
+
+        $this->showForm = true;
+        Flux::modal('ruangan-form')->show();
     }
 
-    public function update(): void
+    public function closeForm(): void
+    {
+        $this->showForm = false;
+        Flux::modal('ruangan-form')->close();
+    }
+
+    public function save(): void
     {
         $this->validate();
 
-        $r = Room::findOrFail($this->editId);
-        $r->update([
-            'room_number' => $this->room_number,
-            'building'    => $this->building,
-            'notes'       => $this->notes,
-        ]);
+        if ($this->editId) {
+            $r = Room::findOrFail($this->editId);
+            $r->update([
+                'room_number' => $this->room_number,
+                'building'    => $this->building,
+                'notes'       => $this->notes,
+            ]);
+            $msg = 'Perubahan ruangan disimpan.';
+        } else {
+            Room::create([
+                'room_number' => $this->room_number,
+                'building'    => $this->building,
+                'notes'       => $this->notes,
+            ]);
+            $msg = 'Ruangan ditambahkan.';
+        }
 
+        $this->closeForm();
         $this->resetForm();
         $this->resetPage();
 
-        // === TOAST sukses update ===
-        Flux::toast(
-            heading: 'Berhasil',
-            text: 'Perubahan ruangan disimpan.',
-            variant: 'success',
-        );
+        Flux::toast(heading: 'Berhasil', text: $msg, variant: 'success');
     }
 
     public function delete(int $id): void
@@ -135,12 +136,7 @@ class RuanganIndex extends Component
         Room::findOrFail($id)->delete();
         $this->resetPage();
 
-        // === TOAST sukses hapus ===
-        Flux::toast(
-            heading: 'Berhasil',
-            text: 'Ruangan dihapus.',
-            variant: 'success',
-        );
+        Flux::toast(heading: 'Terhapus', text: 'Ruangan dihapus.', variant: 'success');
     }
 
     public function render()

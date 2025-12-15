@@ -8,48 +8,51 @@ use App\Services\Notifier;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Flux\Flux;
 
 class SeminarJadwalPage extends Component
 {
     use WithPagination;
 
     public string $search = '';
-    public string $statusFilter = 'disetujui_pembimbing'; // all | diajukan | disetujui_pembimbing | dijadwalkan | ba_terbit | ditolak
+    public string $statusFilter = 'disetujui_pembimbing';
     public string $sortBy = 'created_at';
     public string $sortDirection = 'desc';
     public int $perPage = 10;
 
     // schedule/BA modal state
     public ?int $editId = null;
-    public ?string $tanggal_seminar = null; // HTML datetime-local format: Y-m-d\TH:i
-    public ?int $ruangan_id = null;         // opsional, kalau nanti mau binding ke master room
+    public ?string $tanggal_seminar = null;
+    public ?int $ruangan_id = null;
     public ?string $ruangan_nama = null;
 
     public ?string $nomor_ba = null;
-    public ?string $tanggal_ba = null;      // Y-m-d
-    public ?int $signatory_id = null;       // opsional: snapshot penandatangan
+    public ?string $tanggal_ba = null;
+    public ?int $signatory_id = null;
 
-    // --- Pagination reset hooks ---
+    // --- Hooks ---
+    public function mount(): void
+    {
+        // Default signer jika belum ada
+        $this->signatory_id = Signatory::query()->orderBy('position')->value('id');
+    }
+
     public function updatingSearch()
     {
         $this->resetPage();
     }
-
     public function updatingStatusFilter()
     {
         $this->resetPage();
     }
-
     public function updatingSortBy()
     {
         $this->resetPage();
     }
-
     public function updatingSortDirection()
     {
         $this->resetPage();
     }
-
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -63,20 +66,27 @@ class SeminarJadwalPage extends Component
             $this->sortBy = $field;
             $this->sortDirection = 'asc';
         }
-
         $this->resetPage();
     }
 
-    /**
-     * Query dasar (pattern sama seperti SpkPage).
-     */
+    // Helper Badge
+    public function badgeColor(string $status): string
+    {
+        return KpSeminar::badgeColor($status);
+    }
+
+    public function statusLabel(string $status): string
+    {
+        return KpSeminar::statusLabel($status);
+    }
+
+    // --- Query ---
     protected function baseQuery()
     {
         return KpSeminar::query()
             ->with(['kp.mahasiswa.user', 'kp.dosenPembimbing'])
             ->when($this->search !== '', function ($query) {
                 $term = '%' . $this->search . '%';
-
                 $query->where(function ($q) use ($term) {
                     $q->where('judul_laporan', 'like', $term)
                         ->orWhere('nomor_ba', 'like', $term)
@@ -88,7 +98,6 @@ class SeminarJadwalPage extends Component
                                         ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', $term));
                                 })
                                 ->orWhereHas('dosenPembimbing', function ($dq) use ($term) {
-                                    // SESUAIKAN DENGAN KOLOM DI TABEL `dosens`
                                     $dq->where('dosen_name', 'like', $term);
                                 });
                         });
@@ -106,6 +115,36 @@ class SeminarJadwalPage extends Component
             ->withQueryString();
     }
 
+    #[Computed]
+    public function stats(): array
+    {
+        return [
+            'disetujui'   => KpSeminar::where('status', KpSeminar::ST_DISETUJUI_PEMBIMBING)->count(),
+            'dijadwalkan' => KpSeminar::where('status', KpSeminar::ST_DIJADWALKAN)->count(),
+            'ba_terbit'   => KpSeminar::where('status', KpSeminar::ST_BA_TERBIT)->count(),
+        ];
+    }
+
+    #[Computed]
+    public function statusOptions(): array
+    {
+        return [
+            ['value' => 'all', 'label' => 'Semua Status'],
+            ['value' => KpSeminar::ST_DISETUJUI_PEMBIMBING, 'label' => 'Disetujui Pembimbing'],
+            ['value' => KpSeminar::ST_DIJADWALKAN, 'label' => 'Dijadwalkan'],
+            ['value' => KpSeminar::ST_BA_TERBIT, 'label' => 'BA Terbit'],
+            ['value' => KpSeminar::ST_DITOLAK, 'label' => 'Ditolak'],
+        ];
+    }
+
+    #[Computed]
+    public function signatories()
+    {
+        return Signatory::orderBy('position')->get();
+    }
+
+    // --- Actions ---
+
     public function openEdit(int $id): void
     {
         $row = KpSeminar::with(['kp.mahasiswa.user'])->findOrFail($id);
@@ -116,7 +155,10 @@ class SeminarJadwalPage extends Component
         $this->ruangan_nama    = $row->ruangan_nama;
         $this->nomor_ba        = $row->nomor_ba;
         $this->tanggal_ba      = optional($row->tanggal_ba)->format('Y-m-d');
-        $this->signatory_id    = $row->signatory_id;
+        // Gunakan signatory yg tersimpan atau default
+        $this->signatory_id    = $row->signatory_id ?? Signatory::query()->orderBy('position')->value('id');
+
+        Flux::modal('edit-seminar')->show();
     }
 
     public function saveSchedule(): void
@@ -136,76 +178,47 @@ class SeminarJadwalPage extends Component
             'status'          => KpSeminar::ST_DIJADWALKAN,
         ]);
 
-        // === NOTIFIKASI – Mahasiswa & Dosen Pembimbing
+        // NOTIFIKASI
+        $this->notifySchedule($row);
+
+        Flux::toast(heading: 'Tersimpan', text: 'Jadwal seminar disimpan. Silakan lanjutkan isi BA jika perlu.', variant: 'success');
+
+        // JANGAN TUTUP MODAL AGAR BISA LANJUT ISI BA
+        $this->resetPage();
+    }
+
+    protected function notifySchedule($row)
+    {
         $mhsUser = $row->kp?->mahasiswa?->user;
         $dspUser = $row->kp?->dosenPembimbing?->user;
 
         if ($mhsUser) {
-            Notifier::toUser(
-                $mhsUser,
-                'Seminar KP dijadwalkan',
-                sprintf(
-                    'Seminar kamu dijadwalkan pada %s%s.',
-                    optional($row->tanggal_seminar)?->format('d M Y H:i') ?: '-',
-                    $row->ruangan_nama ? " • {$row->ruangan_nama}" : ''
-                ),
-                route('mhs.kp.seminar', ['kp' => $row->kerja_praktik_id]),
-                [
-                    'type'       => 'kp_seminar_scheduled',
-                    'kp_id'      => $row->kerja_praktik_id,
-                    'seminar_id' => $row->id,
-                ]
-            );
+            Notifier::toUser($mhsUser, 'Seminar KP dijadwalkan', "Seminar kamu dijadwalkan pada " . optional($row->tanggal_seminar)->format('d M Y H:i') . ".", route('mhs.kp.seminar', ['kp' => $row->kerja_praktik_id]), ['type' => 'kp_seminar_scheduled', 'kp_id' => $row->kerja_praktik_id, 'seminar_id' => $row->id]);
         }
 
         if ($dspUser) {
-            Notifier::toUser(
-                $dspUser,
-                'Seminar KP bimbingan Anda dijadwalkan',
-                sprintf(
-                    'Seminar %s dijadwalkan pada %s%s.',
-                    $row->kp?->mahasiswa?->user?->name ?? 'Mahasiswa',
-                    optional($row->tanggal_seminar)?->format('d M Y H:i') ?: '-',
-                    $row->ruangan_nama ? " • {$row->ruangan_nama}" : ''
-                ),
-                route('dsp.kp.seminar.approval'),
-                [
-                    'type'       => 'kp_seminar_scheduled_info',
-                    'kp_id'      => $row->kerja_praktik_id,
-                    'seminar_id' => $row->id,
-                ]
-            );
+            Notifier::toUser($dspUser, 'Seminar KP bimbingan dijadwalkan', "Seminar mahasiswa bimbingan dijadwalkan.", route('dsp.kp.seminar.approval'), ['type' => 'kp_seminar_scheduled_info', 'kp_id' => $row->kerja_praktik_id, 'seminar_id' => $row->id]);
         }
-
-        session()->flash('ok', 'Jadwal seminar disimpan.');
-        $this->editId = null;
-        $this->resetPage();
     }
 
     public function publishBA(): void
     {
         $this->validate([
-            'editId'     => ['required', 'exists:kp_seminars,id'],
-            'nomor_ba'   => ['required', 'string', 'max:100'],
-            'tanggal_ba' => ['required', 'date'],
+            'editId'       => ['required', 'exists:kp_seminars,id'],
+            'nomor_ba'     => ['required', 'string', 'max:100'],
+            'tanggal_ba'   => ['required', 'date'],
+            'signatory_id' => ['required', 'exists:signatories,id'],
         ]);
 
-        $row = KpSeminar::with([
-            'kp.mahasiswa.user',
-            'kp.mahasiswa.jurusan',
-            'kp.dosenPembimbing.user',
-        ])->findOrFail($this->editId);
+        $row = KpSeminar::with(['kp.mahasiswa.user'])->findOrFail($this->editId);
 
-        // snapshot signer bila diisi
-        if ($this->signatory_id) {
-            $sign = Signatory::find($this->signatory_id);
-
-            if ($sign) {
-                $row->signatory_id           = $sign->id;
-                $row->ttd_signed_by_name     = $sign->name;
-                $row->ttd_signed_by_position = $sign->position;
-                $row->ttd_signed_by_nip      = $sign->nip;
-            }
+        // Snapshot Signer
+        $sign = Signatory::find($this->signatory_id);
+        if ($sign) {
+            $row->signatory_id           = $sign->id;
+            $row->ttd_signed_by_name     = $sign->name;
+            $row->ttd_signed_by_position = $sign->position;
+            $row->ttd_signed_by_nip      = $sign->nip;
         }
 
         $row->nomor_ba   = $this->nomor_ba;
@@ -213,56 +226,20 @@ class SeminarJadwalPage extends Component
         $row->status     = KpSeminar::ST_BA_TERBIT;
         $row->save();
 
-        // === NOTIFIKASI – Mahasiswa & Dosen Pembimbing (+ link unduh)
-        $mhsUser = $row->kp?->mahasiswa?->user;
-        $dspUser = $row->kp?->dosenPembimbing?->user;
+        // NOTIFIKASI BA
+        $this->notifyBA($row);
 
-        if ($mhsUser) {
-            Notifier::toUser(
-                $mhsUser,
-                'Berita Acara Seminar terbit',
-                'Berita Acara Seminar KP kamu telah terbit. Silakan unduh dokumennya.',
-                route('mhs.kp.seminar', ['kp' => $row->kerja_praktik_id]),
-                [
-                    'type'           => 'kp_seminar_ba_published',
-                    'kp_id'          => $row->kerja_praktik_id,
-                    'seminar_id'     => $row->id,
-                    'download_route' => route('mhs.kp.seminar.download.ba', [
-                        'kp'      => $row->kerja_praktik_id,
-                        'seminar' => $row->id,
-                    ]),
-                ]
-            );
-        }
-
-        if ($dspUser) {
-            Notifier::toUser(
-                $dspUser,
-                'Berita Acara Seminar bimbingan terbit',
-                sprintf('BA untuk %s telah terbit.', $row->kp?->mahasiswa?->user?->name ?? 'mahasiswa'),
-                route('dsp.kp.seminar.approval'),
-                [
-                    'type'           => 'kp_seminar_ba_published_info',
-                    'kp_id'          => $row->kerja_praktik_id,
-                    'seminar_id'     => $row->id,
-                    'download_route' => route('dsp.kp.seminar.download.ba', $row->id),
-                ]
-            );
-        }
-
-        session()->flash('ok', 'Berita Acara diterbitkan.');
-        $this->editId = null;
+        Flux::toast(heading: 'Berhasil', text: 'Berita Acara diterbitkan.', variant: 'success');
+        Flux::modal('edit-seminar')->close();
         $this->resetPage();
     }
 
-    public function badgeColor(string $st): string
+    protected function notifyBA($row)
     {
-        return KpSeminar::badgeColor($st);
-    }
-
-    public function statusLabel(string $st): string
-    {
-        return KpSeminar::statusLabel($st);
+        $mhsUser = $row->kp?->mahasiswa?->user;
+        if ($mhsUser) {
+            Notifier::toUser($mhsUser, 'Berita Acara Seminar Terbit', 'BA Seminar KP telah terbit. Silakan unduh.', route('mhs.kp.seminar', ['kp' => $row->kerja_praktik_id]), ['type' => 'kp_seminar_ba_published', 'kp_id' => $row->kerja_praktik_id, 'seminar_id' => $row->id]);
+        }
     }
 
     public function render()

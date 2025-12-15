@@ -10,6 +10,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Services\Notifier;
+use Flux\Flux;
 
 class KonsultasiPage extends Component
 {
@@ -112,6 +113,25 @@ class KonsultasiPage extends Component
             ->withQueryString();
     }
 
+    /** Statistik Ringkas untuk Sidebar */
+    #[Computed]
+    public function stats(): array
+    {
+        $base = KpConsultation::where('kerja_praktik_id', $this->kp->id);
+
+        $verified = (clone $base)->whereNotNull('verified_at')->count();
+        // Minimal 6 kali bimbingan (Aturan umum)
+        $target = 6;
+
+        return [
+            'total_log'    => (clone $base)->count(),
+            'verified'     => $verified,
+            'pending'      => (clone $base)->whereNull('verified_at')->count(),
+            'target'       => $target,
+            'progress_pct' => min(100, round(($verified / $target) * 100)),
+        ];
+    }
+
     /** Submit konsultasi baru */
     public function submit(): void
     {
@@ -120,13 +140,13 @@ class KonsultasiPage extends Component
         $mhs = Mahasiswa::where('user_id', Auth::id())->firstOrFail();
 
         $row = KpConsultation::create([
-            'kerja_praktik_id'     => $this->kp->id,
-            'mahasiswa_id'         => $mhs->getKey(),
-            'dosen_pembimbing_id'  => $this->kp->dosen_pembimbing_id, // boleh null
-            'konsultasi_dengan'    => $this->konsultasi_dengan !== '' ? $this->konsultasi_dengan : null,
-            'tanggal_konsultasi'   => $this->tanggal_konsultasi,
-            'topik_konsultasi'     => $this->topik_konsultasi,
-            'hasil_konsultasi'     => $this->hasil_konsultasi,
+            'kerja_praktik_id'    => $this->kp->id,
+            'mahasiswa_id'        => $mhs->getKey(),
+            'dosen_pembimbing_id' => $this->kp->dosen_pembimbing_id, // boleh null
+            'konsultasi_dengan'   => $this->konsultasi_dengan !== '' ? $this->konsultasi_dengan : null,
+            'tanggal_konsultasi'  => $this->tanggal_konsultasi,
+            'topik_konsultasi'    => $this->topik_konsultasi,
+            'hasil_konsultasi'    => $this->hasil_konsultasi,
         ]);
 
         if ($this->kp->status === KerjaPraktik::ST_SPK_TERBIT) {
@@ -159,7 +179,7 @@ class KonsultasiPage extends Component
         }
 
         $this->resetForm();
-        session()->flash('ok', 'Konsultasi tersimpan. Notifikasi dikirim ke Dosen Pembimbing.');
+        Flux::toast(heading: 'Berhasil', text: 'Konsultasi ditambahkan.', variant: 'success');
         $this->resetPage();
     }
 
@@ -170,7 +190,10 @@ class KonsultasiPage extends Component
             ->where('kerja_praktik_id', $this->kp->id)
             ->firstOrFail();
 
-        abort_if($row->verified_at, 403, 'Sudah diverifikasi');
+        if ($row->verified_at) {
+            Flux::toast(heading: 'Gagal', text: 'Data sudah diverifikasi dosen.', variant: 'danger');
+            return;
+        }
 
         $this->editingId          = $row->id;
         $this->konsultasi_dengan  = (string)($row->konsultasi_dengan ?? '');
@@ -194,7 +217,10 @@ class KonsultasiPage extends Component
             ->where('kerja_praktik_id', $this->kp->id)
             ->firstOrFail();
 
-        abort_if($row->verified_at, 403, 'Sudah diverifikasi');
+        if ($row->verified_at) {
+            Flux::toast(heading: 'Gagal', text: 'Data sudah diverifikasi dosen.', variant: 'danger');
+            return;
+        }
 
         $row->update([
             'konsultasi_dengan'  => $this->konsultasi_dengan !== '' ? $this->konsultasi_dengan : null,
@@ -204,7 +230,7 @@ class KonsultasiPage extends Component
         ]);
 
         $this->cancelEdit();
-        session()->flash('ok', 'Perubahan disimpan.');
+        Flux::toast(heading: 'Tersimpan', text: 'Perubahan disimpan.', variant: 'success');
         $this->resetPage();
     }
 
@@ -215,11 +241,14 @@ class KonsultasiPage extends Component
             ->where('kerja_praktik_id', $this->kp->id)
             ->firstOrFail();
 
-        abort_if($row->verified_at, 403, 'Sudah diverifikasi');
+        if ($row->verified_at) {
+            Flux::toast(heading: 'Gagal', text: 'Data sudah diverifikasi dosen.', variant: 'danger');
+            return;
+        }
 
         $row->delete();
 
-        session()->flash('ok', 'Konsultasi dihapus.');
+        Flux::toast(heading: 'Terhapus', text: 'Konsultasi dihapus.', variant: 'success');
         $this->resetPage();
     }
 

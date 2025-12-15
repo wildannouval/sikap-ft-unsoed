@@ -3,7 +3,7 @@
     <flux:toast />
 
     {{-- HEADER HALAMAN --}}
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
             <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
                 Pengajuan Kerja Praktik
@@ -16,76 +16,26 @@
 
     <flux:separator variant="subtle" />
 
-    {{-- CARD PANDUAN --}}
-    <flux:card class="space-y-3 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800">
-        <div class="flex items-start gap-3">
-            <div class="rounded-md p-2 bg-sky-500 text-white dark:bg-sky-400">
-                {{-- Icon clipboard-document-list --}}
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M9 12h6M9 16h6M9 8h6m-3.75-5.25h1.5a2.25 2.25 0 012.25 2.25v.75h1.5A2.25 2.25 0 0120 8.25v10.5A2.25 2.25 0 0117.75 21H6.25A2.25 2.25 0 014 18.75V8.25A2.25 2.25 0 016.25 6.75h1.5V6c0-1.243 1.007-2.25 2.25-2.25z" />
-                </svg>
-            </div>
-            <div>
-                <flux:heading size="md">Panduan Pengajuan Kerja Praktik</flux:heading>
-                <ul class="mt-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc ms-4 space-y-1">
-                    <li>Pastikan sudah memiliki <strong>Surat Pengantar</strong> dengan status
-                        <strong>Diterbitkan</strong>.</li>
-                    <li>Gunakan pilihan <em>“Ambil dari SP terbit”</em> untuk mengisi data instansi secara otomatis.
-                    </li>
-                    <li>Isi <strong>Judul Kerja Praktik</strong> dan <strong>Instansi / Lokasi KP</strong> sesuai
-                        rencana kegiatan.</li>
-                    <li>Upload <strong>Proposal KP</strong> dalam format PDF (maksimal 2MB).</li>
-                    <li>Upload <strong>Surat Diterima / Bukti diterima</strong> (PDF/JPG/PNG, maksimal 2MB).</li>
-                    <li>Setelah diajukan, status awal biasanya <strong>Menunggu Review Komisi</strong>, dilanjutkan
-                        <strong>Menunggu Terbit SPK</strong>, lalu <strong>SPK Terbit</strong>.</li>
-                    <li>Pengajuan hanya bisa diubah / dihapus saat masih <strong>Menunggu Review Komisi</strong>.</li>
-                    <li>Jika status sudah <strong>SPK Terbit</strong>, SPK bisa diunduh melalui menu aksi di tabel.</li>
-                </ul>
-            </div>
-        </div>
-    </flux:card>
+    {{-- GRID UTAMA --}}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-    {{-- ALERTS --}}
-    @if (session('ok'))
-        <div class="rounded-md border border-emerald-300/60 bg-emerald-50 px-3 py-2 text-emerald-800">
-            <div class="font-medium">{{ session('ok') }}</div>
-        </div>
-    @endif
-    @if (session('err'))
-        <div class="rounded-md border border-rose-300/60 bg-rose-50 px-3 py-2 text-rose-800">
-            <div class="font-medium">{{ session('err') }}</div>
-        </div>
-    @endif
-
-    {{-- BARIS ATAS: FORM + RINGKASAN --}}
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-10">
-
-        {{-- FORM --}}
-        <div class="lg:col-span-6">
+        {{-- KOLOM KIRI: FORM --}}
+        <div class="lg:col-span-2 space-y-6">
             <flux:card
-                class="space-y-6 rounded-xl border
-                       bg-white dark:bg-stone-950
-                       border-zinc-200 dark:border-stone-800
-                       shadow-xs">
+                class="space-y-6 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm">
 
-                {{-- Header --}}
-                <div class="flex items-center gap-2 px-1.5 -mt-1">
-                    <span
-                        class="inline-flex items-center justify-center rounded-md p-1.5
-                                 bg-indigo-500 text-white dark:bg-indigo-400">
-                        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                            <path d="M8 8h8M8 12h6M8 16h4" />
-                        </svg>
-                    </span>
+                {{-- Header Kartu Form --}}
+                <div class="flex items-center gap-3">
+                    <div
+                        class="flex items-center justify-center rounded-lg p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                        <flux:icon.pencil-square class="size-5" />
+                    </div>
                     <div>
                         <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">
-                            Pengajuan Kerja Praktik
+                            Formulir Pengajuan
                         </h3>
-                        <p class="text-sm text-zinc-500 dark:text-zinc-300">
-                            Isi data di bawah lalu ajukan ke Komisi &amp; Bapendik.
+                        <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                            Lengkapi data KP &amp; upload dokumen.
                         </p>
                     </div>
                 </div>
@@ -94,9 +44,9 @@
 
                 {{-- Ambil dari SP terbit --}}
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                    <div class="sm:w-96">
-                        <flux:select wire:model="selectedSpId" label="Ambil dari SP terbit">
-                            <option value="">— Pilih SP terbit —</option>
+                    <div class="w-full sm:w-3/4">
+                        <flux:select wire:model="selectedSpId" label="Ambil dari SP terbit (Otomatis isi lokasi)">
+                            <option value="">— Pilih Surat Pengantar —</option>
                             @foreach ($this->spOptions as $sp)
                                 <option value="{{ $sp['id'] }}">
                                     {{ $sp['nomor_surat'] }} — {{ $sp['lokasi_surat_pengantar'] }}
@@ -107,403 +57,476 @@
                             @endforeach
                         </flux:select>
                     </div>
-                    <flux:button size="sm" variant="outline" icon="arrow-path-rounded-square"
-                        wire:click="fillFromSP">
-                        Ambil
+                    <flux:button class="w-full sm:w-auto" size="sm" variant="outline"
+                        icon="arrow-path-rounded-square" wire:click="fillFromSP">
+                        Ambil Data
                     </flux:button>
                 </div>
 
                 {{-- Fields --}}
-                <div class="grid grid-cols-1 gap-4">
+                <div class="grid grid-cols-1 gap-5">
                     <div>
                         <flux:input label="Judul Kerja Praktik" wire:model.defer="judul_kp"
-                            placeholder="Contoh: Otomasi Monitoring X di PT Y" :invalid="$errors->has('judul_kp')" />
-                        @error('judul_kp')
+                            placeholder="Contoh: Perancangan Sistem X di PT Y..." :invalid="$errors->has('judul_kp')" />
+                        {{-- @error('judul_kp')
                             <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                        @enderror
+                        @enderror --}}
                     </div>
 
                     <div>
                         <flux:input label="Instansi / Lokasi KP" wire:model.defer="lokasi_kp"
                             placeholder="Nama perusahaan / instansi" :invalid="$errors->has('lokasi_kp')" />
-                        @error('lokasi_kp')
+                        {{-- @error('lokasi_kp')
                             <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                        @enderror
+                        @enderror --}}
                     </div>
 
-                    {{-- Upload Proposal --}}
-                    <div>
-                        <flux:input wire:model="proposal_kp" type="file" label="Upload Proposal (PDF, maks 2MB)"
-                            required />
-                        {{-- indikator upload --}}
-                        <div class="text-xs text-zinc-500" wire:loading wire:target="proposal_kp">
-                            Mengunggah proposal…
-                        </div>
-                        {{-- error --}}
-                        @error('proposal_kp')
-                            <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                        @enderror
-
-                        {{-- preview nama file + tombol hapus --}}
-                        @if ($proposal_kp && !$errors->has('proposal_kp'))
-                            <div
-                                class="mt-1 flex items-center justify-between rounded-lg border bg-zinc-50 p-2 text-sm
-                                       dark:border-zinc-700 dark:bg-zinc-800">
-                                <span class="truncate">{{ $proposal_kp->getClientOriginalName() }}</span>
-                                <button type="button" wire:click="removeProposal"
-                                    class="text-rose-500 hover:text-rose-700 font-bold text-lg flex-shrink-0 ml-2">
-                                    &times;
-                                </button>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        {{-- Upload Proposal --}}
+                        <div>
+                            <flux:input wire:model="proposal_kp" type="file" label="Proposal (PDF, maks 2MB)"
+                                required />
+                            <div class="text-xs text-zinc-500 mt-1" wire:loading wire:target="proposal_kp">
+                                Mengunggah proposal…
                             </div>
-                        @endif
-                    </div>
+                            {{-- @error('proposal_kp')
+                                <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
+                            @enderror --}}
 
-                    {{-- Upload Surat Diterima / Bukti --}}
-                    <div>
-                        <flux:input wire:model="surat_keterangan_kp" type="file"
-                            label="Upload Surat Diterima (PDF/JPG/PNG, maks 2MB)" required />
-                        {{-- indikator upload --}}
-                        <div class="text-xs text-zinc-500" wire:loading wire:target="surat_keterangan_kp">
-                            Mengunggah surat diterima…
+                            @if ($proposal_kp && !$errors->has('proposal_kp'))
+                                <div
+                                    class="mt-2 flex items-center justify-between rounded-lg border bg-zinc-50 p-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
+                                    <span class="truncate">{{ $proposal_kp->getClientOriginalName() }}</span>
+                                    <button type="button" wire:click="removeProposal"
+                                        class="text-rose-500 hover:text-rose-700 font-bold text-lg flex-shrink-0 ml-2">
+                                        &times;
+                                    </button>
+                                </div>
+                            @endif
                         </div>
-                        {{-- error --}}
-                        @error('surat_keterangan_kp')
-                            <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                        @enderror
 
-                        {{-- preview nama file + tombol hapus --}}
-                        @if ($surat_keterangan_kp && !$errors->has('surat_keterangan_kp'))
-                            <div
-                                class="mt-1 flex items-center justify-between rounded-lg border bg-zinc-50 p-2 text-sm
-                                       dark:border-zinc-700 dark:bg-zinc-800">
-                                <span class="truncate">{{ $surat_keterangan_kp->getClientOriginalName() }}</span>
-                                <button type="button" wire:click="removeSuratKeterangan"
-                                    class="text-rose-500 hover:text-rose-700 font-bold text-lg flex-shrink-0 ml-2">
-                                    &times;
-                                </button>
+                        {{-- Upload Surat Diterima / Bukti --}}
+                        <div>
+                            <flux:input wire:model="surat_keterangan_kp" type="file"
+                                label="Bukti Diterima (PDF/Img, maks 2MB)" required />
+                            <div class="text-xs text-zinc-500 mt-1" wire:loading wire:target="surat_keterangan_kp">
+                                Mengunggah bukti…
                             </div>
-                        @endif
-                    </div>
+                            {{-- @error('surat_keterangan_kp')
+                                <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
+                            @enderror --}}
 
+                            @if ($surat_keterangan_kp && !$errors->has('surat_keterangan_kp'))
+                                <div
+                                    class="mt-2 flex items-center justify-between rounded-lg border bg-zinc-50 p-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
+                                    <span class="truncate">{{ $surat_keterangan_kp->getClientOriginalName() }}</span>
+                                    <button type="button" wire:click="removeSuratKeterangan"
+                                        class="text-rose-500 hover:text-rose-700 font-bold text-lg flex-shrink-0 ml-2">
+                                        &times;
+                                    </button>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
                 </div>
 
-                <div class="flex justify-end gap-2">
+                <div class="flex items-center justify-end gap-3 pt-2">
                     @if ($editingId)
-                        <flux:button variant="ghost" icon="x-mark" wire:click="cancelEdit">Batal</flux:button>
+                        <flux:button variant="subtle" wire:click="cancelEdit">Batal</flux:button>
                         <flux:button variant="primary" icon="check" wire:click="update">Simpan Perubahan</flux:button>
                     @else
-                        <flux:button variant="primary" icon="paper-airplane" wire:click="submit">Ajukan</flux:button>
+                        <flux:button variant="primary" icon="paper-airplane" wire:click="submit"
+                            class="w-full md:w-auto">
+                            Ajukan KP
+                        </flux:button>
                     @endif
                 </div>
             </flux:card>
         </div>
 
-        {{-- RINGKASAN STATUS --}}
-        <div class="lg:col-span-4">
-            <flux:card
-                class="space-y-4 rounded-xl border
-                       bg-white dark:bg-stone-950
-                       border-zinc-200 dark:border-stone-800
-                       shadow-xs">
+        {{-- KOLOM KANAN: INFO --}}
+        <div class="lg:col-span-1 space-y-6">
 
-                <div class="flex items-center gap-2 px-1.5 -mt-1">
-                    <span
-                        class="inline-flex items-center justify-center rounded-md p-1.5
-                                 bg-indigo-500 text-white dark:bg-indigo-400">
-                        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 3v18h18" />
-                            <path d="M7 13v5" />
-                            <path d="M12 9v9" />
-                            <path d="M17 5v13" />
-                        </svg>
-                    </span>
-                    <div>
-                        <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">Ringkasan Status</h3>
-                        <p class="text-sm text-zinc-500 dark:text-zinc-300">Rekap pengajuan & arti tiap status</p>
+            {{-- 1. RINGKASAN STATUS --}}
+            <flux:card
+                class="rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm">
+                <div class="mb-5">
+                    <div class="flex items-center gap-2">
+                        <flux:icon.chart-bar class="size-5 text-zinc-500" />
+                        <h3 class="font-semibold text-stone-900 dark:text-stone-100">Status Pengajuan</h3>
                     </div>
+                    <p class="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400 pl-7">
+                        Pantau progres tahapan KP Anda di sini.
+                    </p>
                 </div>
 
-                <flux:separator />
-
                 <div class="space-y-3">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="flex items-center gap-2">
-                            <flux:badge size="sm" inset="top bottom" :color="$this->badgeColor('review_komisi')"
-                                class="border border-indigo-200 dark:border-indigo-900/40
-                                       bg-indigo-50 text-indigo-700
-                                       dark:bg-indigo-900/20 dark:text-indigo-300">
-                                Menunggu Review Komisi
-                            </flux:badge>
+                    {{-- Status: Review Komisi --}}
+                    <div
+                        class="flex items-center justify-between p-2 rounded-lg bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-800/30">
+                        <div class="flex items-center gap-3">
+                            <div class="size-2 rounded-full bg-indigo-500"></div>
+                            <div>
+                                <p class="text-sm font-medium text-stone-700 dark:text-stone-300">Review Komisi</p>
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400">Menunggu persetujuan</p>
+                            </div>
                         </div>
-                        <span
-                            class="font-semibold text-stone-900 dark:text-stone-100">{{ $this->stats['review_komisi'] }}</span>
+                        <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                            {{ $this->stats['review_komisi'] ?? 0 }}
+                        </span>
                     </div>
 
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="flex items-center gap-2">
-                            <flux:badge size="sm" inset="top bottom"
-                                :color="$this->badgeColor('review_bapendik')"
-                                class="border border-sky-200 dark:border-sky-900/40
-                                       bg-sky-50 text-sky-700
-                                       dark:bg-sky-900/20 dark:text-sky-300">
-                                Menunggu Terbit SPK
-                            </flux:badge>
+                    {{-- Status: Review Bapendik --}}
+                    <div
+                        class="flex items-center justify-between p-2 rounded-lg bg-sky-50/50 dark:bg-sky-900/10 border border-sky-100 dark:border-sky-800/30">
+                        <div class="flex items-center gap-3">
+                            <div class="size-2 rounded-full bg-sky-500"></div>
+                            <div>
+                                <p class="text-sm font-medium text-stone-700 dark:text-stone-300">Tunggu SPK</p>
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400">Proses administrasi</p>
+                            </div>
                         </div>
-                        <span
-                            class="font-semibold text-stone-900 dark:text-stone-100">{{ $this->stats['review_bapendik'] }}</span>
+                        <span class="text-lg font-bold text-sky-600 dark:text-sky-400">
+                            {{ $this->stats['review_bapendik'] ?? 0 }}
+                        </span>
                     </div>
 
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="flex items-center gap-2">
-                            <flux:badge size="sm" inset="top bottom" :color="$this->badgeColor('spk_terbit')"
-                                class="border border-emerald-200 dark:border-emerald-900/40
-                                       bg-emerald-50 text-emerald-700
-                                       dark:bg-emerald-900/20 dark:text-emerald-300">
-                                SPK Terbit
-                            </flux:badge>
+                    {{-- Status: SPK Terbit --}}
+                    <div
+                        class="flex items-center justify-between p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30">
+                        <div class="flex items-center gap-3">
+                            <div class="size-2 rounded-full bg-emerald-500"></div>
+                            <div>
+                                <p class="text-sm font-medium text-stone-700 dark:text-stone-300">SPK Terbit</p>
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400">Siap diunduh</p>
+                            </div>
                         </div>
-                        <span
-                            class="font-semibold text-stone-900 dark:text-stone-100">{{ $this->stats['spk_terbit'] }}</span>
+                        <span class="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                            {{ $this->stats['spk_terbit'] ?? 0 }}
+                        </span>
                     </div>
 
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="flex items-center gap-2">
-                            <flux:badge size="sm" inset="top bottom" :color="$this->badgeColor('ditolak')"
-                                class="border border-rose-200 dark:border-rose-900/40
-                                       bg-rose-50 text-rose-700
-                                       dark:bg-rose-900/20 dark:text-rose-300">
-                                Ditolak
-                            </flux:badge>
+                    {{-- Status: Ditolak --}}
+                    <div
+                        class="flex items-center justify-between p-2 rounded-lg bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-800/30">
+                        <div class="flex items-center gap-3">
+                            <div class="size-2 rounded-full bg-rose-500"></div>
+                            <div>
+                                <p class="text-sm font-medium text-stone-700 dark:text-stone-300">Ditolak</p>
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400">Perlu perbaikan</p>
+                            </div>
                         </div>
-                        <span
-                            class="font-semibold text-stone-900 dark:text-stone-100">{{ $this->stats['ditolak'] }}</span>
+                        <span class="text-lg font-bold text-rose-600 dark:text-rose-400">
+                            {{ $this->stats['ditolak'] ?? 0 }}
+                        </span>
+                    </div>
+                </div>
+            </flux:card>
+
+            {{-- 2. PANDUAN --}}
+            <flux:card
+                class="rounded-xl border bg-sky-50/50 dark:bg-sky-900/10 border-sky-100 dark:border-sky-800/30 shadow-sm">
+                <div class="flex items-start gap-3">
+                    <flux:icon.information-circle class="mt-0.5 size-5 text-sky-600 dark:text-sky-400" />
+                    <div>
+                        <h3 class="font-semibold text-sky-900 dark:text-sky-100 text-sm">Panduan Singkat</h3>
+                        <ul
+                            class="mt-2 text-xs text-sky-800 dark:text-sky-200 list-disc list-outside ml-3 space-y-1.5 leading-relaxed">
+                            <li>Pastikan punya SP status <strong>Diterbitkan</strong>.</li>
+                            <li>Gunakan fitur "Ambil" untuk isi otomatis.</li>
+                            <li>Upload <strong>Proposal</strong> & <strong>Bukti Diterima</strong>.</li>
+                            <li>Jika <strong>Ditolak</strong>, cek catatan & perbaiki.</li>
+                            <li>Jika <strong>SPK Terbit</strong>, unduh dokumen di tabel.</li>
+                        </ul>
                     </div>
                 </div>
             </flux:card>
         </div>
     </div>
 
-    {{-- TABEL + SEARCH --}}
-    <div>
-        <flux:card
-            class="space-y-4 rounded-xl border
-                   bg-white dark:bg-stone-950
-                   border-zinc-200 dark:border-stone-800
-                   shadow-xs">
+    {{-- BARIS BAWAH: TABEL --}}
+    <flux:card
+        class="rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm overflow-hidden">
 
-            <div
-                class="px-4 py-3 border-b
-                        bg-indigo-50 text-indigo-700
-                        dark:bg-indigo-900/20 dark:text-indigo-300
-                        border-indigo-100 dark:border-indigo-900/40
-                        rounded-t-xl">
-                <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <h4 class="text-sm font-medium tracking-wide">Daftar Pengajuan</h4>
-                    <div class="flex items-center gap-2">
-                        <div class="md:w-80">
-                            <flux:input placeholder="Cari judul / lokasi…" wire:model.debounce.500ms="q"
-                                icon="magnifying-glass" />
-                        </div>
-                        <flux:select wire:model="perPage" class="w-36">
-                            <option value="10">10 / halaman</option>
-                            <option value="25">25 / halaman</option>
-                            <option value="50">50 / halaman</option>
-                        </flux:select>
-                    </div>
+        <div
+            class="flex flex-col gap-4 px-6 py-4 border-b border-zinc-200 dark:border-stone-800 bg-zinc-50/50 dark:bg-stone-900/50 md:flex-row md:items-center md:justify-between">
+            <h4 class="text-base font-semibold text-stone-900 dark:text-stone-100">Riwayat Pengajuan KP</h4>
+
+            <div class="flex flex-col gap-3 md:flex-row md:items-center">
+                {{-- Search --}}
+                <div class="w-full md:w-64">
+                    <flux:input icon="magnifying-glass" placeholder="Cari judul / instansi..."
+                        wire:model.live.debounce.300ms="search" class="bg-white dark:bg-stone-900" />
+                </div>
+
+                {{-- Filter --}}
+                <div class="w-full md:w-56">
+                    <flux:select wire:model.live="filterStatus" placeholder="Semua Status"
+                        class="bg-white dark:bg-stone-900">
+                        <flux:select.option value="">Semua Status</flux:select.option>
+                        @foreach ($this->statusOptions as $option)
+                            <flux:select.option value="{{ $option['value'] }}">
+                                {{ $option['label'] }}
+                            </flux:select.option>
+                        @endforeach
+                    </flux:select>
                 </div>
             </div>
+        </div>
 
-            <flux:table
-                class="[&_thead_th]:bg-zinc-50 [&_thead_th]:dark:bg-stone-900/40
-                       [&_thead_th]:text-zinc-600 [&_thead_th]:dark:text-stone-200
-                       [&_tbody_tr]:hover:bg-zinc-50/60 [&_tbody_tr]:dark:hover:bg-stone-900/30"
-                :paginate="$this->orders">
+        <flux:table class="[&_thead_th]:bg-zinc-50 [&_thead_th]:dark:bg-stone-900/40" :paginate="$this->orders">
+            <flux:table.columns>
+                <flux:table.column class="w-12 text-center">No</flux:table.column>
 
-                <flux:table.columns>
-                    <flux:table.column class="w-12">#</flux:table.column>
+                <flux:table.column sortable :sorted="$sortBy === 'created_at'" :direction="$sortDirection"
+                    wire:click="sort('created_at')">
+                    Tanggal
+                </flux:table.column>
 
-                    <flux:table.column sortable :sorted="$sortBy === 'created_at'" :direction="$sortDirection"
-                        wire:click="sort('created_at')">
-                        Tanggal
-                    </flux:table.column>
+                <flux:table.column>Judul & Instansi</flux:table.column>
 
-                    <flux:table.column>Judul</flux:table.column>
-                    <flux:table.column>Instansi</flux:table.column>
+                <flux:table.column sortable :sorted="$sortBy === 'status'" :direction="$sortDirection"
+                    wire:click="sort('status')">
+                    Status
+                </flux:table.column>
 
-                    <flux:table.column sortable :sorted="$sortBy === 'status'" :direction="$sortDirection"
-                        wire:click="sort('status')">
-                        Status
-                    </flux:table.column>
+                <flux:table.column>Catatan</flux:table.column>
+                <flux:table.column class="w-20 text-center">Aksi</flux:table.column>
+            </flux:table.columns>
 
-                    <flux:table.column>Catatan</flux:table.column>
-                    <flux:table.column class="w-32 text-center">Aksi</flux:table.column>
-                </flux:table.columns>
+            <flux:table.rows>
+                @foreach ($this->orders as $i => $row)
+                    {{-- Updated Logic Badge with Icon --}}
+                    @php
+                        $status = $row->status;
+                        $badgeTheme = match ($status) {
+                            'review_komisi' => ['color' => 'indigo', 'icon' => 'clock'],
+                            'review_bapendik' => ['color' => 'sky', 'icon' => 'clock'],
+                            'spk_terbit' => ['color' => 'emerald', 'icon' => 'check-circle'],
+                            'ditolak' => ['color' => 'rose', 'icon' => 'x-circle'],
+                            default => ['color' => 'zinc', 'icon' => 'minus'],
+                        };
+                    @endphp
 
-                <flux:table.rows>
-                    @foreach ($this->orders as $i => $row)
-                        <flux:table.row :key="$row->id">
-                            <flux:table.cell>{{ $this->orders->firstItem() + $i }}</flux:table.cell>
+                    <flux:table.row :key="$row->id">
+                        <flux:table.cell class="text-center text-zinc-500">
+                            {{ $this->orders->firstItem() + $i }}
+                        </flux:table.cell>
 
-                            <flux:table.cell class="whitespace-nowrap">
-                                {{ optional($row->created_at)->format('d M Y') ?: '—' }}
-                            </flux:table.cell>
+                        <flux:table.cell class="whitespace-nowrap">
+                            <div class="font-medium text-stone-900 dark:text-stone-100">
+                                {{ optional($row->created_at)->translatedFormat('d M Y') ?: '-' }}
+                            </div>
+                            <div class="text-xs text-zinc-500">
+                                {{ optional($row->created_at)->format('H:i') }} WIB
+                            </div>
+                        </flux:table.cell>
 
-                            <flux:table.cell class="max-w-[360px]">
-                                <span
-                                    class="line-clamp-2 text-stone-900 dark:text-stone-100">{{ $row->judul_kp }}</span>
-                            </flux:table.cell>
+                        <flux:table.cell>
+                            <div class="font-medium text-stone-900 dark:text-stone-100 line-clamp-2 leading-snug">
+                                {{ $row->judul_kp }}
+                            </div>
+                            <div class="text-xs text-zinc-500 mt-0.5 flex items-center gap-1">
+                                <flux:icon.building-office-2 class="size-3" />
+                                {{ $row->lokasi_kp }}
+                            </div>
+                        </flux:table.cell>
 
-                            <flux:table.cell class="whitespace-nowrap">
-                                <span class="text-stone-900 dark:text-stone-100">{{ $row->lokasi_kp }}</span>
-                            </flux:table.cell>
+                        <flux:table.cell>
+                            <flux:badge size="sm" inset="top bottom" :color="$badgeTheme['color']"
+                                icon="{{ $badgeTheme['icon'] }}">
+                                {{ $this->statusLabel($status) }}
+                            </flux:badge>
+                        </flux:table.cell>
 
-                            <flux:table.cell>
-                                <flux:badge size="sm" inset="top bottom"
-                                    :color="$this->badgeColor($row->status)">
-                                    {{ $this->statusLabel($row->status) }}
-                                </flux:badge>
-                            </flux:table.cell>
+                        <flux:table.cell class="max-w-[200px]">
+                            @if ($row->status === 'ditolak' && $row->catatan)
+                                <div
+                                    class="flex items-start gap-1.5 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/10 p-1.5 rounded-md border border-rose-100 dark:border-rose-900/20">
+                                    <flux:icon.exclamation-triangle class="size-4 shrink-0 mt-0.5" />
+                                    <span class="text-xs leading-snug line-clamp-2">{{ $row->catatan }}</span>
+                                </div>
+                            @elseif ($row->status === 'ditolak')
+                                <span class="text-xs text-zinc-400 italic">Tanpa catatan</span>
+                            @else
+                                <span class="text-zinc-300 dark:text-stone-700">—</span>
+                            @endif
+                        </flux:table.cell>
 
-                            <flux:table.cell class="max-w-[260px]">
-                                @if ($row->status === 'ditolak' && $row->catatan)
-                                    <span
-                                        class="text-sm text-zinc-700 dark:text-zinc-300 line-clamp-2">{{ $row->catatan }}</span>
-                                @else
-                                    <span class="text-sm text-zinc-400 dark:text-stone-500">—</span>
-                                @endif
-                            </flux:table.cell>
+                        <flux:table.cell>
+                            <flux:dropdown position="bottom" align="end">
+                                <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
 
-                            <flux:table.cell>
-                                <flux:dropdown position="bottom" align="end">
-                                    <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal"
-                                        inset="top bottom"></flux:button>
-                                    <flux:menu class="min-w-40">
-                                        {{-- Detail --}}
-                                        <flux:modal.trigger name="detail-kp">
-                                            <flux:menu.item icon="eye"
-                                                wire:click="openDetail({{ $row->id }})">Detail</flux:menu.item>
-                                        </flux:modal.trigger>
+                                <flux:menu class="min-w-40">
+                                    <flux:modal.trigger name="detail-kp">
+                                        <flux:menu.item icon="eye" wire:click="openDetail({{ $row->id }})">
+                                            Detail
+                                        </flux:menu.item>
+                                    </flux:modal.trigger>
 
-                                        @if ($row->status === 'review_komisi')
-                                            <flux:menu.item icon="pencil-square"
-                                                wire:click="edit({{ $row->id }})">Edit</flux:menu.item>
-                                            <flux:modal.trigger name="delete-kp">
-                                                <flux:menu.item icon="trash"
-                                                    wire:click="markDelete({{ $row->id }})">Hapus
-                                                </flux:menu.item>
-                                            </flux:modal.trigger>
-                                        @else
-                                            <flux:menu.item icon="pencil-square" disabled>Edit</flux:menu.item>
-                                            <flux:menu.item icon="trash" disabled>Hapus</flux:menu.item>
-                                        @endif
-
-                                        @if ($row->status === 'spk_terbit')
-                                            <flux:menu.separator />
-                                            <flux:menu.item icon="arrow-down-tray"
-                                                href="{{ route('mhs.kp.download.docx', $row->id) }}" target="_blank">
-                                                Unduh SPK (DOCX)
+                                    @if ($row->status === 'review_komisi')
+                                        <flux:menu.item icon="pencil-square" wire:click="edit({{ $row->id }})">
+                                            Edit
+                                        </flux:menu.item>
+                                        <flux:modal.trigger name="delete-kp">
+                                            <flux:menu.item icon="trash" variant="danger"
+                                                wire:click="markDelete({{ $row->id }})">
+                                                Hapus
                                             </flux:menu.item>
-                                        @endif
-                                    </flux:menu>
-                                </flux:dropdown>
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @endforeach
-                </flux:table.rows>
-            </flux:table>
-        </flux:card>
-    </div>
+                                        </flux:modal.trigger>
+                                    @endif
 
-    {{-- Modal Delete --}}
-    <flux:modal name="delete-kp" class="min-w-[22rem]">
-        <div class="space-y-6">
-            <div>
-                <flux:heading size="lg" class="text-stone-900 dark:text-stone-100">Hapus pengajuan?
-                </flux:heading>
-                <flux:text class="mt-2 text-zinc-700 dark:text-stone-300">
-                    Anda akan menghapus pengajuan KP ini.<br>
-                    Tindakan ini tidak dapat dibatalkan.
-                </flux:text>
+                                    @if ($row->status === 'spk_terbit')
+                                        <flux:menu.separator />
+                                        <flux:menu.item icon="arrow-down-tray"
+                                            href="{{ route('mhs.kp.download.docx', $row->id) }}" target="_blank">
+                                            Unduh SPK (DOCX)
+                                        </flux:menu.item>
+                                    @endif
+                                </flux:menu>
+                            </flux:dropdown>
+                        </flux:table.cell>
+                    </flux:table.row>
+                @endforeach
+            </flux:table.rows>
+        </flux:table>
+
+        {{-- Empty State --}}
+        @if ($this->orders->isEmpty())
+            <div class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="rounded-full bg-zinc-100 p-4 dark:bg-stone-900">
+                    <flux:icon.document-text class="size-8 text-zinc-400" />
+                </div>
+                <h3 class="mt-4 text-base font-semibold text-stone-900 dark:text-stone-100">
+                    @if ($search || $filterStatus)
+                        Data tidak ditemukan
+                    @else
+                        Belum ada pengajuan KP
+                    @endif
+                </h3>
+                <p class="mt-1 text-sm text-zinc-500">
+                    @if ($search || $filterStatus)
+                        Coba ubah kata kunci atau filter.
+                    @else
+                        Silakan isi formulir di atas untuk mengajukan.
+                    @endif
+                </p>
             </div>
-            <div class="flex gap-2">
-                <flux:spacer />
+        @endif
+    </flux:card>
+
+    {{-- Modal Hapus --}}
+    <flux:modal name="delete-kp" class="md:w-96">
+        <div class="space-y-6">
+            <div class="text-center">
+                <div
+                    class="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-900/30">
+                    <flux:icon.trash class="size-6 text-rose-600 dark:text-rose-400" />
+                </div>
+                <flux:heading size="lg">Hapus Pengajuan?</flux:heading>
+                <flux:subheading class="mt-2">
+                    Data KP ini akan dihapus permanen.
+                </flux:subheading>
+            </div>
+            <div class="flex gap-3">
                 <flux:modal.close>
-                    <flux:button variant="ghost">Batal</flux:button>
+                    <flux:button variant="ghost" class="w-full">Batal</flux:button>
                 </flux:modal.close>
-                <flux:button type="button" variant="danger" wire:click="confirmDelete">Hapus</flux:button>
+                <flux:button type="button" variant="danger" wire:click="confirmDelete" class="w-full">
+                    Ya, Hapus
+                </flux:button>
             </div>
         </div>
     </flux:modal>
 
     {{-- Modal Detail --}}
-    <flux:modal name="detail-kp" :show="$detailId !== null">
+    <flux:modal name="detail-kp" :show="$detailId !== null" class="md:w-[32rem]">
         @php $item = $this->selectedItem; @endphp
 
-        <div class="space-y-5">
-            <div class="flex items-start justify-between gap-3">
+        <div class="space-y-6">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-indigo-600 dark:text-indigo-400">
+                    <flux:icon.document-text class="size-6" />
+                </div>
                 <div>
                     <flux:heading size="lg">Detail Pengajuan KP</flux:heading>
-                    <p class="text-sm text-zinc-500">Data dan dokumen yang diajukan.</p>
+                    <p class="text-sm text-zinc-500">Informasi lengkap pengajuan.</p>
                 </div>
             </div>
 
             @if ($item)
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <flux:card class="space-y-2">
-                        <div class="text-sm text-zinc-500">Tanggal Pengajuan</div>
-                        <div class="font-medium">{{ optional($item->created_at)->format('d M Y') ?: '—' }}</div>
-                    </flux:card>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div
+                            class="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                            <div class="text-xs text-zinc-500 mb-1">Tanggal</div>
+                            <div class="font-medium text-stone-900 dark:text-stone-100">
+                                {{ optional($item->created_at)->format('d M Y') ?: '—' }}
+                            </div>
+                        </div>
+                        <div
+                            class="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                            <div class="text-xs text-zinc-500 mb-1">Status</div>
+                            <flux:badge size="sm" :color="$this->badgeColor($item->status)">
+                                {{ $this->statusLabel($item->status) }}
+                            </flux:badge>
+                        </div>
+                    </div>
 
-                    <flux:card class="space-y-2">
-                        <div class="text-sm text-zinc-500">Status</div>
-                        <flux:badge size="sm" inset="top bottom" :color="$this->badgeColor($item->status)">
-                            {{ $this->statusLabel($item->status) }}
-                        </flux:badge>
-                    </flux:card>
+                    <div
+                        class="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                        <div class="text-xs text-zinc-500 mb-1">Judul KP</div>
+                        <div class="font-medium text-stone-900 dark:text-stone-100">{{ $item->judul_kp }}</div>
+                    </div>
 
-                    <flux:card class="space-y-2 md:col-span-2">
-                        <div class="text-sm text-zinc-500">Judul Kerja Praktik</div>
-                        <div class="font-medium">{{ $item->judul_kp }}</div>
-                    </flux:card>
+                    <div
+                        class="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                        <div class="text-xs text-zinc-500 mb-1">Instansi</div>
+                        <div class="font-medium text-stone-900 dark:text-stone-100">{{ $item->lokasi_kp }}</div>
+                    </div>
 
-                    <flux:card class="space-y-2 md:col-span-2">
-                        <div class="text-sm text-zinc-500">Instansi / Lokasi KP</div>
-                        <div class="font-medium">{{ $item->lokasi_kp }}</div>
-                    </flux:card>
-
-                    <flux:card class="space-y-3 md:col-span-2">
-                        <div class="text-sm text-zinc-500">Dokumen</div>
-                        <div class="flex flex-col gap-2">
-                            <a class="text-sm underline hover:no-underline"
-                                href="{{ $item->proposal_path ? asset('storage/' . $item->proposal_path) : '#' }}"
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium text-stone-900 dark:text-stone-100">Dokumen Lampiran</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <a href="{{ $item->proposal_path ? asset('storage/' . $item->proposal_path) : '#' }}"
                                 target="_blank"
-                                @if (!$item->proposal_path) aria-disabled="true" class="pointer-events-none opacity-50" @endif>
-                                Lihat Proposal (PDF)
+                                class="flex items-center gap-2 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition
+                                      {{ !$item->proposal_path ? 'opacity-50 pointer-events-none' : '' }}">
+                                <flux:icon.document class="size-5 text-rose-500" />
+                                <span class="text-sm truncate">Proposal KP</span>
                             </a>
 
-                            <a class="text-sm underline hover:no-underline"
-                                href="{{ $item->surat_keterangan_path ? asset('storage/' . $item->surat_keterangan_path) : '#' }}"
+                            <a href="{{ $item->surat_keterangan_path ? asset('storage/' . $item->surat_keterangan_path) : '#' }}"
                                 target="_blank"
-                                @if (!$item->surat_keterangan_path) aria-disabled="true" class="pointer-events-none opacity-50" @endif>
-                                Lihat Surat Diterima (PDF/JPG/PNG)
+                                class="flex items-center gap-2 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition
+                                      {{ !$item->surat_keterangan_path ? 'opacity-50 pointer-events-none' : '' }}">
+                                <flux:icon.photo class="size-5 text-indigo-500" />
+                                <span class="text-sm truncate">Bukti Diterima</span>
                             </a>
                         </div>
-                    </flux:card>
+                    </div>
 
                     @if ($item->status === 'ditolak' && $item->catatan)
-                        <flux:card class="space-y-2 md:col-span-2">
-                            <div class="text-sm text-zinc-500">Catatan Penolakan</div>
-                            <div class="text-sm">{{ $item->catatan }}</div>
-                        </flux:card>
+                        <div
+                            class="p-4 bg-rose-50 dark:bg-rose-900/10 rounded-lg border border-rose-100 dark:border-rose-800/30">
+                            <div class="flex items-start gap-2">
+                                <flux:icon.exclamation-triangle class="size-5 text-rose-600 mt-0.5" />
+                                <div>
+                                    <div class="font-medium text-rose-700 dark:text-rose-400">Catatan Penolakan</div>
+                                    <div class="text-sm text-rose-600 dark:text-rose-300 mt-1">{{ $item->catatan }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     @endif
                 </div>
             @else
-                <div class="text-sm text-rose-600">Data tidak ditemukan.</div>
+                <div class="text-center py-8 text-zinc-500">Data tidak ditemukan.</div>
             @endif
 
-            <div class="flex justify-end">
+            <div class="flex justify-end pt-2">
                 <flux:modal.close>
-                    <flux:button variant="primary" wire:click="closeDetail">Tutup</flux:button>
+                    <flux:button variant="ghost">Tutup</flux:button>
                 </flux:modal.close>
             </div>
         </div>

@@ -9,6 +9,7 @@ use Flux\Flux;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -17,15 +18,17 @@ class DosenIndex extends Component
 {
     use WithPagination;
 
-    // UI state (modal)
+    // UI state
     public bool $showForm = false;
 
     // Filter & paging
     public string $q = '';
     public int $perPage = 10;
+    public string $sortBy = 'dosen_name';
+    public string $sortDirection = 'asc';
 
     // Form fields
-    public ?int $editingId = null;   // PK dosens = dosen_id
+    public ?int $editingId = null;
     public ?int $jurusan_id = null;
     public string $dosen_name = '';
     public ?string $dosen_nip = null;
@@ -58,32 +61,46 @@ class DosenIndex extends Component
         $this->resetPage();
     }
 
+    public function sort(string $column): void
+    {
+        if ($this->sortBy === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDirection = 'asc';
+        }
+        $this->resetPage();
+    }
+
     public function create(): void
     {
         $this->resetForm();
-        $this->showForm = true; // dipakai oleh :show modal
+        $this->showForm = true;
+        Flux::modal('dosen-form')->show(); // Fix: Trigger modal show
     }
 
     public function edit(int $id): void
     {
         $row = Dosen::with('user')->findOrFail($id);
 
-        $this->editingId     = $row->getKey(); // dosen_id
-        $this->jurusan_id    = $row->jurusan_id;
-        $this->dosen_name    = $row->dosen_name;
-        $this->dosen_nip     = $row->dosen_nip;
-        $this->is_komisi_kp  = (bool) $row->is_komisi_kp;
+        $this->editingId    = $row->getKey();
+        $this->jurusan_id   = $row->jurusan_id;
+        $this->dosen_name   = $row->dosen_name;
+        $this->dosen_nip    = $row->dosen_nip;
+        $this->is_komisi_kp = (bool) $row->is_komisi_kp;
 
         $this->user_id = $row->user_id;
         $this->email   = $row->user?->email ?? '';
-        $this->password = '';
+        $this->password = ''; // Reset password field
 
         $this->showForm = true;
+        Flux::modal('dosen-form')->show(); // Fix: Trigger modal show
     }
 
     public function closeForm(): void
     {
         $this->showForm = false;
+        Flux::modal('dosen-form')->close();
     }
 
     public function save(): void
@@ -97,14 +114,14 @@ class DosenIndex extends Component
                 $user->name  = $data['dosen_name'];
                 $user->email = $data['email'];
                 if (!empty($data['password'])) {
-                    $user->password = $data['password']; // cast hashed
+                    $user->password = $data['password'];
                 }
                 $user->save();
             } else {
                 $user = User::create([
                     'name'     => $data['dosen_name'],
                     'email'    => $data['email'],
-                    'password' => $data['password'], // cast hashed
+                    'password' => $data['password'],
                 ]);
                 $this->user_id = $user->id;
             }
@@ -136,16 +153,11 @@ class DosenIndex extends Component
             }
         });
 
-        $this->showForm = false;
+        $this->closeForm();
         $this->resetForm();
         $this->resetPage();
 
-        // === TOAST sukses simpan (pakai Flux facade) ===
-        Flux::toast(
-            heading: 'Berhasil',
-            text: 'Data dosen disimpan.',
-            variant: 'success',
-        );
+        Flux::toast(heading: 'Berhasil', text: 'Data dosen disimpan.', variant: 'success');
     }
 
     public function delete(int $id): void
@@ -154,13 +166,7 @@ class DosenIndex extends Component
         $row->delete();
 
         $this->resetPage();
-
-        // === TOAST sukses hapus ===
-        Flux::toast(
-            heading: 'Berhasil',
-            text: 'Data dosen dihapus.',
-            variant: 'success',
-        );
+        Flux::toast(heading: 'Terhapus', text: 'Data dosen dihapus.', variant: 'success');
     }
 
     public function resetUserPassword(int $id, string $newPassword = 'password'): void
@@ -171,28 +177,23 @@ class DosenIndex extends Component
         $row->user->password = $newPassword;
         $row->user->save();
 
-        // === TOAST sukses reset password ===
-        Flux::toast(
-            heading: 'Berhasil',
-            text: 'Password akun dosen direset.',
-            variant: 'success',
-        );
+        Flux::toast(heading: 'Berhasil', text: 'Password akun dosen direset.', variant: 'success');
     }
 
     private function resetForm(): void
     {
-        $this->editingId     = null;
-        $this->jurusan_id    = null;
-        $this->dosen_name    = '';
-        $this->dosen_nip     = null;
-        $this->is_komisi_kp  = false;
-
-        $this->user_id = null;
-        $this->email   = '';
-        $this->password = '';
+        $this->editingId    = null;
+        $this->jurusan_id   = null;
+        $this->dosen_name   = '';
+        $this->dosen_nip    = null;
+        $this->is_komisi_kp = false;
+        $this->user_id      = null;
+        $this->email        = '';
+        $this->password     = '';
     }
 
-    public function getItemsProperty()
+    #[Computed]
+    public function items()
     {
         return Dosen::query()
             ->with(['user:id,email', 'jurusan:id,nama_jurusan'])
@@ -203,14 +204,13 @@ class DosenIndex extends Component
                         ->orWhere('dosen_nip', 'like', $term);
                 });
             })
-            ->orderBy('dosen_name')
+            ->orderBy($this->sortBy, $this->sortDirection)
             ->paginate($this->perPage);
     }
 
     public function render()
     {
         return view('livewire.bapendik.master.dosen-index', [
-            'rows'     => $this->items,
             'jurusans' => Jurusan::orderBy('nama_jurusan')->get(),
         ]);
     }

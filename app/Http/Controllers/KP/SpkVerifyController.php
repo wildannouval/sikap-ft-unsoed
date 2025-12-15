@@ -7,6 +7,10 @@ use App\Models\KerjaPraktik;
 
 class SpkVerifyController extends Controller
 {
+    /**
+     * Halaman verifikasi QR SPK KP
+     * Route: GET /kp/spk/verify/{token} (contoh)
+     */
     public function __invoke(string $token)
     {
         $kp = KerjaPraktik::with(['mahasiswa.user'])
@@ -14,17 +18,33 @@ class SpkVerifyController extends Controller
             ->first();
 
         if (! $kp) {
-            abort(404, 'Token verifikasi SPK tidak ditemukan.');
+            return view('kp.spk-verify', [
+                'found'       => false,
+                'status'      => 'invalid',
+                'status_text' => 'Token tidak valid',
+                'description' => 'QR code tidak dikenali atau SPK tidak ditemukan.',
+                'kp'          => null,
+            ]);
         }
 
-        $isValid = true;
-        if ($kp->spk_qr_expires_at && now()->greaterThan($kp->spk_qr_expires_at)) {
-            $isValid = false;
+        $isExpired = $kp->spk_qr_expires_at ? now()->greaterThan($kp->spk_qr_expires_at) : false;
+
+        if ($isExpired) {
+            $status      = 'expired';
+            $statusText  = 'Token Kedaluwarsa';
+            $desc        = 'QR code sudah melewati masa berlaku. Silakan hubungi Bapendik untuk verifikasi manual.';
+        } else {
+            $status      = 'valid';
+            $statusText  = 'SPK Terverifikasi';
+            $desc        = 'QR code valid. Detail SPK Kerja Praktik ditampilkan di bawah.';
         }
 
         return view('kp.spk-verify', [
-            'kp'      => $kp,
-            'isValid' => $isValid,
+            'found'       => true,
+            'status'      => $status,
+            'status_text' => $statusText,
+            'description' => $desc,
+            'kp'          => $kp,
         ]);
     }
 }

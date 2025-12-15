@@ -1,212 +1,281 @@
 <div class="space-y-6">
 
     {{-- HEADER --}}
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
             <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
                 Nilai Kerja Praktik
             </flux:heading>
             <flux:subheading class="text-zinc-600 dark:text-zinc-300">
-                Lihat rekap nilai, unggah bukti distribusi, dan akses BA scan bila tersedia.
+                Lihat rekap nilai, unggah bukti distribusi, dan akses BA scan.
             </flux:subheading>
         </div>
     </div>
     <flux:separator variant="subtle" />
 
-    {{-- FLASH OK --}}
-    @if (session('ok'))
-        <div class="rounded-md border border-emerald-300/60 bg-emerald-50 px-3 py-2 text-emerald-800">
-            <div class="font-medium">{{ session('ok') }}</div>
-        </div>
-    @endif
+    {{-- GRID UTAMA 7:3 --}}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-10">
 
-    {{-- PANDUAN HALAMAN --}}
-    <flux:card
-        class="space-y-4 rounded-xl border
-               bg-white dark:bg-stone-950
-               border-zinc-200 dark:border-stone-800
-               shadow-xs">
-        <div class="flex items-start gap-2 px-1.5 -mt-1">
-            <span
-                class="inline-flex items-center justify-center rounded-md p-1.5
-                       bg-indigo-500 text-white dark:bg-indigo-400">
-                <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 16v-4" />
-                    <path d="M12 8h.01" />
-                </svg>
-            </span>
-            <div>
-                <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">Panduan Nilai KP</h3>
-                <p class="text-sm text-zinc-600 dark:text-zinc-300">
-                    1) Nilai hanya terlihat <em>setelah</em> bukti distribusi diunggah. 2) Klik
-                    <strong>Upload Bukti</strong> pada baris seminar berstatus
-                    <span class="font-medium">Dinilai</span> atau <span class="font-medium">BA Terbit</span>.
-                    3) Jika sudah mengunggah, Anda bisa membuka <strong>BA Scan</strong> bila tersedia.
-                </p>
-            </div>
-        </div>
-    </flux:card>
+        {{-- KOLOM KIRI: TABEL (7) --}}
+        <div class="lg:col-span-7 space-y-6">
+            <flux:card
+                class="space-y-4 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm overflow-hidden">
 
-    {{-- TABEL NILAI --}}
-    <flux:card
-        class="space-y-4 rounded-xl border
-               bg-white dark:bg-stone-950
-               border-zinc-200 dark:border-stone-800
-               shadow-xs">
+                {{-- Header Tabel --}}
+                <div
+                    class="flex flex-col gap-4 px-6 py-4 border-b border-zinc-200 dark:border-stone-800 bg-zinc-50/50 dark:bg-stone-900/50 md:flex-row md:items-center md:justify-between">
+                    <h4 class="text-base font-semibold text-stone-900 dark:text-stone-100">Daftar Nilai</h4>
 
-        {{-- Header card dengan aksen indigo (seragam modul lain) --}}
-        <div
-            class="px-4 py-3 border-b
-                   bg-indigo-50 text-indigo-700
-                   dark:bg-indigo-900/20 dark:text-indigo-300
-                   border-indigo-100 dark:border-indigo-900/40
-                   rounded-t-xl">
-            <div class="flex items-center justify-between gap-3">
-                <h3 class="text-sm font-medium tracking-wide">Nilai KP</h3>
-                <div class="flex items-center gap-2">
-                    <flux:input class="md:w-72" placeholder="Cari judul…" wire:model.debounce.400ms="q"
-                        icon="magnifying-glass" />
-                    <flux:select wire:model.live="perPage" class="w-24">
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                    </flux:select>
-                </div>
-            </div>
-        </div>
-
-        <flux:table
-            class="[&_thead_th]:bg-zinc-50 [&_thead_th]:dark:bg-stone-900/40
-                   [&_thead_th]:text-zinc-600 [&_thead_th]:dark:text-stone-200
-                   [&_tbody_tr]:hover:bg-zinc-50/60 [&_tbody_tr]:dark:hover:bg-stone-900/30"
-            :paginate="$this->items">
-            <flux:table.columns>
-                <flux:table.column class="w-10">#</flux:table.column>
-                <flux:table.column>Judul</flux:table.column>
-                <flux:table.column>Status</flux:table.column>
-                <flux:table.column>Distribusi</flux:table.column>
-                <flux:table.column>Skor Akhir</flux:table.column>
-                <flux:table.column>Rincian</flux:table.column>
-                <flux:table.column>BA Scan</flux:table.column>
-            </flux:table.columns>
-
-            <flux:table.rows>
-                @forelse ($this->items as $i => $row)
-                    <flux:table.row :key="$row->id">
-                        <flux:table.cell>{{ $this->items->firstItem() + $i }}</flux:table.cell>
-
-                        <flux:table.cell class="max-w-[420px]">
-                            <div class="line-clamp-2 text-stone-900 dark:text-stone-100">
-                                {{ $row->judul_laporan ?? '—' }}
-                            </div>
-                        </flux:table.cell>
-
-                        <flux:table.cell>
-                            <flux:badge size="sm" :color="$row::badgeColor($row->status)">
-                                {{ $row::statusLabel($row->status) }}
-                            </flux:badge>
-                        </flux:table.cell>
-
-                        {{-- Distribusi: jika sudah ada => link; jika belum => tombol buka modal --}}
-                        <flux:table.cell class="whitespace-nowrap">
-                            @if ($row->distribusi_proof_path)
-                                <a class="text-sm underline hover:no-underline"
-                                    href="{{ asset('storage/' . $row->distribusi_proof_path) }}" target="_blank">
-                                    Lihat Bukti
-                                </a>
-                                <div class="text-[11px] text-zinc-500">
-                                    {{ $row->distribusi_uploaded_at?->format('d M Y H:i') }}
-                                </div>
-                            @else
-                                @if (in_array($row->status, ['dinilai', 'ba_terbit']))
-                                    <flux:button size="xs" variant="primary" icon="arrow-up-tray"
-                                        modal="mhs-upload-distribusi" wire:click="openUpload({{ $row->id }})">
-                                        Upload Bukti
-                                    </flux:button>
-                                @else
-                                    <span class="text-xs text-zinc-400 dark:text-stone-500">Menunggu dinilai</span>
-                                @endif
-                            @endif
-                        </flux:table.cell>
-
-                        {{-- Skor Akhir (tampil setelah distribusi diunggah) --}}
-                        <flux:table.cell>
-                            @if ($row->distribusi_proof_path && $row->grade)
-                                <div class="text-sm font-medium text-stone-900 dark:text-stone-100">
-                                    {{ number_format($row->grade->final_score, 2) }}
-                                    ({{ $row->grade->final_letter }})
-                                </div>
-                            @elseif(!$row->distribusi_proof_path && $row->grade)
-                                <span class="text-xs text-zinc-400 dark:text-stone-500">
-                                    Upload bukti distribusi untuk melihat nilai
-                                </span>
-                            @else
-                                <span class="text-xs text-zinc-400 dark:text-stone-500">Belum dinilai</span>
-                            @endif
-                        </flux:table.cell>
-
-                        <flux:table.cell class="text-sm">
-                            @if ($row->distribusi_proof_path && $row->grade)
-                                Dospem {{ number_format($row->grade->score_dospem, 2) }}
-                                • PL {{ number_format($row->grade->score_pl, 2) }}
-                            @else
-                                <span class="text-xs text-zinc-400 dark:text-stone-500">—</span>
-                            @endif
-                        </flux:table.cell>
-
-                        <flux:table.cell>
-                            @if ($row->grade?->ba_scan_path)
-                                <a class="text-sm underline hover:no-underline"
-                                    href="{{ asset('storage/' . $row->grade->ba_scan_path) }}" target="_blank">
-                                    Lihat BA Scan
-                                </a>
-                            @else
-                                <span class="text-xs text-zinc-400 dark:text-stone-500">—</span>
-                            @endif
-                        </flux:table.cell>
-                    </flux:table.row>
-                @empty
-                    <flux:table.row>
-                        <flux:table.cell colspan="7">
-                            <div class="py-6 text-center text-sm text-zinc-500 dark:text-stone-400">
-                                Belum ada data nilai.
-                            </div>
-                        </flux:table.cell>
-                    </flux:table.row>
-                @endforelse
-            </flux:table.rows>
-        </flux:table>
-    </flux:card>
-
-    {{-- Modal Global: kombinasi :show (Livewire) + name (fallback modal attr) --}}
-    <flux:modal name="mhs-upload-distribusi" :show="$showUploadModal" dismissable class="min-w-[34rem]">
-        @if ($uploadSeminarId)
-            <div class="p-1">
-                <flux:card class="space-y-4 border-indigo-200/70 dark:border-indigo-900/40">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">
-                                Upload Bukti Distribusi
-                            </h3>
-                            <p class="text-sm text-zinc-600 dark:text-zinc-300">
-                                Unggah bukti distribusi setelah status
-                                <span class="font-medium">Dinilai</span> atau
-                                <span class="font-medium">BA Terbit</span>.
-                            </p>
+                    <div class="flex flex-col gap-3 md:flex-row md:items-center">
+                        <div class="w-full md:w-56">
+                            <flux:input icon="magnifying-glass" placeholder="Cari judul..."
+                                wire:model.live.debounce.300ms="q" class="bg-white dark:bg-stone-900" />
                         </div>
-                        <flux:button variant="ghost" icon="x-mark" wire:click="closeUpload"
-                            modal="mhs-upload-distribusi">
-                            Tutup
-                        </flux:button>
+                        <div class="w-full md:w-40">
+                            <flux:select wire:model.live="filterStatus" placeholder="Semua Status"
+                                class="bg-white dark:bg-stone-900">
+                                <flux:select.option value="">Semua Status</flux:select.option>
+                                @foreach ($this->statusOptions as $option)
+                                    <flux:select.option value="{{ $option['value'] }}">
+                                        {{ $option['label'] }}
+                                    </flux:select.option>
+                                @endforeach
+                            </flux:select>
+                        </div>
+                    </div>
+                </div>
+
+                <flux:table class="[&_thead_th]:bg-zinc-50 [&_thead_th]:dark:bg-stone-900/40" :paginate="$this->items">
+                    <flux:table.columns>
+                        <flux:table.column class="w-10">No</flux:table.column>
+                        <flux:table.column>Judul Laporan</flux:table.column>
+                        <flux:table.column>Status</flux:table.column>
+                        <flux:table.column>Distribusi</flux:table.column>
+                        <flux:table.column>Nilai Akhir</flux:table.column>
+                        <flux:table.column>Aksi</flux:table.column>
+                    </flux:table.columns>
+
+                    <flux:table.rows>
+                        @forelse ($this->items as $i => $row)
+                            @php
+                                $status = $row->status;
+                                $badgeTheme = match ($status) {
+                                    'dinilai' => ['color' => 'purple', 'icon' => 'star'],
+                                    'ba_terbit' => ['color' => 'violet', 'icon' => 'document-text'],
+                                    'selesai' => ['color' => 'teal', 'icon' => 'check-badge'],
+                                    default => ['color' => 'zinc', 'icon' => 'minus'],
+                                };
+                            @endphp
+
+                            <flux:table.row :key="$row->id">
+                                <flux:table.cell class="text-zinc-500 text-center">{{ $this->items->firstItem() + $i }}
+                                </flux:table.cell>
+
+                                <flux:table.cell class="max-w-[240px]">
+                                    <div
+                                        class="line-clamp-2 text-stone-900 dark:text-stone-100 font-medium leading-snug">
+                                        {{ $row->judul_laporan ?? '—' }}
+                                    </div>
+                                    <div class="text-xs text-zinc-500 mt-0.5">
+                                        {{ optional($row->tanggal_seminar)->format('d M Y') }}
+                                    </div>
+                                </flux:table.cell>
+
+                                <flux:table.cell>
+                                    <flux:badge size="sm" :color="$badgeTheme['color']" inset="top bottom"
+                                        icon="{{ $badgeTheme['icon'] }}">
+                                        {{ $row::statusLabel($status) }}
+                                    </flux:badge>
+                                </flux:table.cell>
+
+                                <flux:table.cell class="whitespace-nowrap">
+                                    @if ($row->distribusi_proof_path)
+                                        <a class="flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700 hover:underline"
+                                            href="{{ asset('storage/' . $row->distribusi_proof_path) }}"
+                                            target="_blank">
+                                            <flux:icon.check-circle class="size-4" />
+                                            <span>Lihat Bukti</span>
+                                        </a>
+                                        <div class="text-[10px] text-zinc-400 mt-0.5">
+                                            {{ $row->distribusi_uploaded_at?->format('d/m/y H:i') }}
+                                        </div>
+                                    @else
+                                        @if (in_array($status, ['dinilai', 'ba_terbit']))
+                                            {{-- FIX: Tombol ini memicu openUpload --}}
+                                            <flux:button size="xs" variant="primary" icon="arrow-up-tray"
+                                                wire:click="openUpload({{ $row->id }})">
+                                                Upload
+                                            </flux:button>
+                                        @else
+                                            <span class="text-xs text-zinc-400 italic">Menunggu nilai</span>
+                                        @endif
+                                    @endif
+                                </flux:table.cell>
+
+                                <flux:table.cell>
+                                    @if ($row->distribusi_proof_path && $row->grade)
+                                        <div class="text-sm font-bold text-stone-900 dark:text-stone-100">
+                                            {{ number_format($row->grade->final_score, 2) }}
+                                            <span
+                                                class="ml-1 text-zinc-500 font-normal">({{ $row->grade->final_letter }})</span>
+                                        </div>
+                                    @elseif(!$row->distribusi_proof_path && $row->grade)
+                                        <span class="text-xs text-zinc-400 italic">Upload bukti dulu</span>
+                                    @else
+                                        <span class="text-xs text-zinc-400">—</span>
+                                    @endif
+                                </flux:table.cell>
+
+                                <flux:table.cell>
+                                    @if ($row->grade?->ba_scan_path)
+                                        <a class="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 hover:underline"
+                                            href="{{ asset('storage/' . $row->grade->ba_scan_path) }}" target="_blank">
+                                            <flux:icon.document-text class="size-4" />
+                                            <span>BA Scan</span>
+                                        </a>
+                                    @else
+                                        <span class="text-xs text-zinc-400">—</span>
+                                    @endif
+                                </flux:table.cell>
+                            </flux:table.row>
+                        @empty
+                            <flux:table.row>
+                                <flux:table.cell colspan="6">
+                                    <div class="py-8 text-center text-sm text-zinc-500">
+                                        Belum ada data nilai kerja praktik.
+                                    </div>
+                                </flux:table.cell>
+                            </flux:table.row>
+                        @endforelse
+                    </flux:table.rows>
+                </flux:table>
+            </flux:card>
+        </div>
+
+        {{-- KOLOM KANAN: INFO RINGKAS (3) --}}
+        <div class="lg:col-span-3 space-y-6">
+            {{-- 1. STATUS SUMMARY (Boxed Style) --}}
+            <flux:card
+                class="rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm">
+                <div class="mb-5">
+                    <div class="flex items-center gap-2">
+                        <flux:icon.chart-bar class="size-5 text-zinc-500" />
+                        <h3 class="font-semibold text-stone-900 dark:text-stone-100">Ringkasan Nilai</h3>
+                    </div>
+                    <p class="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400 pl-7">
+                        Statistik penilaian & penyelesaian KP.
+                    </p>
+                </div>
+
+                <div class="space-y-3">
+                    {{-- Dinilai --}}
+                    <div
+                        class="flex items-center justify-between p-2 rounded-lg bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800/30">
+                        <div class="flex items-center gap-2">
+                            <div class="size-2 rounded-full bg-purple-500"></div>
+                            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Dinilai</span>
+                        </div>
+                        <span class="text-lg font-bold text-purple-600 dark:text-purple-400">
+                            {{ $this->stats['dinilai'] ?? 0 }}
+                        </span>
                     </div>
 
-                    {{-- Form upload sebagai komponen anak --}}
-                    <livewire:mahasiswa.kp.distribusi-upload :seminar-id="$uploadSeminarId" :key="'modal-upload-' . $uploadSeminarId" />
-                </flux:card>
+                    {{-- BA Terbit --}}
+                    <div
+                        class="flex items-center justify-between p-2 rounded-lg bg-violet-50/50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-800/30">
+                        <div class="flex items-center gap-2">
+                            <div class="size-2 rounded-full bg-violet-500"></div>
+                            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">BA Terbit</span>
+                        </div>
+                        <span class="text-lg font-bold text-violet-600 dark:text-violet-400">
+                            {{ $this->stats['ba_terbit'] ?? 0 }}
+                        </span>
+                    </div>
+
+                    {{-- Selesai (Distribusi Uploaded) --}}
+                    <div
+                        class="flex items-center justify-between p-2 rounded-lg bg-teal-50/50 dark:bg-teal-900/10 border border-teal-100 dark:border-teal-800/30">
+                        <div class="flex items-center gap-2">
+                            <div class="size-2 rounded-full bg-teal-500"></div>
+                            <span class="text-sm font-medium text-stone-700 dark:text-stone-300">Selesai</span>
+                        </div>
+                        <span class="text-lg font-bold text-teal-600 dark:text-teal-400">
+                            {{ $this->stats['selesai'] ?? 0 }}
+                        </span>
+                    </div>
+                </div>
+            </flux:card>
+
+            {{-- 2. PANDUAN --}}
+            <flux:card
+                class="rounded-xl border bg-sky-50/50 dark:bg-sky-900/10 border-sky-100 dark:border-sky-800/30 shadow-sm">
+                <div class="flex items-start gap-3">
+                    <flux:icon.information-circle class="mt-0.5 size-5 text-sky-600 dark:text-sky-400" />
+                    <div>
+                        <h3 class="font-semibold text-sky-900 dark:text-sky-100 text-sm">Alur Penilaian</h3>
+                        <ul class="mt-3 text-xs text-sky-800 dark:text-sky-200 space-y-3">
+                            <li class="flex gap-2">
+                                <span
+                                    class="flex-none font-bold bg-sky-200 dark:bg-sky-800 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">1</span>
+                                <span>Nilai tampil setelah Dosen memberi nilai.</span>
+                            </li>
+                            <li class="flex gap-2">
+                                <span
+                                    class="flex-none font-bold bg-sky-200 dark:bg-sky-800 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">2</span>
+                                <span>Klik <strong>Upload Bukti</strong> saat status <em>Dinilai</em> / <em>BA
+                                        Terbit</em>.</span>
+                            </li>
+                            <li class="flex gap-2">
+                                <span
+                                    class="flex-none font-bold bg-sky-200 dark:bg-sky-800 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">3</span>
+                                <span>Unduh <strong>BA Scan</strong> jika sudah tersedia.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </flux:card>
+        </div>
+    </div>
+
+    {{-- Modal Upload Distribusi --}}
+    {{-- FIX: Gunakan :show="$showUploadModal" dan name yang sesuai --}}
+    <flux:modal name="mhs-upload-distribusi" :show="$showUploadModal" class="md:w-[32rem]">
+        @if ($uploadSeminarId)
+            <div class="space-y-6">
+                <div>
+                    <flux:heading size="lg">Upload Bukti Distribusi</flux:heading>
+                    <p class="text-sm text-zinc-500">
+                        Unggah bukti penyerahan laporan KP untuk melihat nilai.
+                    </p>
+                </div>
+
+                <div class="space-y-4">
+                    {{-- File Input --}}
+                    <div class="space-y-2">
+                        <flux:input type="file" wire:model="file" accept=".pdf,.jpg,.jpeg,.png"
+                            label="Berkas (PDF/JPG/PNG, maks 10 MB)" />
+
+                        <div wire:loading wire:target="file" class="text-xs text-zinc-500">Mengunggah...</div>
+
+                        @error('file')
+                            <div class="text-sm text-rose-600">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    {{-- Tombol Aksi --}}
+                    <div class="flex justify-end gap-2 pt-2">
+                        {{-- Gunakan wire:click untuk menutup, hindari atribut 'modal' jika menggunakan state Livewire --}}
+                        <flux:button variant="ghost" wire:click="closeUpload">Batal</flux:button>
+
+                        <flux:button variant="primary" icon="check" wire:click="saveUpload"
+                            wire:loading.attr="disabled">
+                            Simpan
+                        </flux:button>
+                    </div>
+                </div>
             </div>
         @else
-            <div class="p-6 text-sm text-zinc-500 dark:text-stone-400">Memuat formulir…</div>
+            <div class="p-6 text-sm text-zinc-500 text-center">Memuat formulir...</div>
         @endif
     </flux:modal>
 </div>

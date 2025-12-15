@@ -30,6 +30,12 @@ class Index extends Component
     }
 
     #[Computed]
+    public function allCount(): int
+    {
+        return (clone $this->base())->count();
+    }
+
+    #[Computed]
     public function rows()
     {
         $q = $this->base();
@@ -90,6 +96,18 @@ class Index extends Component
     {
         AppNotification::forUser(Auth::id())->delete();
         $this->resetPage();
+    }
+
+    // Helper Badge (Opsional, untuk konsistensi di view)
+    public function getBadgeConfig(string $type): array
+    {
+        return match ($type) {
+            'sp_submitted', 'kp_submitted' => ['color' => 'sky', 'icon' => 'paper-airplane', 'label' => 'Pengajuan Baru'],
+            'sp_published', 'spk_published' => ['color' => 'emerald', 'icon' => 'check-circle', 'label' => 'Diterbitkan'],
+            'sp_rejected', 'kp_rejected' => ['color' => 'rose', 'icon' => 'x-circle', 'label' => 'Ditolak'],
+            'kp_seminar_scheduled' => ['color' => 'indigo', 'icon' => 'calendar', 'label' => 'Jadwal Seminar'],
+            default => ['color' => 'zinc', 'icon' => 'bell', 'label' => 'Info'],
+        };
     }
 
     public function render()

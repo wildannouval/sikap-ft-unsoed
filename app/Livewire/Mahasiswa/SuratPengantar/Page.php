@@ -19,13 +19,17 @@ class Page extends Component
     public ?int $editingId = null;
     public ?int $deletingId = null;
 
+    // Form Properties
     public string $lokasi_surat_pengantar = '';
     public string $penerima_surat_pengantar = '';
     public string $alamat_surat_pengantar = '';
     public string $tembusan_surat_pengantar = '';
 
+    // Table & Filter Properties
     public string $sortBy = 'tanggal_pengajuan_surat_pengantar';
     public string $sortDirection = 'desc';
+    public string $search = '';
+    public string $filterStatus = '';
 
     public function mount(): void
     {
@@ -44,9 +48,10 @@ class Page extends Component
         ];
     }
 
+    // Reset pagination saat user mengetik search atau ganti filter
     public function updating($name, $value): void
     {
-        if (in_array($name, ['sortBy', 'sortDirection'])) {
+        if (in_array($name, ['sortBy', 'sortDirection', 'search', 'filterStatus'])) {
             $this->resetPage();
         }
     }
@@ -55,6 +60,18 @@ class Page extends Component
     public function orders()
     {
         return $this->mine()
+            // Logic Search
+            ->when($this->search, function ($q) {
+                $q->where(function ($sub) {
+                    $sub->where('lokasi_surat_pengantar', 'like', '%' . $this->search . '%')
+                        ->orWhere('penerima_surat_pengantar', 'like', '%' . $this->search . '%');
+                });
+            })
+            // Logic Filter Status
+            ->when($this->filterStatus, function ($q) {
+                $q->where('status_surat_pengantar', $this->filterStatus);
+            })
+            // Sorting
             ->tap(fn($q) => $this->sortBy ? $q->orderBy($this->sortBy, $this->sortDirection) : $q)
             ->paginate(10);
     }
@@ -70,28 +87,18 @@ class Page extends Component
         ];
     }
 
-    public function badgeColor(string $status): string
-    {
-        return match ($status) {
-            'Diajukan'    => 'indigo',
-            'Diterbitkan' => 'emerald',
-            'Ditolak'     => 'rose',
-            default       => 'zinc',
-        };
-    }
-
     public function submit(): void
     {
         $this->validate();
 
         $sp = SuratPengantar::create([
-            'mahasiswa_id'                       => $this->mhsId,
-            'lokasi_surat_pengantar'             => $this->lokasi_surat_pengantar,
-            'penerima_surat_pengantar'           => $this->penerima_surat_pengantar,
-            'alamat_surat_pengantar'             => $this->alamat_surat_pengantar,
-            'tembusan_surat_pengantar'           => $this->tembusan_surat_pengantar ?: null,
-            'status_surat_pengantar'             => 'Diajukan',
-            'tanggal_pengajuan_surat_pengantar'  => now(),
+            'mahasiswa_id'                    => $this->mhsId,
+            'lokasi_surat_pengantar'          => $this->lokasi_surat_pengantar,
+            'penerima_surat_pengantar'        => $this->penerima_surat_pengantar,
+            'alamat_surat_pengantar'          => $this->alamat_surat_pengantar,
+            'tembusan_surat_pengantar'        => $this->tembusan_surat_pengantar ?: null,
+            'status_surat_pengantar'          => 'Diajukan',
+            'tanggal_pengajuan_surat_pengantar' => now(),
         ]);
 
         // Notif Bapendik
@@ -131,9 +138,9 @@ class Page extends Component
             return;
         }
         $this->editingId = $sp->id;
-        $this->lokasi_surat_pengantar   = $sp->lokasi_surat_pengantar;
+        $this->lokasi_surat_pengantar    = $sp->lokasi_surat_pengantar;
         $this->penerima_surat_pengantar = $sp->penerima_surat_pengantar;
-        $this->alamat_surat_pengantar   = $sp->alamat_surat_pengantar;
+        $this->alamat_surat_pengantar    = $sp->alamat_surat_pengantar;
         $this->tembusan_surat_pengantar = $sp->tembusan_surat_pengantar ?: '';
     }
 

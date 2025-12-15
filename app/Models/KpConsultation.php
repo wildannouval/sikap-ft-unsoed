@@ -23,18 +23,23 @@ class KpConsultation extends Model
         'hasil_konsultasi',
         'verified_at',
         'verified_by_dosen_id',
-        'verified_note',
+        'verifier_note', // pastikan nama kolom di DB sesuai (verifier_note vs verified_note)
     ];
 
     protected $casts = [
         'tanggal_konsultasi' => 'date',
-        'verified_at' => 'datetime',
+        'verified_at'        => 'datetime',
     ];
 
     // ===== Relations =====
-    public function kerjaPraktik(): BelongsTo
+
+    /**
+     * Diubah dari kerjaPraktik() menjadi kp()
+     * agar konsisten dengan pemanggilan ->with('kp') dan $row->kp
+     */
+    public function kp(): BelongsTo
     {
-        return $this->belongsTo(KerjaPraktik::class);
+        return $this->belongsTo(KerjaPraktik::class, 'kerja_praktik_id');
     }
 
     public function mahasiswa(): BelongsTo
@@ -52,19 +57,14 @@ class KpConsultation extends Model
         return $this->belongsTo(Dosen::class, 'verified_by_dosen_id', 'dosen_id');
     }
 
-    // Scope: hanya yang sudah diverifikasi
+    // Scopes
     public function scopeVerified($q)
     {
         return $q->whereNotNull('verified_at');
     }
 
-    public function  scopeUnverified($q)
+    public function scopeUnverified($q)
     {
         return $q->whereNull('verified_at');
-    }
-
-    public function consultations()
-    {
-        return $this->hasMany(\App\Models\KpConsultation::class, 'kerja_praktik_id');
     }
 }

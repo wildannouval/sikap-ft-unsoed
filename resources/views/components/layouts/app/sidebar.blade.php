@@ -10,18 +10,14 @@
             {{-- Toggle (mobile) --}}
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
-            {{-- Brand SIKAP (pakai logo komponen kamu + teks SIKAP) --}}
+            {{-- Brand --}}
             <a href="{{ route('dashboard') }}" class="me-5 flex items-center gap-2 rtl:space-x-reverse" wire:navigate>
                 <x-app-logo class="h-8 w-auto" />
-                {{-- <span class="text-sm font-semibold tracking-wide text-zinc-800 dark:text-zinc-100">
-                    SIKAP
-                </span> --}}
             </a>
 
-            {{-- === Hitung badge Notifikasi (tanpa "use", pakai FQCN) --}}
+            {{-- Hitung badge Notifikasi --}}
             @php
                 $notifBadge = null;
-
                 try {
                     if (
                         \Illuminate\Support\Facades\Auth::check() &&
@@ -35,12 +31,44 @@
                         $notifBadge = $count > 0 ? (string) $count : null;
                     }
                 } catch (\Throwable $e) {
-                    // Jangan gagalkan render sidebar kalau ada error
                     $notifBadge = null;
                 }
+
+                // Tentukan route notifikasi berdasarkan role (prioritas)
+                $notifRoute = '#';
+                if (request()->routeIs('mhs.*')) {
+                    $notifRoute = route('mhs.notifikasi');
+                } elseif (request()->routeIs('bap.*')) {
+                    $notifRoute = route('bap.notifikasi');
+                } elseif (request()->routeIs('dsp.*')) {
+                    $notifRoute = route('dsp.notifikasi');
+                } elseif (request()->routeIs('komisi.*')) {
+                    $notifRoute = route('komisi.notifikasi');
+                } else {
+                    $notifRoute = route('notifications');
+                } // fallback
+
+                $isNotifActive = request()->routeIs('*.notifikasi') || request()->routeIs('notifications');
             @endphp
 
             <flux:navlist variant="outline">
+
+                {{-- ===================== UMUM ===================== --}}
+                <flux:navlist.group heading="Umum" class="grid">
+                    {{-- Notifikasi (Dipindah ke Umum) --}}
+                    @if (Route::has('notifications'))
+                        <flux:navlist.item icon="bell" :href="$notifRoute" :current="$isNotifActive"
+                            badge="{{ $notifBadge }}" badge:color="red" wire:navigate>Notifikasi</flux:navlist.item>
+                    @endif
+
+                    @if (Route::has('calendar.seminar'))
+                        <flux:navlist.item icon="calendar-days" :href="route('calendar.seminar')"
+                            :current="request()->routeIs('calendar.seminar')" wire:navigate>
+                            Kalender Seminar
+                        </flux:navlist.item>
+                    @endif
+                </flux:navlist.group>
+
                 {{-- ===================== MAHASISWA ===================== --}}
                 @role('Mahasiswa')
                     @php
@@ -76,45 +104,27 @@
                                 :current="request()->routeIs('mhs.kp.index')" wire:navigate>Pengajuan KP</flux:navlist.item>
                         @endcan
 
-                        {{-- Konsultasi KP --}}
                         @if ($activeKpId)
-                            <flux:navlist.item icon="chat-bubble-left-right" :href="route('mhs.kp.konsultasi', $activeKpId)"
+                            <flux:navlist.item icon="chat-bubble-left-right"
+                                :href="route('mhs.kp.konsultasi', $activeKpId)"
                                 :current="request()->routeIs('mhs.kp.konsultasi')" wire:navigate>Konsultasi KP
                             </flux:navlist.item>
                         @else
-                            <flux:navlist.item icon="chat-bubble-left-right" disabled>
-                                Konsultasi KP
-                            </flux:navlist.item>
+                            <flux:navlist.item icon="chat-bubble-left-right" disabled>Konsultasi KP</flux:navlist.item>
                         @endif
 
-                        {{-- Daftar Seminar (aktif jika >=6 konsultasi terverifikasi) --}}
                         @if ($activeKpId && $canSeminar && Route::has('mhs.kp.seminar'))
                             <flux:navlist.item icon="calendar-days" :href="route('mhs.kp.seminar', $activeKpId)"
                                 :current="request()->routeIs('mhs.kp.seminar')" wire:navigate>Daftar Seminar KP
                             </flux:navlist.item>
                         @else
-                            <flux:navlist.item icon="calendar-days" disabled>
-                                Daftar Seminar KP
-                            </flux:navlist.item>
+                            <flux:navlist.item icon="calendar-days" disabled>Daftar Seminar KP</flux:navlist.item>
                         @endif
 
-                        {{-- Nilai KP (tampil setelah upload distribusi) --}}
                         @if (Route::has('mhs.nilai'))
                             <flux:navlist.item icon="chart-bar" :href="route('mhs.nilai')"
                                 :current="request()->routeIs('mhs.nilai')" wire:navigate>Nilai KP</flux:navlist.item>
                         @endif
-
-                        {{-- Notifikasi (Inbox-style badge) --}}
-                        @if (Route::has('notifications'))
-                            <flux:navlist.item icon="inbox" :href="route('notifications')"
-                                :current="request()->routeIs('notifications')" badge="{{ $notifBadge }}"
-                                badge:color="blue" wire:navigate>Notifikasi</flux:navlist.item>
-                        @else
-                            <flux:navlist.item icon="inbox" :badge="$notifBadge" badge:color="blue" disabled>
-                                Notifikasi
-                            </flux:navlist.item>
-                        @endif
-
                     </flux:navlist.group>
                 @endrole
 
@@ -141,91 +151,88 @@
                                 :current="request()->routeIs('bap.kp.spk')" wire:navigate>Penerbitan SPK</flux:navlist.item>
                         @endcan
 
-                        {{-- Jadwal & BA Seminar --}}
                         @if (Route::has('bap.kp.seminar.jadwal'))
                             <flux:navlist.item icon="calendar" :href="route('bap.kp.seminar.jadwal')"
                                 :current="request()->routeIs('bap.kp.seminar.jadwal')" wire:navigate>Jadwal & BA Seminar
                             </flux:navlist.item>
-                        @else
-                            <flux:navlist.item icon="calendar" disabled>Jadwal & BA Seminar</flux:navlist.item>
                         @endif
 
-                        {{-- Nilai & Arsip BA --}}
                         @if (Route::has('bap.kp.nilai'))
                             <flux:navlist.item icon="archive-box" :href="route('bap.kp.nilai')"
                                 :current="request()->routeIs('bap.kp.nilai')" wire:navigate>Nilai & Arsip BA
                             </flux:navlist.item>
-                        @else
-                            <flux:navlist.item icon="archive-box" disabled>Nilai & Arsip BA</flux:navlist.item>
                         @endif
 
-                        {{-- Master Data (collapsible) --}}
                         @can('masterdata.manage')
                             <flux:navlist.group heading="Master Data" expandable class="grid">
                                 @if (Route::has('bap.master.dosen'))
                                     <flux:navlist.item icon="users" :href="route('bap.master.dosen')"
                                         :current="request()->routeIs('bap.master.dosen')" wire:navigate>Data Dosen
                                     </flux:navlist.item>
-                                @else
-                                    <flux:navlist.item icon="users" disabled>Data Dosen</flux:navlist.item>
                                 @endif
 
                                 @if (Route::has('bap.master.mahasiswa'))
                                     <flux:navlist.item icon="academic-cap" :href="route('bap.master.mahasiswa')"
                                         :current="request()->routeIs('bap.master.mahasiswa')" wire:navigate>Data Mahasiswa
                                     </flux:navlist.item>
-                                @else
-                                    <flux:navlist.item icon="academic-cap" disabled>Data Mahasiswa</flux:navlist.item>
                                 @endif
 
                                 @if (Route::has('bap.master.ruangan'))
                                     <flux:navlist.item icon="building-office-2" :href="route('bap.master.ruangan')"
                                         :current="request()->routeIs('bap.master.ruangan')" wire:navigate>Data Ruangan
                                     </flux:navlist.item>
-                                @else
-                                    <flux:navlist.item icon="building-office-2" disabled>Data Ruangan</flux:navlist.item>
+                                @endif
+                                @if (Route::has('bap.master.signatory'))
+                                    <flux:navlist.item icon="identification" :href="route('bap.master.signatory')"
+                                        :current="request()->routeIs('bap.master.signatory')" wire:navigate>Data Penandatangan
+                                    </flux:navlist.item>
+                                @endif
+                                @if (Route::has('bap.master.jurusan'))
+                                    <flux:navlist.item icon="building-library" :href="route('bap.master.jurusan')"
+                                        :current="request()->routeIs('bap.master.jurusan')" wire:navigate>Data Jurusan
+                                    </flux:navlist.item>
                                 @endif
                             </flux:navlist.group>
                         @endcan
+                    </flux:navlist.group>
+                @endrole
 
-                        {{-- Notifikasi (Inbox-style badge) --}}
-                        @if (Route::has('notifications'))
-                            <flux:navlist.item icon="inbox" :href="route('notifications')"
-                                :current="request()->routeIs('notifications')" badge="{{ $notifBadge }}"
-                                badge:color="blue" wire:navigate>Notifikasi</flux:navlist.item>
-                        @else
-                            <flux:navlist.item icon="inbox" :badge="$notifBadge" badge:color="blue" disabled>
-                                Notifikasi
+                {{-- ===================== DOSEN KOMISI ===================== --}}
+                @role('Dosen Komisi')
+                    <flux:navlist.group heading="Komisi" class="grid">
+                        @if (Route::has('komisi.dashboard'))
+                            <flux:navlist.item icon="home" :href="route('komisi.dashboard')"
+                                :current="request()->routeIs('komisi.dashboard')" wire:navigate>Dashboard Komisi
                             </flux:navlist.item>
                         @endif
 
+                        @can('kp.review')
+                            <flux:navlist.item icon="document-check" :href="route('komisi.kp.review')"
+                                :current="request()->routeIs('komisi.kp.review')" wire:navigate>Review Pengajuan KP
+                            </flux:navlist.item>
+                        @endcan
+
+                        @if (Route::has('komisi.kp.nilai'))
+                            <flux:navlist.item icon="chart-bar-square" :href="route('komisi.kp.nilai')"
+                                :current="request()->routeIs('komisi.kp.nilai')" wire:navigate>Status KP Dinilai
+                            </flux:navlist.item>
+                        @endif
                     </flux:navlist.group>
                 @endrole
 
                 {{-- ===================== DOSEN PEMBIMBING ===================== --}}
-                @hasanyrole('Dosen Pembimbing|Dosen Komisi') {{-- ✅ Komisi juga melihat menu pembimbing --}}
+                {{-- Dosen Komisi juga bisa jadi Pembimbing, jadi mereka lihat menu ini juga --}}
+                @hasanyrole('Dosen Pembimbing|Dosen Komisi')
                     <flux:navlist.group heading="Dosen Pembimbing" class="grid">
                         @if (Route::has('dsp.dashboard'))
                             <flux:navlist.item icon="home" :href="route('dsp.dashboard')"
                                 :current="request()->routeIs('dsp.dashboard')" wire:navigate>Dashboard</flux:navlist.item>
-                        @else
-                            <flux:navlist.item icon="home" disabled>Dashboard</flux:navlist.item>
                         @endif
 
-                        @if (Route::has('dsp.mhs'))
-                            <flux:navlist.item icon="academic-cap" :href="route('dsp.mhs')"
-                                :current="request()->routeIs('dsp.mhs')" wire:navigate>Mahasiswa Bimbingan
-                            </flux:navlist.item>
-                        @else
-                            <flux:navlist.item icon="academic-cap" disabled>Mahasiswa Bimbingan</flux:navlist.item>
-                        @endif
-
+                        {{-- Bimbingan & Konsultasi (Disatukan) --}}
                         @if (Route::has('dsp.kp.konsultasi'))
                             <flux:navlist.item icon="chat-bubble-left-right" :href="route('dsp.kp.konsultasi')"
-                                :current="request()->routeIs('dsp.kp.konsultasi')" wire:navigate>Konsultasi Mahasiswa
-                            </flux:navlist.item>
-                        @else
-                            <flux:navlist.item icon="chat-bubble-left-right" disabled>Konsultasi Mahasiswa
+                                :current="request()->routeIs('dsp.kp.konsultasi')" wire:navigate>Bimbingan & Konsultasi
                             </flux:navlist.item>
                         @endif
 
@@ -233,8 +240,6 @@
                             <flux:navlist.item icon="check-circle" :href="route('dsp.kp.seminar.approval')"
                                 :current="request()->routeIs('dsp.kp.seminar.approval')" wire:navigate>Persetujuan Seminar
                             </flux:navlist.item>
-                        @else
-                            <flux:navlist.item icon="check-circle" disabled>Persetujuan Seminar</flux:navlist.item>
                         @endif
 
                         @if (Route::has('dsp.nilai'))
@@ -247,85 +252,20 @@
                                 :current="request()->routeIs('dsp.laporan')" wire:navigate>Laporan & Arsip
                             </flux:navlist.item>
                         @endif
-
-                        @if (Route::has('notifications'))
-                            <flux:navlist.item icon="inbox" :href="route('notifications')"
-                                :current="request()->routeIs('notifications')" badge="{{ $notifBadge }}"
-                                badge:color="blue" wire:navigate>Notifikasi</flux:navlist.item>
-                        @else
-                            <flux:navlist.item icon="inbox" :badge="$notifBadge" badge:color="blue" disabled>Notifikasi
-                            </flux:navlist.item>
-                        @endif
                     </flux:navlist.group>
                 @endhasanyrole
 
-
-                {{-- ===================== DOSEN KOMISI ===================== --}}
-                @role('Dosen Komisi')
-                    <flux:navlist.group heading="Komisi" class="grid">
-                        @if (Route::has('komisi.dashboard'))
-                            <flux:navlist.item icon="home" :href="route('komisi.dashboard')"
-                                :current="request()->routeIs('komisi.dashboard')" wire:navigate>Dashboard
-                            </flux:navlist.item>
-                        @else
-                            <flux:navlist.item icon="home" disabled>Dashboard</flux:navlist.item>
-                        @endif
-
-                        @can('kp.review')
-                            <flux:navlist.item icon="document-check" :href="route('komisi.kp.review')"
-                                :current="request()->routeIs('komisi.kp.review')" wire:navigate>Review Pengajuan KP
-                            </flux:navlist.item>
-                        @endcan
-
-                        {{-- Status KP Dinilai --}}
-                        @if (Route::has('komisi.kp.nilai'))
-                            <flux:navlist.item icon="chart-bar-square" :href="route('komisi.kp.nilai')"
-                                :current="request()->routeIs('komisi.kp.nilai')" wire:navigate>Status KP Dinilai
-                            </flux:navlist.item>
-                        @else
-                            <flux:navlist.item icon="chart-bar-square" disabled>Status KP Dinilai</flux:navlist.item>
-                        @endif
-
-                        {{-- Notifikasi (Inbox-style badge) --}}
-                        @if (Route::has('notifications'))
-                            <flux:navlist.item icon="inbox" :href="route('notifications')"
-                                :current="request()->routeIs('notifications')" badge="{{ $notifBadge }}"
-                                badge:color="blue" wire:navigate>Notifikasi</flux:navlist.item>
-                        @else
-                            <flux:navlist.item icon="inbox" :badge="$notifBadge" badge:color="blue" disabled>
-                                Notifikasi
-                            </flux:navlist.item>
-                        @endif
-
-                    </flux:navlist.group>
-                @endrole
             </flux:navlist>
 
             <flux:spacer />
 
-            {{-- ====== Link bawaan (disembunyikan: diminta di-comment) --}}
-            {{--
-            <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    {{ __('Repository') }}
-                </flux:navlist.item>
-                <flux:navlist.item icon="book-open" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                    {{ __('Documentation') }}
-                </flux:navlist.item>
-            </flux:navlist>
-            --}}
-
-            <!-- Desktop User Menu -->
             <flux:dropdown class="hidden lg:block" position="bottom" align="start">
-                {{-- hanya tambah :avatar, lainnya tetap --}}
                 <flux:profile :name="auth()->user()->name" :initials="auth()->user()->initials()"
                     :avatar="auth()->user()->profilePhotoUrl()" icon:trailing="chevrons-up-down" />
 
                 <flux:menu class="w-[220px]">
                     <flux:menu.radio.group>
-                        @php
-                            $user = auth()->user();
-                        @endphp
+                        @php $user = auth()->user(); @endphp
                         <div class="p-0 text-sm font-normal">
                             <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
                                 <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
@@ -348,11 +288,8 @@
                     </flux:menu.radio.group>
 
                     <flux:menu.separator />
-                    <flux:menu.radio.group>
-                        <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
-                            {{ __('Settings') }}
-                        </flux:menu.item>
-                    </flux:menu.radio.group>
+                    <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>Settings
+                    </flux:menu.item>
                     <flux:menu.separator />
 
                     <form method="POST" action="{{ route('logout') }}" class="w-full">
@@ -366,19 +303,14 @@
             </flux:dropdown>
         </flux:sidebar>
 
-        <!-- Mobile User Menu -->
         <flux:header class="lg:hidden">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
             <flux:spacer />
             <flux:dropdown position="top" align="end">
-                {{-- hanya tambah :avatar, lainnya tetap --}}
                 <flux:profile :initials="auth()->user()->initials()" :avatar="auth()->user()->profilePhotoUrl()"
                     icon-trailing="chevron-down" />
                 <flux:menu>
                     <flux:menu.radio.group>
-                        @php
-                            $user = auth()->user();
-                        @endphp
                         <div class="p-0 text-sm font-normal">
                             <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
                                 <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
@@ -399,14 +331,10 @@
                             </div>
                         </div>
                     </flux:menu.radio.group>
-
                     <flux:menu.separator />
-                    <flux:menu.radio.group>
-                        <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
-                            {{ __('Settings') }}</flux:menu.item>
-                    </flux:menu.radio.group>
+                    <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>Settings
+                    </flux:menu.item>
                     <flux:menu.separator />
-
                     <form method="POST" action="{{ route('logout') }}" class="w-full">
                         @csrf
                         <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle"

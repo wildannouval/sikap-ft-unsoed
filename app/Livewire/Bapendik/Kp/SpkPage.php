@@ -35,7 +35,6 @@ class SpkPage extends Component
     {
         $this->resetPage();
     }
-
     public function updatingTab()
     {
         $this->resetPage();
@@ -75,8 +74,7 @@ class SpkPage extends Component
     {
         return $this->baseQuery()
             ->where('status', KerjaPraktik::ST_REVIEW_BAPENDIK)
-            ->paginate($this->perPage, ['*'], 'pendingPage')
-            ->withQueryString();
+            ->paginate($this->perPage, ['*'], 'pendingPage');
     }
 
     #[Computed]
@@ -84,8 +82,7 @@ class SpkPage extends Component
     {
         return $this->baseQuery()
             ->where('status', KerjaPraktik::ST_SPK_TERBIT)
-            ->paginate($this->perPage, ['*'], 'publishedPage')
-            ->withQueryString();
+            ->paginate($this->perPage, ['*'], 'publishedPage');
     }
 
     #[Computed]
@@ -101,7 +98,7 @@ class SpkPage extends Component
     public function selectedItem(): ?KerjaPraktik
     {
         if (!$this->detailId) return null;
-        return KerjaPraktik::with(['mahasiswa.user', 'dosenPembimbing'])->find($this->detailId);
+        return KerjaPraktik::with(['mahasiswa.user', 'dosenPembimbing', 'signatory'])->find($this->detailId);
     }
 
     public function openDetail(int $id): void
@@ -125,8 +122,8 @@ class SpkPage extends Component
             return;
         }
 
-        $this->select_id    = $row->id;
-        $this->nomor_spk    = (string) ($row->nomor_spk ?? '');
+        $this->select_id  = $row->id;
+        $this->nomor_spk  = (string) ($row->nomor_spk ?? '');
         $this->signatory_id ??= Signatory::query()->orderBy('position')->value('id');
 
         Flux::modal('spk-publish')->show();
@@ -134,9 +131,10 @@ class SpkPage extends Component
 
     public function publishSave(): void
     {
+        // REVISI: Nomor SPK optional, Signatory wajib
         $this->validate([
             'select_id'    => ['required', 'exists:kerja_praktiks,id'],
-            'nomor_spk'    => ['required', 'string', 'max:255'],
+            'nomor_spk'    => ['nullable', 'string', 'max:255'],
             'signatory_id' => ['required', 'exists:signatories,id'],
         ]);
 
@@ -169,13 +167,8 @@ class SpkPage extends Component
 
     protected function sendNotifications($row): void
     {
-        // 1. Mahasiswa
-        Notifier::toUser($row->mahasiswa?->user_id, 'SPK KP Terbit', "SPK KP Anda telah terbit. Nomor: {$row->nomor_spk}.", route('mhs.kp.index'), ['type' => 'spk_published', 'kp_id' => $row->id]);
-
-        // 2. Komisi
+        Notifier::toUser($row->mahasiswa?->user_id, 'SPK KP Terbit', "SPK KP Anda telah terbit.", route('mhs.kp.index'), ['type' => 'spk_published', 'kp_id' => $row->id]);
         Notifier::toRole('Dosen Komisi', 'SPK KP Terbit', "SPK untuk {$row->mahasiswa?->user?->name} diterbitkan.", route('komisi.kp.review'), ['type' => 'spk_notify_komisi', 'kp_id' => $row->id]);
-
-        // 3. Dospem
         if ($dospem = $row->dosenPembimbing) {
             Notifier::toUser($dospem->user_id, 'SPK Mahasiswa Terbit', "SPK bimbingan ({$row->mahasiswa?->user?->name}) terbit.", route('dsp.kp.konsultasi'), ['type' => 'spk_notify_dospem', 'kp_id' => $row->id]);
         }

@@ -19,7 +19,7 @@ class DosenFactory extends Factory
             'user_id' => User::factory()->state(fn() => [
                 'name'     => $name,
                 'email'    => $this->faker->unique()->safeEmail(),
-                'password' => 'password', // di-hash oleh casts User
+                'password' => 'password',
             ]),
             'dosen_name'   => $name,
             'dosen_nip'    => $this->faker->unique()->numerify('1971#########'),

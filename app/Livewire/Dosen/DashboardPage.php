@@ -19,15 +19,16 @@ class DashboardPage extends Component
     public function stats(): array
     {
         $dosenId = $this->dosenId();
+        // Hapus 'dijadwalkan' dari default return
         if (!$dosenId) {
-            return ['menungguAcc' => 0, 'dijadwalkan' => 0, 'perluNilai' => 0, 'baTerbit' => 0];
+            return ['menungguAcc' => 0, 'perluNilai' => 0, 'baTerbit' => 0];
         }
 
         $base = KpSeminar::where('dosen_pembimbing_id', $dosenId);
 
         return [
             'menungguAcc' => (clone $base)->where('status', KpSeminar::ST_DIAJUKAN)->count(),
-            'dijadwalkan' => (clone $base)->where('status', KpSeminar::ST_DIJADWALKAN)->count(),
+            // 'dijadwalkan' => ... // HAPUS
             'baTerbit'    => (clone $base)->where('status', KpSeminar::ST_BA_TERBIT)->count(),
             // Perlu nilai: Sudah BA terbit tapi belum ada nilai (grade)
             'perluNilai'  => (clone $base)->where('status', KpSeminar::ST_BA_TERBIT)

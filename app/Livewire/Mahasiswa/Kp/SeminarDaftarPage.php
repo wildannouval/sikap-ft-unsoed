@@ -32,13 +32,20 @@ class SeminarDaftarPage extends Component
     public $berkas_laporan;
     public ?string $berkas_laporan_path = null;
 
-    public string $status = KpSeminar::ST_DIAJUKAN;
+    /**
+     * NOTE:
+     * - Default jangan "diajukan" supaya ketika belum ada pengajuan (seminar null),
+     *   status tidak misleading jadi "Menunggu ACC".
+     */
+    public string $status = 'draft';
+
+    public ?string $rejected_reason = null; // Tambahan untuk menyimpan alasan penolakan
 
     public function mount(KerjaPraktik $kp): void
     {
         $mhs = Mahasiswa::where('user_id', Auth::id())->firstOrFail();
 
-        abort_unless((int)$kp->mahasiswa_id === (int)$mhs->getKey(), 403, 'KP bukan milik Anda.');
+        abort_unless((int) $kp->mahasiswa_id === (int) $mhs->getKey(), 403, 'KP bukan milik Anda.');
 
         abort_unless(
             in_array($kp->status, [KerjaPraktik::ST_SPK_TERBIT, KerjaPraktik::ST_KP_BERJALAN], true),
@@ -56,15 +63,20 @@ class SeminarDaftarPage extends Component
             ->first();
 
         if ($this->seminar) {
-            $this->judul_kp_final      = (string)($this->seminar->judul_laporan ?? '');
+            $this->judul_kp_final      = (string) ($this->seminar->judul_laporan ?? '');
             $this->abstrak             = $this->seminar->abstrak;
             $this->berkas_laporan_path = $this->seminar->berkas_laporan_path;
             $this->status              = $this->seminar->status;
+            $this->rejected_reason     = $this->seminar->rejected_reason; // Load alasan
 
             $this->tanggal_seminar = optional($this->seminar->tanggal_seminar)->toDateString();
             $this->ruangan_id      = $this->seminar->ruangan_id;
             $this->jam_mulai       = $this->seminar->jam_mulai;
             $this->jam_selesai     = $this->seminar->jam_selesai;
+        } else {
+            // Belum pernah mengajukan -> status draft agar UI tidak menampilkan "Menunggu ACC"
+            $this->status = 'draft';
+            $this->rejected_reason = null;
         }
     }
 
@@ -84,34 +96,49 @@ class SeminarDaftarPage extends Component
     #[Computed]
     public function statusLabel(): string
     {
+        // FIX 1: jika belum ada pengajuan (seminar null) jangan tampil "Menunggu ACC"
+        if (! $this->seminar) {
+            return 'Belum Diajukan';
+        }
+
         return KpSeminar::statusLabel($this->status);
     }
 
     #[Computed]
     public function statusBadge(): array
     {
+        // FIX 1: jika belum ada pengajuan, beri badge draft yang benar
+        if (! $this->seminar) {
+            return [
+                'color' => 'zinc',
+                'icon'  => 'document-text',
+                'desc'  => 'Anda belum mengajukan seminar. Lengkapi formulir lalu klik Ajukan Seminar.',
+            ];
+        }
+
+        // FIX 2: tambahkan mapping untuk DINILAI agar tidak jatuh ke "Status belum tersedia"
         return match ($this->status) {
-            KpSeminar::ST_DIAJUKAN             => ['color' => 'indigo',  'icon' => 'clock',        'desc' => 'Menunggu persetujuan Dosen'],
-            KpSeminar::ST_DISETUJUI_PEMBIMBING => ['color' => 'sky',     'icon' => 'check-circle', 'desc' => 'Menunggu penjadwalan Koordinator'],
-            KpSeminar::ST_DIJADWALKAN          => ['color' => 'emerald', 'icon' => 'calendar',     'desc' => 'Jadwal & Ruangan dikonfirmasi'],
-            KpSeminar::ST_SELESAI              => ['color' => 'teal',    'icon' => 'check-badge',  'desc' => 'Seminar telah dilaksanakan'],
-            KpSeminar::ST_REVISI               => ['color' => 'amber',   'icon' => 'pencil',       'desc' => 'Perlu perbaikan laporan'],
-            KpSeminar::ST_BA_TERBIT            => ['color' => 'violet',  'icon' => 'document-text', 'desc' => 'Berita Acara diterbitkan'],
-            KpSeminar::ST_DITOLAK              => ['color' => 'rose',    'icon' => 'x-circle',     'desc' => 'Pengajuan ditolak, silakan cek.'],
-            KpSeminar::ST_GAGAL                => ['color' => 'rose',    'icon' => 'x-circle',     'desc' => 'Seminar dibatalkan/gagal'],
-            default                            => ['color' => 'zinc',    'icon' => 'minus',        'desc' => 'Status belum tersedia'],
+            KpSeminar::ST_DIAJUKAN             => ['color' => 'indigo', 'icon' => 'clock',         'desc' => 'Menunggu persetujuan Dosen'],
+            KpSeminar::ST_DISETUJUI_PEMBIMBING => ['color' => 'sky',    'icon' => 'check-circle',  'desc' => 'Menunggu penjadwalan Koordinator'],
+            KpSeminar::ST_SELESAI              => ['color' => 'teal',   'icon' => 'check-badge',   'desc' => 'Seminar telah dilaksanakan'],
+            KpSeminar::ST_REVISI               => ['color' => 'amber',  'icon' => 'pencil',        'desc' => 'Perlu revisi jadwal/laporan'],
+            KpSeminar::ST_BA_TERBIT            => ['color' => 'violet', 'icon' => 'document-text', 'desc' => 'Berita Acara diterbitkan'],
+            KpSeminar::ST_DINILAI              => ['color' => 'purple', 'icon' => 'star',          'desc' => 'Seminar telah dinilai oleh Dosen.'],
+            KpSeminar::ST_DITOLAK              => ['color' => 'rose',   'icon' => 'x-circle',      'desc' => 'Pengajuan ditolak, silakan cek.'],
+            KpSeminar::ST_GAGAL                => ['color' => 'rose',   'icon' => 'x-circle',      'desc' => 'Seminar dibatalkan/gagal'],
+            default                            => ['color' => 'zinc',   'icon' => 'minus',         'desc' => 'Status belum tersedia'],
         };
     }
 
     #[Computed]
     public function isLocked(): bool
     {
+        // ST_REVISI dan ST_DITOLAK TIDAK boleh dikunci agar bisa resubmit
         return in_array($this->status, [
             KpSeminar::ST_DISETUJUI_PEMBIMBING,
-            KpSeminar::ST_DIJADWALKAN,
             KpSeminar::ST_SELESAI,
-            KpSeminar::ST_REVISI,
             KpSeminar::ST_BA_TERBIT,
+            KpSeminar::ST_DINILAI,
         ], true);
     }
 
@@ -130,11 +157,11 @@ class SeminarDaftarPage extends Component
 
     private function buildSeminarDateTime(): ?string
     {
-        if (!$this->tanggal_seminar || !$this->jam_mulai) return null;
+        if (! $this->tanggal_seminar || ! $this->jam_mulai) return null;
         return "{$this->tanggal_seminar} {$this->jam_mulai}:00";
     }
 
-    public function saveDraft(): void
+    public function submitToAdvisor(): void
     {
         $this->validate();
         $mhs = Mahasiswa::where('user_id', Auth::id())->firstOrFail();
@@ -168,24 +195,21 @@ class SeminarDaftarPage extends Component
                 Flux::toast(heading: 'Gagal', text: 'Data terkunci, tidak bisa diubah.', variant: 'danger');
                 return;
             }
+
+            // Reset status ke diajukan dan hapus catatan reject lama
+            $payload['status'] = KpSeminar::ST_DIAJUKAN;
+            $payload['rejected_reason'] = null;
+
             $this->seminar->update($payload);
         } else {
             $payload['status'] = KpSeminar::ST_DIAJUKAN;
             $this->seminar = KpSeminar::create($payload);
-            $this->status  = $this->seminar->status;
         }
 
-        Flux::toast(heading: 'Tersimpan', text: 'Draf pendaftaran disimpan.', variant: 'success');
-    }
-
-    public function submitToAdvisor(): void
-    {
-        $this->validate();
-        $this->saveDraft();
-
-        $this->seminar->update(['status' => KpSeminar::ST_DIAJUKAN]);
         $this->status = KpSeminar::ST_DIAJUKAN;
+        $this->rejected_reason = null;
 
+        // Notifikasi ke Dosen
         $dosenUser = $this->kp->dosenPembimbing?->user;
         if ($dosenUser) {
             Notifier::toUser(
@@ -197,12 +221,12 @@ class SeminarDaftarPage extends Component
             );
         }
 
-        Flux::toast(heading: 'Terkirim', text: 'Pengajuan dikirim ke Dosen.', variant: 'success');
+        Flux::toast(heading: 'Terkirim', text: 'Pengajuan seminar berhasil dikirim.', variant: 'success');
     }
 
     public function removeFile(): void
     {
-        if (!$this->seminar || $this->isLocked()) return;
+        if (! $this->seminar || $this->isLocked()) return;
 
         if ($this->berkas_laporan_path && Storage::disk('public')->exists($this->berkas_laporan_path)) {
             Storage::disk('public')->delete($this->berkas_laporan_path);

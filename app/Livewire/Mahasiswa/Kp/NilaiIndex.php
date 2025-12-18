@@ -2,46 +2,29 @@
 
 namespace App\Livewire\Mahasiswa\Kp;
 
+use App\Models\Dosen;
 use App\Models\KpSeminar;
 use App\Models\Mahasiswa;
+use App\Models\KerjaPraktik;
 use App\Services\Notifier;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use Livewire\WithPagination;
 use Flux\Flux;
 
 class NilaiIndex extends Component
 {
-    use WithPagination, WithFileUploads;
+    use WithFileUploads;
 
-    public string $q = '';
-    public string $filterStatus = '';
-    public int $perPage = 10;
-
-    /** ID seminar yang sedang dibuka upload-nya */
     public ?int $uploadSeminarId = null;
 
-    /** State Form Upload */
-    public $file; // TemporaryUploadedFile
-    public bool $showUploadModal = false;
-
-    public function updatingQ()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingFilterStatus()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingPerPage()
-    {
-        $this->resetPage();
-    }
+    /** Form Upload */
+    public $fileDistribusi = null;
+    public $fileLaporanFinal = null;
 
     #[Computed]
     public function mahasiswaId(): int
@@ -51,134 +34,150 @@ class NilaiIndex extends Component
     }
 
     #[Computed]
-    public function items()
+    public function seminar(): ?KpSeminar
     {
+        $mhsId = $this->mahasiswaId;
+        if ($mhsId <= 0) return null;
+
         return KpSeminar::query()
             ->with(['grade', 'kp.mahasiswa.user'])
-            ->whereHas('kp', fn($q) => $q->where('mahasiswa_id', $this->mahasiswaId))
-            ->when($this->q !== '', function ($q) {
-                $kw = '%' . $this->q . '%';
-                $q->where('judul_laporan', 'like', $kw);
-            })
-            ->when($this->filterStatus !== '', function ($q) {
-                $q->where('status', $this->filterStatus);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate($this->perPage)
-            ->withQueryString();
+            ->whereHas('kp', fn($q) => $q->where('mahasiswa_id', $mhsId))
+            ->whereIn('status', [KpSeminar::ST_BA_TERBIT, KpSeminar::ST_DINILAI, KpSeminar::ST_SELESAI])
+            ->latest('updated_at')
+            ->first();
     }
 
-    #[Computed]
-    public function stats(): array
+    public function openUpload(): void
     {
-        $base = KpSeminar::whereHas('kp', fn($q) => $q->where('mahasiswa_id', $this->mahasiswaId));
+        if (! $this->seminar) return;
 
-        return [
-            'dinilai'   => (clone $base)->where('status', KpSeminar::ST_DINILAI)->count(),
-            'ba_terbit' => (clone $base)->where('status', KpSeminar::ST_BA_TERBIT)->count(),
-            'selesai'   => (clone $base)->whereNotNull('distribusi_proof_path')->count(),
-        ];
-    }
+        $this->resetValidation();
+        $this->reset(['fileDistribusi', 'fileLaporanFinal']);
 
-    #[Computed]
-    public function statusOptions(): array
-    {
-        return [
-            ['value' => KpSeminar::ST_DINILAI, 'label' => 'Dinilai'],
-            ['value' => KpSeminar::ST_BA_TERBIT, 'label' => 'BA Terbit'],
-            ['value' => KpSeminar::ST_SELESAI, 'label' => 'Selesai'],
-        ];
-    }
+        $this->uploadSeminarId = (int) $this->seminar->id;
 
-    /** Buka modal upload untuk seminar tertentu */
-    public function openUpload(int $seminarId): void
-    {
-        $this->reset(['file']); // Reset file input
-        $this->uploadSeminarId = $seminarId;
-        $this->showUploadModal = true;
-
-        // FIX: Panggil show() eksplisit agar modal muncul
         Flux::modal('mhs-upload-distribusi')->show();
     }
 
-    /** Tutup modal upload */
     public function closeUpload(): void
     {
-        $this->showUploadModal = false;
+        $this->resetValidation();
         $this->uploadSeminarId = null;
-        $this->reset(['file']);
+        $this->reset(['fileDistribusi', 'fileLaporanFinal']);
 
-        // Opsional: Panggil close() eksplisit
         Flux::modal('mhs-upload-distribusi')->close();
     }
 
-    /** Simpan File Distribusi */
     public function saveUpload(): void
     {
         $this->validate([
-            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'], // 10MB
+            'fileDistribusi'   => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'fileLaporanFinal' => ['required', 'file', 'mimes:pdf', 'max:20480'],
+        ], [
+            'fileDistribusi.required'   => 'Bukti distribusi wajib diunggah.',
+            'fileDistribusi.mimes'      => 'Bukti distribusi harus PDF/JPG/JPEG/PNG.',
+            'fileDistribusi.max'        => 'Bukti distribusi maksimal 10MB.',
+            'fileLaporanFinal.required' => 'Laporan final wajib diunggah.',
+            'fileLaporanFinal.mimes'    => 'Laporan final harus PDF.',
+            'fileLaporanFinal.max'      => 'Laporan final maksimal 20MB.',
         ]);
 
-        // Load Seminar & Validasi Kepemilikan
-        $seminar = KpSeminar::where('id', $this->uploadSeminarId)
-            ->whereHas('kp', fn($q) => $q->where('mahasiswa_id', $this->mahasiswaId))
-            ->firstOrFail();
-
-        // Guard: hanya boleh upload setelah dinilai atau BA terbit
-        if (!in_array($seminar->status, [KpSeminar::ST_DINILAI, KpSeminar::ST_BA_TERBIT])) {
-            Flux::toast(heading: 'Gagal', text: 'Status seminar tidak valid untuk upload bukti.', variant: 'danger');
+        $mhsId = $this->mahasiswaId;
+        if ($mhsId <= 0 || ! $this->uploadSeminarId) {
+            Flux::toast(heading: 'Gagal', text: 'Data mahasiswa / seminar tidak valid.', variant: 'danger');
             return;
         }
 
-        // Simpan file
-        $path = $this->file->store('kp/distribusi', 'public');
+        // Pastikan seminar memang milik mahasiswa (security)
+        $seminar = KpSeminar::query()
+            ->where('id', $this->uploadSeminarId)
+            ->whereHas('kp', fn($q) => $q->where('mahasiswa_id', $mhsId))
+            ->firstOrFail();
 
-        // Update seminar
-        $seminar->update([
-            'distribusi_proof_path'  => $path,
-            'distribusi_uploaded_at' => now(),
-            // Opsional: ubah status ke 'selesai' jika diinginkan
-            'status' => KpSeminar::ST_SELESAI
-        ]);
+        $pathDist = null;
+        $pathLap  = null;
 
-        // --- Logika Notifikasi ---
         try {
-            $notified = 0;
-            // Notif ke Dospem
-            if ($seminar->dosen_pembimbing_id) {
-                $dosenClass = '\\App\\Models\\Dosen';
-                if (class_exists($dosenClass)) {
-                    $dosen = $dosenClass::find($seminar->dosen_pembimbing_id);
-                    if ($dosen && $dosen->user_id) {
-                        Notifier::toUser(
-                            (int) $dosen->user_id,
-                            'Bukti Distribusi Diunggah',
-                            'Mahasiswa telah mengunggah bukti distribusi KP.',
-                            route('dsp.nilai'),
-                            ['kp_seminar_id' => $seminar->id]
-                        );
-                        $notified++;
-                    }
+            // Simpan file dulu supaya object temporary tidak hilang saat transaksi
+            $pathDist = $this->fileDistribusi->store('kp/distribusi', 'public');
+            $pathLap  = $this->fileLaporanFinal->store('kp/laporan_final', 'public');
+
+            DB::transaction(function () use ($seminar, $pathDist, $pathLap) {
+                // 1) Update kp_seminars
+                $seminar->update([
+                    'distribusi_proof_path'  => $pathDist,
+                    'laporan_final_path'     => $pathLap,
+                    'distribusi_uploaded_at' => now(),
+                    'status'                 => KpSeminar::ST_SELESAI,
+                ]);
+
+                // 2) Update kerja_praktiks.status ke ENUM yang VALID (lihat SQL kamu)
+                // enum kerja_praktiks: ... 'nilai_terbit' itu ada, 'selesai' TIDAK ADA
+                if ($seminar->kerja_praktik_id) {
+                    KerjaPraktik::where('id', $seminar->kerja_praktik_id)->update([
+                        'status' => 'nilai_terbit',
+                    ]);
                 }
-            }
-            // Fallback Role Dospem
-            if ($notified === 0) {
-                Notifier::toRole('Dosen Pembimbing', 'Bukti Distribusi KP', 'Cek menu penilaian.', route('dsp.nilai'));
-            }
+            });
 
-            // Notif Admin & Komisi
-            Notifier::toRole('Bapendik', 'Bukti Distribusi KP', 'Mahasiswa upload bukti distribusi.', route('bap.kp.nilai'));
-            Notifier::toRole('Dosen Komisi', 'Bukti Distribusi KP', 'Mahasiswa upload bukti distribusi.', route('komisi.kp.nilai'));
+            $this->sendNotifications($seminar);
+
+            $this->closeUpload();
+
+            Flux::toast(
+                heading: 'Berhasil',
+                text: 'Dokumen akhir berhasil diunggah. Status KP selesai.',
+                variant: 'success'
+            );
+
+            $this->redirect(route('mhs.nilai'), navigate: true);
         } catch (\Throwable $e) {
-            // Silent fail notification
-        }
+            // kalau DB gagal, hapus file yang sudah tersimpan agar tidak nyampah
+            if ($pathDist && Storage::disk('public')->exists($pathDist)) {
+                Storage::disk('public')->delete($pathDist);
+            }
+            if ($pathLap && Storage::disk('public')->exists($pathLap)) {
+                Storage::disk('public')->delete($pathLap);
+            }
 
-        $this->closeUpload();
-        $this->resetPage(); // Refresh tabel
-        Flux::toast(heading: 'Berhasil', text: 'Bukti distribusi berhasil diunggah.', variant: 'success');
+            report($e);
+            Flux::toast(heading: 'Gagal', text: 'Terjadi kesalahan: ' . $e->getMessage(), variant: 'danger');
+        }
     }
 
-    public function render()
+    private function sendNotifications(KpSeminar $seminar): void
+    {
+        if ($seminar->dosen_pembimbing_id) {
+            $dosen = Dosen::find($seminar->dosen_pembimbing_id);
+            if ($dosen?->user_id) {
+                Notifier::toUser(
+                    (int) $dosen->user_id,
+                    'KP Mahasiswa Selesai',
+                    'Mahasiswa bimbingan telah mengunggah laporan final & bukti distribusi.',
+                    route('dsp.laporan')
+                );
+            }
+        }
+
+        Notifier::toRole(
+            'Bapendik',
+            'Arsip Laporan Baru',
+            'Mahasiswa telah menyelesaikan proses KP (dokumen akhir diunggah).',
+            route('bap.kp.nilai')
+        );
+    }
+
+    public function badgeColor(string $status): string
+    {
+        return KpSeminar::badgeColor($status);
+    }
+
+    public function statusLabel(string $status): string
+    {
+        return KpSeminar::statusLabel($status);
+    }
+
+    public function render(): View
     {
         return view('livewire.mahasiswa.kp.nilai-index');
     }

@@ -96,8 +96,9 @@
                                                 wire:click="resetUserPassword({{ $r->mahasiswa_id }})">Reset Password
                                             </flux:menu.item>
                                             <flux:menu.separator />
+                                            {{-- FIX: Menggunakan confirmDelete --}}
                                             <flux:menu.item icon="trash" variant="danger"
-                                                wire:click="delete({{ $r->mahasiswa_id }})">Hapus
+                                                wire:click="confirmDelete({{ $r->mahasiswa_id }})">Hapus
                                             </flux:menu.item>
                                         </flux:menu>
                                     </flux:dropdown>
@@ -157,9 +158,6 @@
                     </flux:heading>
                     <flux:subheading class="mt-1">Lengkapi data mahasiswa & akun login.</flux:subheading>
                 </div>
-                <flux:modal.close>
-                    <flux:button variant="ghost" icon="x-mark" wire:click="closeForm"></flux:button>
-                </flux:modal.close>
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
@@ -196,6 +194,25 @@
                     <flux:button variant="ghost" wire:click="closeForm">Batal</flux:button>
                 </flux:modal.close>
                 <flux:button variant="primary" icon="check" wire:click="save">Simpan</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    {{-- MODAL DELETE CONFIRMATION --}}
+    <flux:modal name="delete-confirm" class="min-w-[24rem]">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg" class="text-rose-600">Hapus Data Mahasiswa?</flux:heading>
+                <p class="text-sm text-zinc-500 mt-2">
+                    Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.
+                </p>
+            </div>
+
+            <div class="flex gap-2 justify-end">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
+                <flux:button variant="danger" wire:click="delete">Hapus</flux:button>
             </div>
         </div>
     </flux:modal>

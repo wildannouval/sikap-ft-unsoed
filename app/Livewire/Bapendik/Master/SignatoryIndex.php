@@ -30,6 +30,9 @@ class SignatoryIndex extends Component
     public string $nip = '';
     public string $position = '';
 
+    // Delete Confirmation State
+    public ?int $deleteId = null;
+
     public function rules(): array
     {
         return [
@@ -43,7 +46,6 @@ class SignatoryIndex extends Component
     {
         $this->resetPage();
     }
-
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -132,15 +134,30 @@ class SignatoryIndex extends Component
         Flux::toast(heading: 'Berhasil', text: $msg, variant: 'success');
     }
 
-    public function delete(int $id): void
-    {
-        // Cek apakah dipakai (opsional, tergantung kebutuhan integritas)
-        // Saat ini delete cascade/set null di DB, jadi aman dihapus langsung
-        $row = Signatory::findOrFail($id);
-        $row->delete();
+    // --- Delete Logic ---
 
-        $this->resetPage();
-        Flux::toast(heading: 'Terhapus', text: 'Data dihapus.', variant: 'success');
+    public function confirmDelete(int $id): void
+    {
+        $this->deleteId = $id;
+        Flux::modal('delete-confirm')->show();
+    }
+
+    public function delete(): void
+    {
+        if ($this->deleteId) {
+            try {
+                $row = Signatory::findOrFail($this->deleteId);
+                $row->delete();
+
+                $this->resetPage();
+                Flux::toast(heading: 'Terhapus', text: 'Data penandatangan dihapus.', variant: 'success');
+            } catch (\Exception $e) {
+                Flux::toast(heading: 'Gagal', text: 'Gagal menghapus data.', variant: 'danger');
+            }
+        }
+
+        $this->deleteId = null;
+        Flux::modal('delete-confirm')->close();
     }
 
     private function resetForm(): void

@@ -28,6 +28,9 @@ class JurusanIndex extends Component
     public ?int $editingId = null;
     public string $nama_jurusan = '';
 
+    // Delete Confirmation State
+    public ?int $deleteId = null;
+
     public function rules(): array
     {
         return [
@@ -106,19 +109,30 @@ class JurusanIndex extends Component
         Flux::toast(heading: 'Berhasil', text: $msg, variant: 'success');
     }
 
-    public function delete(int $id): void
-    {
-        // Opsional: Cek relasi sebelum hapus jika perlu
-        // Misalnya jika ada mahasiswa/dosen yang terikat, cegah hapus.
-        try {
-            $row = Jurusan::findOrFail($id);
-            $row->delete();
+    // --- Delete Logic ---
 
-            $this->resetPage();
-            Flux::toast(heading: 'Terhapus', text: 'Data jurusan dihapus.', variant: 'success');
-        } catch (\Exception $e) {
-            Flux::toast(heading: 'Gagal', text: 'Tidak dapat menghapus jurusan yang sedang digunakan.', variant: 'danger');
+    public function confirmDelete(int $id): void
+    {
+        $this->deleteId = $id;
+        Flux::modal('delete-confirm')->show();
+    }
+
+    public function delete(): void
+    {
+        if ($this->deleteId) {
+            try {
+                $row = Jurusan::findOrFail($this->deleteId);
+                $row->delete();
+
+                $this->resetPage();
+                Flux::toast(heading: 'Terhapus', text: 'Data jurusan dihapus.', variant: 'success');
+            } catch (\Exception $e) {
+                Flux::toast(heading: 'Gagal', text: 'Gagal menghapus data. Kemungkinan sedang digunakan.', variant: 'danger');
+            }
         }
+
+        $this->deleteId = null;
+        Flux::modal('delete-confirm')->close();
     }
 
     private function resetForm(): void

@@ -1,8 +1,7 @@
 <div class="space-y-6">
-    {{-- TOAST GLOBAL --}}
     <flux:toast />
 
-    {{-- HEADER HALAMAN --}}
+    {{-- HEADER --}}
     <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
             <flux:heading size="xl" level="1" class="text-stone-900 dark:text-stone-100">
@@ -68,17 +67,11 @@
                     <div>
                         <flux:input label="Judul Kerja Praktik" wire:model.defer="judul_kp"
                             placeholder="Contoh: Perancangan Sistem X di PT Y..." :invalid="$errors->has('judul_kp')" />
-                        {{-- @error('judul_kp')
-                            <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                        @enderror --}}
                     </div>
 
                     <div>
                         <flux:input label="Instansi / Lokasi KP" wire:model.defer="lokasi_kp"
                             placeholder="Nama perusahaan / instansi" :invalid="$errors->has('lokasi_kp')" />
-                        {{-- @error('lokasi_kp')
-                            <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                        @enderror --}}
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -89,9 +82,6 @@
                             <div class="text-xs text-zinc-500 mt-1" wire:loading wire:target="proposal_kp">
                                 Mengunggah proposal…
                             </div>
-                            {{-- @error('proposal_kp')
-                                <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                            @enderror --}}
 
                             @if ($proposal_kp && !$errors->has('proposal_kp'))
                                 <div
@@ -105,16 +95,13 @@
                             @endif
                         </div>
 
-                        {{-- Upload Surat Diterima / Bukti --}}
+                        {{-- Upload Surat Diterima --}}
                         <div>
                             <flux:input wire:model="surat_keterangan_kp" type="file"
                                 label="Bukti Diterima (PDF/Img, maks 2MB)" required />
                             <div class="text-xs text-zinc-500 mt-1" wire:loading wire:target="surat_keterangan_kp">
                                 Mengunggah bukti…
                             </div>
-                            {{-- @error('surat_keterangan_kp')
-                                <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
-                            @enderror --}}
 
                             @if ($surat_keterangan_kp && !$errors->has('surat_keterangan_kp'))
                                 <div
@@ -296,13 +283,12 @@
 
             <flux:table.rows>
                 @foreach ($this->orders as $i => $row)
-                    {{-- Updated Logic Badge with Icon --}}
                     @php
                         $status = $row->status;
                         $badgeTheme = match ($status) {
                             'review_komisi' => ['color' => 'indigo', 'icon' => 'clock'],
                             'review_bapendik' => ['color' => 'sky', 'icon' => 'clock'],
-                            'spk_terbit' => ['color' => 'emerald', 'icon' => 'check-circle'],
+                            'spk_terbit', 'kp_sedang_berjalan' => ['color' => 'emerald', 'icon' => 'check-circle'],
                             'ditolak' => ['color' => 'rose', 'icon' => 'x-circle'],
                             default => ['color' => 'zinc', 'icon' => 'minus'],
                         };
@@ -358,29 +344,25 @@
                                 <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
 
                                 <flux:menu class="min-w-40">
-                                    <flux:modal.trigger name="detail-kp">
-                                        <flux:menu.item icon="eye" wire:click="openDetail({{ $row->id }})">
-                                            Detail
-                                        </flux:menu.item>
-                                    </flux:modal.trigger>
+                                    <flux:menu.item icon="eye" wire:click="openDetail({{ $row->id }})">
+                                        Detail
+                                    </flux:menu.item>
 
                                     @if ($row->status === 'review_komisi')
                                         <flux:menu.item icon="pencil-square" wire:click="edit({{ $row->id }})">
                                             Edit
                                         </flux:menu.item>
-                                        <flux:modal.trigger name="delete-kp">
-                                            <flux:menu.item icon="trash" variant="danger"
-                                                wire:click="markDelete({{ $row->id }})">
-                                                Hapus
-                                            </flux:menu.item>
-                                        </flux:modal.trigger>
+                                        <flux:menu.item icon="trash" variant="danger"
+                                            wire:click="markDelete({{ $row->id }})">
+                                            Hapus
+                                        </flux:menu.item>
                                     @endif
 
-                                    @if ($row->status === 'spk_terbit')
+                                    @if ($row->status === 'spk_terbit' || $row->status === 'kp_sedang_berjalan')
                                         <flux:menu.separator />
                                         <flux:menu.item icon="arrow-down-tray"
                                             href="{{ route('mhs.kp.download.docx', $row->id) }}" target="_blank">
-                                            Unduh SPK (DOCX)
+                                            Unduh SPK
                                         </flux:menu.item>
                                     @endif
                                 </flux:menu>
@@ -428,7 +410,7 @@
                     Data KP ini akan dihapus permanen.
                 </flux:subheading>
             </div>
-            <div class="flex gap-3">
+            <div class="flex justify-end gap-2">
                 <flux:modal.close>
                     <flux:button variant="ghost" class="w-full">Batal</flux:button>
                 </flux:modal.close>
@@ -459,7 +441,7 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div
                             class="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800">
-                            <div class="text-xs text-zinc-500 mb-1">Tanggal</div>
+                            <div class="text-xs text-zinc-500 mb-1">Tanggal Pengajuan</div>
                             <div class="font-medium text-stone-900 dark:text-stone-100">
                                 {{ optional($item->created_at)->format('d M Y') ?: '—' }}
                             </div>
@@ -484,6 +466,35 @@
                         <div class="text-xs text-zinc-500 mb-1">Instansi</div>
                         <div class="font-medium text-stone-900 dark:text-stone-100">{{ $item->lokasi_kp }}</div>
                     </div>
+
+                    {{-- Info SPK Terbit --}}
+                    @if ($item->status === 'spk_terbit' || $item->status === 'kp_sedang_berjalan')
+                        <div
+                            class="p-3 bg-emerald-50 dark:bg-emerald-900/10 rounded-lg border border-emerald-100 dark:border-emerald-800/30">
+                            <div class="flex items-center gap-2 mb-2">
+                                <flux:icon.check-circle class="size-4 text-emerald-600" />
+                                <span class="text-sm font-bold text-emerald-700 dark:text-emerald-400">SPK
+                                    Diterbitkan</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span class="text-xs text-zinc-500 block">Nomor SPK</span>
+                                    <span class="font-mono">{{ $item->nomor_spk ?? '-' }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-zinc-500 block">Tanggal Terbit</span>
+                                    <span>{{ optional($item->tanggal_terbit_spk)->format('d F Y') ?? '-' }}</span>
+                                </div>
+                            </div>
+                            <div class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800/50">
+                                <span class="text-xs text-zinc-500 block">Masa Berlaku (1 Tahun)</span>
+                                <span class="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                                    Sampai:
+                                    {{ optional($item->tanggal_terbit_spk)->addYear()->format('d F Y') ?? '-' }}
+                                </span>
+                            </div>
+                        </div>
+                    @endif
 
                     <div class="space-y-2">
                         <div class="text-sm font-medium text-stone-900 dark:text-stone-100">Dokumen Lampiran</div>

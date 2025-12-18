@@ -109,16 +109,25 @@ Route::prefix('mhs')
     ->middleware(['auth', 'role:Mahasiswa'])
     ->group(function () {
         Route::get('/dashboard', MhsDashboardPage::class)->name('mhs.dashboard');
+
+        // Surat Pengantar
         Route::get('/surat-pengantar', SuratPengantarPage::class)->name('mhs.sp.index');
         Route::get('/surat-pengantar/{sp}/download-docx', [SpDownloadController::class, 'downloadDocxForMahasiswa'])->name('mhs.sp.download.docx');
+
+        // KP & SPK
         Route::get('/kp', MhsKpPage::class)->name('mhs.kp.index');
         Route::get('/kp/{kp}/download-docx', [DownloadSpkController::class, 'downloadDocxForMahasiswa'])->name('mhs.kp.download.docx');
+
+        // Tambahkan Route Download SPK (Ini yang sebelumnya missing/salah nama)
+        Route::get('/kp/{kp}/download-spk', [DownloadSpkController::class, 'downloadDocxForMahasiswa'])->name('mhs.kp.download.spk');
+
         Route::get('/kp/{kp}/konsultasi', MhsKpKonsultasiPage::class)->name('mhs.kp.konsultasi');
+
+        // Seminar & BA
         Route::get('/kp/{kp}/seminar', SeminarDaftarPage::class)->name('mhs.kp.seminar');
         Route::get('/kp/{kp}/seminar/{seminar}/download-ba', [BaDownloadController::class, 'downloadForMahasiswa'])->name('mhs.kp.seminar.download.ba');
-        Route::get('/nilai', MhsNilaiIndex::class)->name('mhs.nilai');
 
-        // Notifikasi khusus
+        Route::get('/nilai', MhsNilaiIndex::class)->name('mhs.nilai');
         Route::get('/notifikasi', NotificationsIndex::class)->name('mhs.notifikasi');
     });
 

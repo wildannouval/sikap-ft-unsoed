@@ -1,52 +1,54 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h2 class="text-lg font-semibold text-stone-900 dark:text-stone-100">Dashboard Bapendik</h2>
-        <flux:badge size="sm"
-            class="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-            SIKAP FT UNSOED
-        </flux:badge>
+        <flux:badge size="sm" color="amber" inset="top bottom">SIKAP FT UNSOED</flux:badge>
     </div>
 
     {{-- STAT TILES --}}
     @php
-        // Menggunakan helper dari Model KpSeminar untuk warna konsisten
-        // Mapping manual untuk key stats di component
         $cards = [
             [
                 'label' => 'Menunggu Jadwal',
                 'key' => 'menungguJadwal',
-                'color' => 'sky', // Sesuai status disetujui_pembimbing
                 'icon' => 'clock',
+                // Definisikan class lengkap agar Tailwind JIT mendeteksinya
+                'bgClass' => 'bg-sky-100 dark:bg-sky-900/30',
+                'textClass' => 'text-sky-600 dark:text-sky-400',
             ],
             [
                 'label' => 'Dijadwalkan',
                 'key' => 'dijadwalkan',
-                'color' => 'emerald', // Sesuai status dijadwalkan
                 'icon' => 'calendar',
+                'bgClass' => 'bg-emerald-100 dark:bg-emerald-900/30',
+                'textClass' => 'text-emerald-600 dark:text-emerald-400',
             ],
             [
                 'label' => 'BA Terbit',
                 'key' => 'baTerbit',
-                'color' => 'violet', // Sesuai status ba_terbit
                 'icon' => 'document-text',
+                'bgClass' => 'bg-violet-100 dark:bg-violet-900/30',
+                'textClass' => 'text-violet-600 dark:text-violet-400',
             ],
             [
                 'label' => 'Sudah Dinilai',
                 'key' => 'dinilai',
-                'color' => 'purple', // Sesuai status dinilai
                 'icon' => 'star',
+                'bgClass' => 'bg-purple-100 dark:bg-purple-900/30',
+                'textClass' => 'text-purple-600 dark:text-purple-400',
             ],
             [
                 'label' => 'Total Mahasiswa',
                 'key' => 'mhs',
-                'color' => 'zinc',
                 'icon' => 'user-group',
+                'bgClass' => 'bg-zinc-100 dark:bg-zinc-800',
+                'textClass' => 'text-zinc-600 dark:text-zinc-400',
             ],
             [
                 'label' => 'Total Dosen',
                 'key' => 'dosen',
-                'color' => 'indigo',
                 'icon' => 'academic-cap',
+                'bgClass' => 'bg-indigo-100 dark:bg-indigo-900/30',
+                'textClass' => 'text-indigo-600 dark:text-indigo-400',
             ],
         ];
     @endphp
@@ -64,8 +66,9 @@
                             {{ number_format($this->stats[$c['key']] ?? 0) }}
                         </div>
                     </div>
-                    <div
-                        class="p-2 rounded-lg bg-{{ $c['color'] }}-100 dark:bg-{{ $c['color'] }}-900/30 text-{{ $c['color'] }}-600 dark:text-{{ $c['color'] }}-400">
+
+                    {{-- Gunakan class lengkap dari array --}}
+                    <div class="p-2 rounded-lg {{ $c['bgClass'] }} {{ $c['textClass'] }}">
                         <flux:icon :name="$c['icon']" class="size-6" />
                     </div>
                 </div>
@@ -80,8 +83,11 @@
                 <h3 class="text-base font-semibold text-stone-900 dark:text-stone-100">Aktivitas Seminar Terbaru</h3>
                 <p class="text-sm text-zinc-500 dark:text-zinc-400">Daftar seminar yang baru diperbarui.</p>
             </div>
-            <a href="{{ route('bap.kp.seminar.jadwal') }}" class="text-sm text-indigo-600 hover:underline">Lihat
-                Semua</a>
+            {{-- Tombol Lihat Semua (Button Style) --}}
+            <flux:button href="{{ route('bap.kp.seminar.jadwal') }}" variant="ghost" size="sm"
+                icon-trailing="arrow-right">
+                Lihat Semua
+            </flux:button>
         </div>
 
         <flux:table>
@@ -120,17 +126,19 @@
 
                         <flux:table.cell>
                             @if ($row->ba_scan_path)
-                                <a href="{{ asset('storage/' . $row->ba_scan_path) }}" target="_blank"
-                                    class="text-xs text-indigo-600 hover:underline flex items-center gap-1">
-                                    <flux:icon.document-text class="size-3" /> Lihat
-                                </a>
+                                {{-- Tombol Lihat (Button Style) --}}
+                                <flux:button href="{{ asset('storage/' . $row->ba_scan_path) }}" target="_blank"
+                                    variant="ghost" size="xs" icon="document-text">
+                                    Lihat
+                                </flux:button>
                             @else
                                 <span class="text-xs text-zinc-400">—</span>
                             @endif
                         </flux:table.cell>
 
                         <flux:table.cell class="text-xs text-zinc-500 whitespace-nowrap">
-                            {{ $row->updated_at?->diffForHumans() ?? '—' }}
+                            {{-- DiffForHumans Bahasa Indonesia --}}
+                            {{ $row->updated_at?->locale('id')->diffForHumans() ?? '—' }}
                         </flux:table.cell>
                     </flux:table.row>
                 @empty

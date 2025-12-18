@@ -19,23 +19,26 @@ class ValidasiPage extends Component
     #[Url] public string $sortBy = 'tanggal_pengajuan_surat_pengantar';
     #[Url] public string $sortDirection = 'desc';
     #[Url] public int $perPage = 10;
-    #[Url] public string $tab = 'pending'; // 'pending' | 'published'
+
+    // Tabs: pending | published | rejected
+    #[Url] public string $tab = 'pending';
     #[Url] public string $search = '';
 
-    // publish modal state
+    // Publish Modal State
     public ?int $publish_id = null;
     public string $publish_nomor_surat = '';
     public ?int $signatory_id = null;
 
-    // reject modal state
+    // Reject Modal State
     public ?int $reject_id = null;
     public string $catatan_tolak = '';
 
-    // detail modal state
+    // Detail Modal State
     public ?int $detailId = null;
 
     public function mount(): void
     {
+        // Default penandatangan (urutan pertama)
         $this->signatory_id = Signatory::query()->orderBy('position')->value('id');
     }
 
@@ -43,7 +46,6 @@ class ValidasiPage extends Component
     {
         $this->resetPage();
     }
-
     public function updatingTab(): void
     {
         $this->resetPage();
@@ -60,13 +62,14 @@ class ValidasiPage extends Component
         $this->resetPage();
     }
 
-    // Helper Badge (Sama dengan KP)
+    // --- Helpers ---
+
     public function badgeColor(string $status): string
     {
         return match ($status) {
-            'Diajukan'    => 'sky',      // Menunggu (Warna Sky utk Bapendik)
-            'Diterbitkan' => 'emerald',  // Selesai
-            'Ditolak'     => 'rose',     // Gagal
+            'Diajukan'    => 'sky',
+            'Diterbitkan' => 'emerald',
+            'Ditolak'     => 'rose',
             default       => 'zinc',
         };
     }
@@ -80,6 +83,8 @@ class ValidasiPage extends Component
             default       => 'minus',
         };
     }
+
+    // --- Queries ---
 
     protected function baseQuery(): Builder
     {
@@ -118,6 +123,14 @@ class ValidasiPage extends Component
     }
 
     #[Computed]
+    public function ordersRejected()
+    {
+        return $this->baseQuery()
+            ->where('status_surat_pengantar', 'Ditolak')
+            ->paginate($this->perPage, ['*'], 'rejectedPage');
+    }
+
+    #[Computed]
     public function stats(): array
     {
         return [
@@ -131,8 +144,11 @@ class ValidasiPage extends Component
     public function selectedItem(): ?SuratPengantar
     {
         if (!$this->detailId) return null;
-        return SuratPengantar::with(['mahasiswa.user', 'mahasiswa.jurusan'])->find($this->detailId);
+        // Load relasi lengkap untuk modal detail
+        return SuratPengantar::with(['mahasiswa.user', 'mahasiswa.jurusan', 'signatory'])->find($this->detailId);
     }
+
+    // --- Actions ---
 
     public function openDetail(int $id): void
     {
@@ -152,16 +168,18 @@ class ValidasiPage extends Component
 
         $this->publish_id = $sp->id;
         $this->publish_nomor_surat = (string) ($sp->nomor_surat ?? '');
-        $this->signatory_id ??= Signatory::query()->orderBy('position')->value('id');
+        // Default signatory to existing or first available
+        $this->signatory_id = $sp->signatory_id ?? Signatory::query()->orderBy('position')->value('id');
 
         Flux::modal('sp-publish')->show();
     }
 
     public function publishConfirm(): void
     {
+        // Validasi: Nomor surat boleh kosong, tapi Signatory wajib
         $this->validate([
             'publish_id'          => ['required', 'integer', 'exists:surat_pengantars,id'],
-            'publish_nomor_surat' => ['required', 'string', 'max:255'],
+            'publish_nomor_surat' => ['nullable', 'string', 'max:255'],
             'signatory_id'        => ['required', 'integer', 'exists:signatories,id'],
         ]);
 
@@ -174,26 +192,26 @@ class ValidasiPage extends Component
         $sp->signatory_id = $sig->id;
         $sp->ttd_signed_at = now();
 
-        // snapshot penandatangan
+        // Snapshot data pejabat (agar sejarah tetap ada jika master berubah)
         $sp->ttd_signed_by_name     = $sig->name;
         $sp->ttd_signed_by_position = $sig->position;
         $sp->ttd_signed_by_nip      = $sig->nip;
         $sp->save();
 
-        // NOTIF → Mahasiswa
+        // NOTIFIKASI
         $mhsUserId = $sp->mahasiswa?->user_id;
         if ($mhsUserId) {
             Notifier::toUser(
                 $mhsUserId,
                 'Surat Pengantar Diterbitkan',
-                "SP untuk {$sp->lokasi_surat_pengantar} telah diterbitkan. Nomor: {$sp->nomor_surat}.",
+                "SP untuk {$sp->lokasi_surat_pengantar} telah diterbitkan.",
                 route('mhs.sp.index'),
-                ['type' => 'sp_published', 'sp_id' => $sp->id, 'nomor' => $sp->nomor_surat]
+                ['type' => 'sp_published', 'sp_id' => $sp->id]
             );
         }
 
         Flux::modal('sp-publish')->close();
-        Flux::toast(heading: 'Diterbitkan', text: 'Nomor surat tersimpan & surat diterbitkan.', variant: 'success');
+        Flux::toast(heading: 'Diterbitkan', text: 'Surat berhasil diterbitkan.', variant: 'success');
 
         $this->publish_id = null;
         $this->publish_nomor_surat = '';
@@ -211,25 +229,32 @@ class ValidasiPage extends Component
     {
         if (!$this->reject_id) return;
 
+        // Validasi: Catatan tolak wajib diisi
+        $this->validate([
+            'catatan_tolak' => ['required', 'string', 'min:5'],
+        ], [
+            'catatan_tolak.required' => 'Alasan penolakan wajib diisi.',
+        ]);
+
         $sp = SuratPengantar::with('mahasiswa')->findOrFail($this->reject_id);
         $sp->status_surat_pengantar = 'Ditolak';
-        $sp->catatan_surat = $this->catatan_tolak ?: null;
+        $sp->catatan_surat = $this->catatan_tolak;
         $sp->save();
 
-        // NOTIF → Mahasiswa
+        // NOTIFIKASI
         $mhsUserId = $sp->mahasiswa?->user_id;
         if ($mhsUserId) {
             Notifier::toUser(
                 $mhsUserId,
                 'Pengajuan SP Ditolak',
-                $sp->catatan_surat ? "Catatan: {$sp->catatan_surat}" : 'Silakan perbaiki data pengajuan.',
+                "Catatan: {$sp->catatan_surat}",
                 route('mhs.sp.index'),
                 ['type' => 'sp_rejected', 'sp_id' => $sp->id]
             );
         }
 
         Flux::modal('sp-reject')->close();
-        Flux::toast(heading: 'Ditolak', text: 'Pengajuan ditolak dan catatan sudah disimpan.', variant: 'warning');
+        Flux::toast(heading: 'Ditolak', text: 'Pengajuan ditolak.', variant: 'warning');
 
         $this->reject_id = null;
         $this->catatan_tolak = '';

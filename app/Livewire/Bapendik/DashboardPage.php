@@ -27,6 +27,7 @@ class DashboardPage extends Component
     public function recent()
     {
         return KpSeminar::query()
+            ->with(['kp.mahasiswa.user']) // Eager load relasi
             ->latest('updated_at')
             ->limit(8)
             ->get();

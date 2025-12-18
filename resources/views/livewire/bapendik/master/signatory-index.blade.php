@@ -82,8 +82,9 @@
                                                 Edit
                                             </flux:menu.item>
                                             <flux:menu.separator />
+                                            {{-- FIX: Menggunakan confirmDelete --}}
                                             <flux:menu.item icon="trash" variant="danger"
-                                                wire:click="delete({{ $row->id }})">
+                                                wire:click="confirmDelete({{ $row->id }})">
                                                 Hapus
                                             </flux:menu.item>
                                         </flux:menu>
@@ -144,9 +145,10 @@
                     <flux:heading size="lg">{{ $editingId ? 'Edit Pejabat' : 'Tambah Pejabat' }}</flux:heading>
                     <flux:subheading class="mt-1">Isi data pejabat penandatangan.</flux:subheading>
                 </div>
-                <flux:modal.close>
+                {{-- Button X dimatikan sesuai permintaan agar tidak tumpang tindih --}}
+                {{-- <flux:modal.close>
                     <flux:button variant="ghost" icon="x-mark" wire:click="closeForm"></flux:button>
-                </flux:modal.close>
+                </flux:modal.close> --}}
             </div>
 
             <div class="grid gap-4">
@@ -159,12 +161,30 @@
                     placeholder="Wakil Dekan Bidang Akademik" />
             </div>
 
-            <div class="flex gap-2 pt-2">
-                <flux:spacer />
+            <div class="flex justify-end gap-2 pt-2">
                 <flux:modal.close>
                     <flux:button variant="ghost" wire:click="closeForm">Batal</flux:button>
                 </flux:modal.close>
                 <flux:button variant="primary" icon="check" wire:click="save">Simpan</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    {{-- MODAL DELETE CONFIRMATION --}}
+    <flux:modal name="delete-confirm" class="min-w-[24rem]">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg" class="text-rose-600">Hapus Penandatangan?</flux:heading>
+                <p class="text-sm text-zinc-500 mt-2">
+                    Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.
+                </p>
+            </div>
+
+            <div class="flex gap-2 justify-end">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Batal</flux:button>
+                </flux:modal.close>
+                <flux:button variant="danger" wire:click="delete">Hapus</flux:button>
             </div>
         </div>
     </flux:modal>

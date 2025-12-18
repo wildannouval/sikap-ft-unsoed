@@ -22,12 +22,7 @@
                 'color' => 'amber', // Pending
                 'icon' => 'clock',
             ],
-            [
-                'label' => 'Dijadwalkan',
-                'val' => $this->stats['dijadwalkan'],
-                'color' => 'sky', // Scheduled
-                'icon' => 'calendar',
-            ],
+            // Card Dijadwalkan DIHAPUS
             [
                 'label' => 'BA Terbit',
                 'val' => $this->stats['baTerbit'],
@@ -43,7 +38,8 @@
         ];
     @endphp
 
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    {{-- Sesuaikan grid jadi 4 kolom --}}
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         @foreach ($cards as $c)
             <div class="rounded-xl border shadow-sm bg-white dark:bg-stone-950 dark:border-stone-800 overflow-hidden">
                 <div class="p-4 flex items-center justify-between">
@@ -148,9 +144,7 @@
                                 </div>
                                 <h3 class="text-sm font-medium text-stone-900 dark:text-stone-100">Belum ada aktivitas
                                 </h3>
-                                <p class="text-xs text-zinc-500 mt-1">
-                                    Pengajuan seminar akan muncul di sini.
-                                </p>
+                                <p class="text-xs text-zinc-500 mt-1">Data seminar akan muncul di sini.</p>
                             </div>
                         </flux:table.cell>
                     </flux:table.row>

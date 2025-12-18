@@ -24,10 +24,10 @@
                 class="rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-xs">
                 <div
                     class="px-4 py-3 border-b
-                           bg-blue-50 text-blue-700
-                           dark:bg-blue-900/20 dark:text-blue-300
-                           border-blue-100 dark:border-blue-900/40
-                           rounded-t-xl">
+                            bg-blue-50 text-blue-700
+                            dark:bg-blue-900/20 dark:text-blue-300
+                            border-blue-100 dark:border-blue-900/40
+                            rounded-t-xl">
                     <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                         <h3 class="text-sm font-medium tracking-wide">Filter Jadwal</h3>
 
@@ -80,8 +80,8 @@
                 <div class="p-0">
                     <flux:table
                         class="[&_thead_th]:bg-zinc-50 [&_thead_th]:dark:bg-stone-900/40
-                               [&_thead_th]:text-zinc-600 [&_thead_th]:dark:text-stone-200
-                               [&_tbody_tr]:hover:bg-zinc-50/60 [&_tbody_tr]:dark:hover:bg-stone-900/30"
+                                [&_thead_th]:text-zinc-600 [&_thead_th]:dark:text-stone-200
+                                [&_tbody_tr]:hover:bg-zinc-50/60 [&_tbody_tr]:dark:hover:bg-stone-900/30"
                         :paginate="$this->items">
 
                         <flux:table.columns>
@@ -103,7 +103,6 @@
                             @forelse ($this->items as $i => $row)
                                 @php
                                     $status = $row->status;
-                                    // Mapping icon manual jika perlu, atau dari model
                                     $icon = match ($status) {
                                         'dijadwalkan' => 'calendar',
                                         'ba_terbit' => 'document-text',

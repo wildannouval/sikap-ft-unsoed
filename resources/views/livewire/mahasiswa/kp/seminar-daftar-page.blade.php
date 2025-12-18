@@ -20,6 +20,20 @@
 
         {{-- KOLOM KIRI: FORM (7) --}}
         <div class="lg:col-span-7 space-y-6">
+
+            {{-- ALERT REVISI --}}
+            @if (in_array($status, ['revisi', 'ditolak']) && $rejected_reason)
+                <div class="p-4 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800">
+                    <div class="flex items-start gap-3">
+                        <flux:icon.exclamation-triangle class="mt-0.5 size-5 text-rose-600 dark:text-rose-400" />
+                        <div>
+                            <h4 class="font-semibold text-rose-900 dark:text-rose-100 text-sm">Perlu Perbaikan</h4>
+                            <p class="text-sm text-rose-700 dark:text-rose-300 mt-1">{{ $rejected_reason }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <flux:card
                 class="space-y-6 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm">
 
@@ -114,9 +128,10 @@
                     </div>
 
                     <div class="space-y-2">
-                        <flux:input type="file" label="Berkas Laporan (PDF, Maks 10MB)" wire:model="berkas_laporan"
-                            accept="application/pdf" :invalid="$errors->has('berkas_laporan')"
-                            :disabled="$this->isLocked" />
+                        {{-- Label Berkas Persyaratan --}}
+                        <flux:input type="file" label="Berkas Persyaratan (PDF, Maks 10MB)"
+                            wire:model="berkas_laporan" accept="application/pdf"
+                            :invalid="$errors->has('berkas_laporan')" :disabled="$this->isLocked" />
 
                         <div class="text-xs text-zinc-500" wire:loading wire:target="berkas_laporan">Mengunggah...</div>
                         @error('berkas_laporan')
@@ -142,11 +157,11 @@
                     </div>
                 </div>
 
-                {{-- Actions --}}
+                {{-- Actions: Hanya tombol Ajukan --}}
                 <div class="flex items-center justify-end gap-3 pt-2">
                     @if (!$this->isLocked)
-                        <flux:button variant="ghost" icon="bookmark" wire:click="saveDraft">Simpan Draf</flux:button>
-                        <flux:button variant="primary" icon="paper-airplane" wire:click="submitToAdvisor">Ajukan Seminar
+                        <flux:button variant="primary" icon="paper-airplane" wire:click="submitToAdvisor">
+                            {{ in_array($status, ['revisi', 'ditolak']) ? 'Ajukan Ulang' : 'Ajukan Seminar' }}
                         </flux:button>
                     @else
                         <div
@@ -180,7 +195,8 @@
                     @php $badge = $this->statusBadge; @endphp
                     <div
                         class="p-4 rounded-lg border bg-zinc-50/50 dark:bg-zinc-900/20 border-zinc-100 dark:border-zinc-800 text-center">
-                        <div class="text-xs text-zinc-500 mb-2 uppercase tracking-wider font-semibold">Status Saat Ini
+                        <div class="text-xs text-zinc-500 mb-2 uppercase tracking-wider font-semibold">
+                            Status Saat Ini
                         </div>
                         <div class="inline-flex flex-col items-center gap-2">
                             <div
@@ -189,14 +205,17 @@
                             </div>
                             <div>
                                 <div class="font-bold text-lg text-stone-900 dark:text-stone-100">
-                                    {{ $this->statusLabel }}</div>
-                                <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $badge['desc'] }}</div>
+                                    {{ $this->statusLabel }}
+                                </div>
+                                <div class="text-xs text-zinc-500 dark:text-zinc-400">
+                                    {{ $badge['desc'] }}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Ringkasan Jadwal (Jika Dijadwalkan/Selesai/BA Terbit) --}}
-                    @if (in_array($status, ['dijadwalkan', 'selesai', 'ba_terbit', 'dinilai']))
+                    {{-- Ringkasan Jadwal (Jika BA Terbit/Selesai) --}}
+                    @if (in_array($status, ['ba_terbit', 'dinilai', 'selesai']))
                         <div class="text-sm space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
                             <div class="flex justify-between">
                                 <span class="text-zinc-500">Tanggal</span>
@@ -226,7 +245,27 @@
                 </div>
             </flux:card>
 
-            {{-- 2. PANDUAN --}}
+            {{-- 2. INFORMASI BERKAS PERSYARATAN --}}
+            <flux:card
+                class="rounded-xl border bg-violet-50/50 dark:bg-violet-900/10 border-violet-100 dark:border-violet-800/30 shadow-sm">
+                <div class="flex items-start gap-3">
+                    <flux:icon.document-text class="mt-0.5 size-5 text-violet-600 dark:text-violet-400" />
+                    <div>
+                        <h3 class="font-semibold text-violet-900 dark:text-violet-100 text-sm">Dokumen Persyaratan</h3>
+                        <p class="text-xs text-violet-700 dark:text-violet-300 mt-1 mb-2">
+                            Gabungkan semua dokumen berikut menjadi <strong>1 file PDF</strong>:
+                        </p>
+                        <ul
+                            class="mt-2 text-xs text-violet-800 dark:text-violet-200 list-disc list-outside ml-3 space-y-2 leading-relaxed">
+                            <li><strong>Lembar Pengesahan Laporan</strong> (telah di-ACC Pembimbing I & II).</li>
+                            <li><strong>Kartu Seminar</strong> (bukti telah mengikuti seminar serupa min. 5 kali).</li>
+                            <li><strong>Lembar Permohonan Seminar</strong> (telah di-ACC Pembimbing I & II).</li>
+                        </ul>
+                    </div>
+                </div>
+            </flux:card>
+
+            {{-- 3. ALUR PENDAFTARAN --}}
             <flux:card
                 class="rounded-xl border bg-amber-50/50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/30 shadow-sm">
                 <div class="flex items-start gap-3">
@@ -237,27 +276,27 @@
                             <li class="flex gap-2">
                                 <span
                                     class="flex-none font-bold bg-amber-200 dark:bg-amber-800 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">1</span>
-                                <span>Lengkapi formulir (judul, tanggal, ruangan).</span>
+                                <span>Lengkapi formulir dan upload berkas persyaratan (gabungan PDF).</span>
                             </li>
                             <li class="flex gap-2">
                                 <span
                                     class="flex-none font-bold bg-amber-200 dark:bg-amber-800 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">2</span>
-                                <span>Klik <strong>Ajukan Seminar</strong> ke Dosen.</span>
+                                <span>Klik <strong>Ajukan Seminar</strong> untuk mengirim ke Dosen.</span>
                             </li>
                             <li class="flex gap-2">
                                 <span
                                     class="flex-none font-bold bg-amber-200 dark:bg-amber-800 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">3</span>
-                                <span>Tunggu jadwal final dari Koordinator.</span>
+                                <span>Tunggu validasi Dosen dan penjadwalan dari Koordinator/Bapendik.</span>
                             </li>
                             <li class="flex gap-2">
                                 <span
                                     class="flex-none font-bold bg-amber-200 dark:bg-amber-800 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">4</span>
-                                <span>Laksanakan seminar & revisi (jika ada).</span>
+                                <span>Laksanakan seminar sesuai jadwal.</span>
                             </li>
                             <li class="flex gap-2">
                                 <span
                                     class="flex-none font-bold bg-amber-200 dark:bg-amber-800 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">5</span>
-                                <span>Unduh Berita Acara setelah selesai.</span>
+                                <span>Unduh Berita Acara setelah seminar selesai.</span>
                             </li>
                         </ul>
                     </div>

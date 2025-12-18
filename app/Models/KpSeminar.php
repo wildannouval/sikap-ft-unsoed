@@ -14,6 +14,7 @@ class KpSeminar extends Model
     protected $table = 'kp_seminars';
     protected $guarded = [];
 
+    // Pastikan fillable lengkap
     protected $fillable = [
         'kerja_praktik_id',
         'mahasiswa_id',
@@ -41,6 +42,7 @@ class KpSeminar extends Model
         'distribusi_proof_path',
         'distribusi_uploaded_at',
         'berkas_laporan_path',
+        'laporan_final_path',
     ];
 
     protected $casts = [
@@ -54,51 +56,49 @@ class KpSeminar extends Model
         'distribusi_uploaded_at' => 'datetime',
     ];
 
-    /**
-     * Konstanta status
-     */
     public const ST_DIAJUKAN              = 'diajukan';
     public const ST_DISETUJUI_PEMBIMBING  = 'disetujui_pembimbing';
-    public const ST_DITOLAK               = 'ditolak';
-    public const ST_DIJADWALKAN           = 'dijadwalkan';
+    // public const ST_DIJADWALKAN        = 'dijadwalkan'; // KITA HAPUS DARI FLOW
     public const ST_SELESAI               = 'selesai';
     public const ST_REVISI                = 'revisi';
     public const ST_GAGAL                 = 'gagal';
     public const ST_BA_TERBIT             = 'ba_terbit';
     public const ST_DINILAI               = 'dinilai';
+    public const ST_DITOLAK               = 'ditolak';
 
     public static function badgeColor(string $st): string
     {
         return match ($st) {
-            self::ST_DIAJUKAN                => 'zinc',
-            self::ST_DISETUJUI_PEMBIMBING    => 'sky',
-            self::ST_DIJADWALKAN             => 'emerald',
-            self::ST_SELESAI                 => 'teal',
-            self::ST_REVISI                  => 'amber',
-            self::ST_BA_TERBIT               => 'violet',
-            self::ST_DINILAI                 => 'purple',
+            self::ST_DIAJUKAN              => 'zinc',
+            self::ST_DISETUJUI_PEMBIMBING  => 'sky',
+            // self::ST_DIJADWALKAN        => 'emerald',
+            self::ST_SELESAI               => 'teal',
+            self::ST_REVISI                => 'amber',
+            self::ST_BA_TERBIT             => 'violet',
+            self::ST_DINILAI               => 'purple',
             self::ST_DITOLAK, self::ST_GAGAL => 'rose',
-            default                          => 'zinc',
+            default                        => 'zinc',
         };
     }
 
     public static function statusLabel(string $st): string
     {
         return match ($st) {
-            self::ST_DIAJUKAN               => 'Menunggu ACC',
-            self::ST_DISETUJUI_PEMBIMBING   => 'Disetujui Pembimbing',
-            self::ST_DIJADWALKAN            => 'Dijadwalkan',
-            self::ST_SELESAI                => 'Selesai Seminar',
-            self::ST_REVISI                 => 'Revisi Laporan',
-            self::ST_BA_TERBIT              => 'BA Terbit',
-            self::ST_DINILAI                => 'Dinilai',
-            self::ST_DITOLAK                => 'Ditolak',
-            self::ST_GAGAL                  => 'Gagal/Batal',
-            default                         => ucfirst($st),
+            self::ST_DIAJUKAN              => 'Menunggu ACC',
+            self::ST_DISETUJUI_PEMBIMBING  => 'Menunggu Jadwal', // Label disesuaikan agar user paham
+            // self::ST_DIJADWALKAN        => 'Dijadwalkan',
+            self::ST_SELESAI               => 'Selesai Seminar',
+            self::ST_REVISI                => 'Revisi Jadwal', // Disesuaikan
+            self::ST_BA_TERBIT             => 'BA Terbit',
+            self::ST_DINILAI               => 'Dinilai',
+            self::ST_DITOLAK               => 'Ditolak',
+            self::ST_GAGAL                 => 'Gagal/Batal',
+            default                        => ucfirst($st),
         };
     }
 
-    // Relasi
+    // --- RELATIONS ---
+
     public function kp(): BelongsTo
     {
         return $this->belongsTo(KerjaPraktik::class, 'kerja_praktik_id');
@@ -112,6 +112,12 @@ class KpSeminar extends Model
     public function dosenPembimbing(): BelongsTo
     {
         return $this->belongsTo(Dosen::class, 'dosen_pembimbing_id', 'dosen_id');
+    }
+
+    // INI YANG MENYEBABKAN ERROR SEBELUMNYA (KURANG)
+    public function signatory(): BelongsTo
+    {
+        return $this->belongsTo(Signatory::class, 'signatory_id');
     }
 
     public function grade(): HasOne

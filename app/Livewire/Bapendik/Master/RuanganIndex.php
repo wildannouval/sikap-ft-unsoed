@@ -4,6 +4,7 @@ namespace App\Livewire\Bapendik\Master;
 
 use App\Models\Room;
 use Flux\Flux;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -14,23 +15,47 @@ class RuanganIndex extends Component
 {
     use WithPagination;
 
-    public string $q = '';
-    public string $sortBy = 'building';
-    public string $sortDirection = 'asc';
-    public int    $perPage = 10;
+    // UI State
+    public bool $showForm = false;
 
-    // form state
-    public bool $showForm = false; // Untuk kontrol modal
-    public ?int $editId = null;
+    // Filter & Paging
+    public string $q = '';
+    public int $perPage = 10;
+    public string $sortBy = 'room_number';
+    public string $sortDirection = 'asc';
+
+    // Form Fields
+    public ?int $editingId = null;
     public string $room_number = '';
     public string $building = '';
-    public ?string $notes = null;
+    public string $notes = '';
 
+    // Delete Confirmation State
+    public ?int $deleteId = null;
+
+    public function rules(): array
+    {
+        return [
+            'room_number' => [
+                'required',
+                'string',
+                'max:50',
+                // Validasi unik kombinasi room_number + building
+                Rule::unique('rooms')->where(function ($query) {
+                    return $query->where('room_number', $this->room_number)
+                        ->where('building', $this->building);
+                })->ignore($this->editingId)
+            ],
+            'building' => ['required', 'string', 'max:100'],
+            'notes'    => ['nullable', 'string', 'max:255'],
+        ];
+    }
+
+    // --- Reset Pagination Hooks ---
     public function updatingQ()
     {
         $this->resetPage();
     }
-
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -47,35 +72,7 @@ class RuanganIndex extends Component
         $this->resetPage();
     }
 
-    protected function rules(): array
-    {
-        return [
-            'room_number' => ['required', 'string', 'max:50'],
-            'building'    => ['required', 'string', 'max:100'],
-            'notes'       => ['nullable', 'string', 'max:255'],
-        ];
-    }
-
-    #[Computed]
-    public function items()
-    {
-        return Room::query()
-            ->when($this->q !== '', function ($q) {
-                $q->where(function ($qq) {
-                    $qq->where('room_number', 'like', '%' . $this->q . '%')
-                        ->orWhere('building', 'like', '%' . $this->q . '%')
-                        ->orWhere('notes', 'like', '%' . $this->q . '%');
-                });
-            })
-            ->orderBy($this->sortBy, $this->sortDirection)
-            ->paginate($this->perPage)
-            ->withQueryString();
-    }
-
-    public function resetForm(): void
-    {
-        $this->reset(['editId', 'room_number', 'building', 'notes']);
-    }
+    // --- Actions ---
 
     public function create(): void
     {
@@ -86,12 +83,11 @@ class RuanganIndex extends Component
 
     public function edit(int $id): void
     {
-        $r = Room::findOrFail($id);
-
-        $this->editId      = $r->id;
-        $this->room_number = $r->room_number;
-        $this->building    = $r->building;
-        $this->notes       = $r->notes;
+        $row = Room::findOrFail($id);
+        $this->editingId = $row->id;
+        $this->room_number = $row->room_number;
+        $this->building    = $row->building;
+        $this->notes       = (string) $row->notes;
 
         $this->showForm = true;
         Flux::modal('ruangan-form')->show();
@@ -107,20 +103,18 @@ class RuanganIndex extends Component
     {
         $this->validate();
 
-        if ($this->editId) {
-            $r = Room::findOrFail($this->editId);
-            $r->update([
-                'room_number' => $this->room_number,
-                'building'    => $this->building,
-                'notes'       => $this->notes,
-            ]);
-            $msg = 'Perubahan ruangan disimpan.';
+        $data = [
+            'room_number' => $this->room_number,
+            'building'    => $this->building,
+            'notes'       => $this->notes,
+        ];
+
+        if ($this->editingId) {
+            $row = Room::findOrFail($this->editingId);
+            $row->update($data);
+            $msg = 'Data ruangan diperbarui.';
         } else {
-            Room::create([
-                'room_number' => $this->room_number,
-                'building'    => $this->building,
-                'notes'       => $this->notes,
-            ]);
+            Room::create($data);
             $msg = 'Ruangan ditambahkan.';
         }
 
@@ -131,12 +125,54 @@ class RuanganIndex extends Component
         Flux::toast(heading: 'Berhasil', text: $msg, variant: 'success');
     }
 
-    public function delete(int $id): void
-    {
-        Room::findOrFail($id)->delete();
-        $this->resetPage();
+    // --- Delete Logic ---
 
-        Flux::toast(heading: 'Terhapus', text: 'Ruangan dihapus.', variant: 'success');
+    public function confirmDelete(int $id): void
+    {
+        $this->deleteId = $id;
+        Flux::modal('delete-confirm')->show();
+    }
+
+    public function delete(): void
+    {
+        if ($this->deleteId) {
+            try {
+                $row = Room::findOrFail($this->deleteId);
+                $row->delete();
+
+                $this->resetPage();
+                Flux::toast(heading: 'Terhapus', text: 'Data ruangan dihapus.', variant: 'success');
+            } catch (\Exception $e) {
+                Flux::toast(heading: 'Gagal', text: 'Gagal menghapus data.', variant: 'danger');
+            }
+        }
+
+        $this->deleteId = null;
+        Flux::modal('delete-confirm')->close();
+    }
+
+    private function resetForm(): void
+    {
+        $this->editingId = null;
+        $this->room_number = '';
+        $this->building    = '';
+        $this->notes       = '';
+    }
+
+    #[Computed]
+    public function items()
+    {
+        return Room::query()
+            ->when($this->q !== '', function ($q) {
+                $term = '%' . $this->q . '%';
+                $q->where(function ($qq) use ($term) {
+                    $qq->where('room_number', 'like', $term)
+                        ->orWhere('building', 'like', $term)
+                        ->orWhere('notes', 'like', $term);
+                });
+            })
+            ->orderBy($this->sortBy, $this->sortDirection)
+            ->paginate($this->perPage);
     }
 
     public function render()

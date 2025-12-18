@@ -38,6 +38,9 @@ class MahasiswaIndex extends Component
     public string $email = '';
     public string $password = '';
 
+    // Delete Confirmation State
+    public ?int $deleteId = null;
+
     public function rules(): array
     {
         return [
@@ -54,7 +57,6 @@ class MahasiswaIndex extends Component
     {
         $this->resetPage();
     }
-
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -152,13 +154,26 @@ class MahasiswaIndex extends Component
         Flux::toast(heading: 'Berhasil', text: 'Data mahasiswa disimpan.', variant: 'success');
     }
 
-    public function delete(int $id): void
-    {
-        $row = Mahasiswa::findOrFail($id);
-        $row->delete();
+    // --- Delete Logic ---
 
-        $this->resetPage();
-        Flux::toast(heading: 'Terhapus', text: 'Data mahasiswa dihapus.', variant: 'success');
+    public function confirmDelete(int $id): void
+    {
+        $this->deleteId = $id;
+        Flux::modal('delete-confirm')->show();
+    }
+
+    public function delete(): void
+    {
+        if ($this->deleteId) {
+            $row = Mahasiswa::findOrFail($this->deleteId);
+            $row->delete(); // User cascade delete biasanya diatur di migration/model event
+
+            $this->resetPage();
+            Flux::toast(heading: 'Terhapus', text: 'Data mahasiswa dihapus.', variant: 'success');
+        }
+
+        $this->deleteId = null;
+        Flux::modal('delete-confirm')->close();
     }
 
     public function resetUserPassword(int $id, string $newPassword = 'password'): void

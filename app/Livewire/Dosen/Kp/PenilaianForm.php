@@ -6,7 +6,6 @@ use App\Models\KpGrade;
 use App\Models\KpSeminar;
 use App\Services\Notifier;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -19,6 +18,9 @@ class PenilaianForm extends Component
 
     public string $q = '';
     public int $perPage = 10;
+
+    // Tab: 'pending' | 'graded'
+    public string $tab = 'pending';
 
     // entity yang sedang dinilai (untuk ringkasan di modal)
     public ?KpSeminar $seminar = null;
@@ -46,16 +48,28 @@ class PenilaianForm extends Component
     public $pl_tanggung_jawab = null;
 
     protected $queryString = [
-        'q' => ['except' => ''],
+        'q'   => ['except' => ''],
+        'tab' => ['except' => 'pending'],
     ];
 
     public function updatingQ()
     {
-        $this->resetPage();
+        // reset pagination untuk kedua tab
+        $this->resetPage('pendingPage');
+        $this->resetPage('gradedPage');
     }
+
     public function updatingPerPage()
     {
-        $this->resetPage();
+        $this->resetPage('pendingPage');
+        $this->resetPage('gradedPage');
+    }
+
+    public function updatingTab()
+    {
+        // saat ganti tab, reset pagination agar tidak nyangkut page sebelumnya
+        $this->resetPage('pendingPage');
+        $this->resetPage('gradedPage');
     }
 
     #[Computed]
@@ -65,27 +79,44 @@ class PenilaianForm extends Component
     }
 
     #[Computed]
-    public function items()
+    public function pendingItems()
     {
         $term = '%' . $this->q . '%';
 
         return KpSeminar::query()
             ->with(['kp.mahasiswa.user', 'grade'])
             ->where('dosen_pembimbing_id', $this->dosenId)
-            // Hanya tampilkan seminar yang sudah BA terbit atau sedang dinilai
-            ->whereIn('status', [KpSeminar::ST_BA_TERBIT, KpSeminar::ST_DINILAI])
+            ->where('status', KpSeminar::ST_BA_TERBIT)
             ->when($this->q !== '', function ($q) use ($term) {
                 $q->where(function ($qq) use ($term) {
                     $qq->where('judul_laporan', 'like', $term)
                         ->orWhereHas('kp.mahasiswa.user', fn($w) => $w->where('name', 'like', $term))
-                        // Pencarian NIM via relasi KP->Mahasiswa
-                        ->orWhereHas('kp.mahasiswa', function ($w) use ($term) {
-                            $w->where('mahasiswa_nim', 'like', $term);
-                        });
+                        ->orWhereHas('kp.mahasiswa', fn($w) => $w->where('mahasiswa_nim', 'like', $term));
                 });
             })
             ->orderByDesc('updated_at')
-            ->paginate($this->perPage)
+            ->paginate($this->perPage, ['*'], 'pendingPage')
+            ->withQueryString();
+    }
+
+    #[Computed]
+    public function gradedItems()
+    {
+        $term = '%' . $this->q . '%';
+
+        return KpSeminar::query()
+            ->with(['kp.mahasiswa.user', 'grade'])
+            ->where('dosen_pembimbing_id', $this->dosenId)
+            ->where('status', KpSeminar::ST_DINILAI)
+            ->when($this->q !== '', function ($q) use ($term) {
+                $q->where(function ($qq) use ($term) {
+                    $qq->where('judul_laporan', 'like', $term)
+                        ->orWhereHas('kp.mahasiswa.user', fn($w) => $w->where('name', 'like', $term))
+                        ->orWhereHas('kp.mahasiswa', fn($w) => $w->where('mahasiswa_nim', 'like', $term));
+                });
+            })
+            ->orderByDesc('updated_at')
+            ->paginate($this->perPage, ['*'], 'gradedPage')
             ->withQueryString();
     }
 
@@ -95,9 +126,9 @@ class PenilaianForm extends Component
         $base = KpSeminar::where('dosen_pembimbing_id', $this->dosenId);
 
         return [
-            'total'     => (clone $base)->whereIn('status', [KpSeminar::ST_BA_TERBIT, KpSeminar::ST_DINILAI])->count(),
-            'pending'   => (clone $base)->where('status', KpSeminar::ST_BA_TERBIT)->count(),
-            'completed' => (clone $base)->where('status', KpSeminar::ST_DINILAI)->count(),
+            'total'   => (clone $base)->whereIn('status', [KpSeminar::ST_BA_TERBIT, KpSeminar::ST_DINILAI])->count(),
+            'pending' => (clone $base)->where('status', KpSeminar::ST_BA_TERBIT)->count(),
+            'graded'  => (clone $base)->where('status', KpSeminar::ST_DINILAI)->count(),
         ];
     }
 
@@ -132,6 +163,7 @@ class PenilaianForm extends Component
     protected function rules(): array
     {
         $score = ['required', 'numeric', 'min:0', 'max:100'];
+
         return [
             'dospem_sistematika_laporan' => $score,
             'dospem_tata_bahasa'         => $score,
@@ -191,6 +223,35 @@ class PenilaianForm extends Component
         return [$scoreDospem, $scorePl, $final, $letter];
     }
 
+    /**
+     * Tutup form (dipakai setelah simpan atau saat cancel).
+     */
+    protected function closeForm(): void
+    {
+        $this->resetValidation();
+
+        $this->seminar = null;
+        $this->editingId = null;
+
+        $this->reset('ba_scan');
+        $this->ba_scan_path = null;
+
+        $this->dospem_sistematika_laporan = null;
+        $this->dospem_tata_bahasa = null;
+        $this->dospem_sistematika_seminar = null;
+        $this->dospem_kecocokan_isi = null;
+        $this->dospem_materi_kp = null;
+        $this->dospem_penguasaan_masalah = null;
+        $this->dospem_diskusi = null;
+
+        $this->pl_kesesuaian = null;
+        $this->pl_kehadiran = null;
+        $this->pl_kedisiplinan = null;
+        $this->pl_keaktifan = null;
+        $this->pl_kecermatan = null;
+        $this->pl_tanggung_jawab = null;
+    }
+
     public function save(): void
     {
         $this->validate();
@@ -200,16 +261,14 @@ class PenilaianForm extends Component
             ->where('dosen_pembimbing_id', $this->dosenId)
             ->firstOrFail();
 
-        // upload BA scan (opsional)
         if ($this->ba_scan) {
             $this->ba_scan_path = $this->ba_scan->store('kp/ba-scan', 'public');
         }
 
-        // hitung skor
         [$scoreDospem, $scorePl, $final, $letter] = $this->computeScores();
 
         $payload = [
-            'kp_seminar_id'             => $seminar->id,
+            'kp_seminar_id'              => $seminar->id,
             'dospem_sistematika_laporan' => $this->dospem_sistematika_laporan,
             'dospem_tata_bahasa'         => $this->dospem_tata_bahasa,
             'dospem_sistematika_seminar' => $this->dospem_sistematika_seminar,
@@ -238,11 +297,10 @@ class PenilaianForm extends Component
             $payload['ba_scan_path'] = $this->ba_scan_path;
         }
 
-        // upsert grade
         $grade = KpGrade::firstOrNew(['kp_seminar_id' => $seminar->id]);
         $grade->fill($payload)->save();
 
-        // update status seminar -> dinilai
+        // pastikan status jadi DINILAI (untuk "sudah dinilai" tab)
         $seminar->update(['status' => KpSeminar::ST_DINILAI]);
 
         // Notif
@@ -258,16 +316,17 @@ class PenilaianForm extends Component
                 );
             }
         } catch (\Throwable $e) {
+            // silent
         }
 
-        // refresh entity untuk ringkasan modal
-        $this->seminar = $seminar->fresh(['grade', 'kp.mahasiswa.user']);
-
         Flux::toast(heading: 'Tersimpan', text: 'Nilai berhasil disimpan.', variant: 'success');
-        $this->reset('ba_scan');
-        $this->resetPage();
 
-        // Tetap di mode edit agar dosen bisa review
+        // refresh pagination tab yang aktif (biar antrean berkurang / list graded update)
+        $this->resetPage('pendingPage');
+        $this->resetPage('gradedPage');
+
+        // otomatis tutup form setelah simpan
+        $this->closeForm();
     }
 
     // Helpers Badge

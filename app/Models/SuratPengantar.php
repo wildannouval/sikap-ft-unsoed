@@ -2,10 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory; // <--- PASTIKAN INI ADA
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SuratPengantar extends Model
 {
+    use HasFactory;
+
+    protected $guarded = ['id'];
+
     protected $table = 'surat_pengantars';
 
     public const ST_DIAJUKAN    = 'Diajukan';
@@ -42,14 +48,14 @@ class SuratPengantar extends Model
         'ttd_signed_at'                     => 'datetime',
     ];
 
-    public function mahasiswa()
+    public function mahasiswa(): BelongsTo
     {
         // FK: surat_pengantars.mahasiswa_id -> mahasiswa.mahasiswa_id
         return $this->belongsTo(Mahasiswa::class, 'mahasiswa_id', 'mahasiswa_id');
     }
 
-    public function signatory()
+    public function signatory(): BelongsTo
     {
-        return $this->belongsTo(Signatory::class);
+        return $this->belongsTo(Signatory::class, 'signatory_id');
     }
 }

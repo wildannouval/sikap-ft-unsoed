@@ -20,11 +20,14 @@ class KonsultasiIndex extends Component
     public string $q = '';
     public string $statusFilter = 'all';
     public int $perPage = 10;
-    public string $tab = 'mahasiswa'; // 'mahasiswa' | 'konsultasi'
+    public string $tab = 'mahasiswa'; // 'mahasiswa' | 'log_konsultasi'
 
     // Verify Modal State
     public ?int $verifyId = null;
     public string $verifier_note = '';
+
+    // Log Detail State (View Logs per Student)
+    public ?int $viewLogKpId = null;
 
     public function updatingQ()
     {
@@ -39,12 +42,50 @@ class KonsultasiIndex extends Component
     public function updatingTab()
     {
         $this->resetPage();
-        $this->q = ''; // Reset search saat ganti tab agar tidak bingung
+        $this->q = '';
     }
 
     protected function meAsDosen(): Dosen
     {
         return Dosen::where('user_id', Auth::id())->firstOrFail();
+    }
+
+    /**
+     * FIX FILTER STATUS:
+     * Dropdown UI mengirim value:
+     * - all
+     * - kp_sedang_berjalan
+     * - spk_terbit
+     * - selesai (di UI dipakai sebagai "Nilai Terbit")
+     *
+     * Tapi di DB KerjaPraktik status real bisa:
+     * - spk_terbit
+     * - kp_berjalan
+     * - nilai_terbit (atau legacy: lulus / selesai)
+     */
+    protected function applyStatusFilter($query)
+    {
+        $filter = $this->statusFilter;
+
+        if ($filter === 'all') {
+            return $query;
+        }
+
+        return match ($filter) {
+            // UI: "KP Berjalan"
+            'kp_sedang_berjalan' => $query->where('status', KerjaPraktik::ST_KP_BERJALAN),
+
+            // UI: "SPK Terbit"
+            'spk_terbit' => $query->where('status', KerjaPraktik::ST_SPK_TERBIT),
+
+            // UI: "Selesai" (yang maksudnya: Nilai Terbit)
+            'selesai' => $query->whereIn('status', ['nilai_terbit', 'lulus', 'selesai']),
+
+            // Kalau suatu saat UI langsung pakai nilai_terbit
+            'nilai_terbit' => $query->whereIn('status', ['nilai_terbit', 'lulus']),
+
+            default => $query->where('status', $filter),
+        };
     }
 
     #[Computed]
@@ -53,7 +94,7 @@ class KonsultasiIndex extends Component
         $dosen = $this->meAsDosen();
         $kw    = trim($this->q);
 
-        return KerjaPraktik::query()
+        $q = KerjaPraktik::query()
             ->with(['mahasiswa.user'])
             ->withCount([
                 'consultations',
@@ -72,33 +113,52 @@ class KonsultasiIndex extends Component
                                 ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$kw}%"))
                         );
                 });
-            })
-            ->when($this->statusFilter !== 'all', fn($q) => $q->where('status', $this->statusFilter))
-            ->orderByDesc('updated_at')
+            });
+
+        // FIX: apply mapping filter dari dropdown
+        $q = $this->applyStatusFilter($q);
+
+        return $q->orderByDesc('updated_at')
             ->paginate($this->perPage, ['*'], 'mhsPage')
             ->withQueryString();
     }
 
     #[Computed]
-    public function konsultasiItems()
+    public function activeKpItems()
     {
+        // Untuk Tab Log Konsultasi: Hanya tampilkan mahasiswa yg KP-nya aktif
         $dosen = $this->meAsDosen();
         $kw    = trim($this->q);
 
-        // Menggunakan relasi 'kp' yang sudah diperbaiki di Model
-        return KpConsultation::query()
-            ->with(['kp.mahasiswa.user'])
+        return KerjaPraktik::query()
+            ->with(['mahasiswa.user'])
             ->where('dosen_pembimbing_id', $dosen->getKey())
+            ->whereIn('status', [KerjaPraktik::ST_SPK_TERBIT, KerjaPraktik::ST_KP_BERJALAN]) // Hanya yg aktif
+            ->withCount([
+                'consultations as pending_count' => fn($q) => $q->whereNull('verified_at')
+            ])
             ->when($kw !== '', function ($q) use ($kw) {
-                $q->where(function ($qq) use ($kw) {
-                    $qq->where('topik_konsultasi', 'like', "%{$kw}%")
-                        ->orWhere('hasil_konsultasi', 'like', "%{$kw}%")
-                        ->orWhereHas('kp.mahasiswa.user', fn($u) => $u->where('name', 'like', "%{$kw}%"));
-                });
+                $q->whereHas('mahasiswa.user', fn($u) => $u->where('name', 'like', "%{$kw}%"));
             })
+            ->orderByDesc('updated_at')
+            ->paginate($this->perPage, ['*'], 'activePage');
+    }
+
+    #[Computed]
+    public function selectedKpLogs()
+    {
+        if (!$this->viewLogKpId) return collect();
+
+        return KpConsultation::where('kerja_praktik_id', $this->viewLogKpId)
             ->orderByDesc('tanggal_konsultasi')
-            ->paginate($this->perPage, ['*'], 'konsultasiPage')
-            ->withQueryString();
+            ->get();
+    }
+
+    #[Computed]
+    public function selectedKp()
+    {
+        if (!$this->viewLogKpId) return null;
+        return KerjaPraktik::with('mahasiswa.user')->find($this->viewLogKpId);
     }
 
     #[Computed]
@@ -111,6 +171,14 @@ class KonsultasiIndex extends Component
             'pending_verifikasi' => KpConsultation::where('dosen_pembimbing_id', $dosenId)
                 ->whereNull('verified_at')->count(),
         ];
+    }
+
+    // --- Actions ---
+
+    public function openLogModal(int $kpId): void
+    {
+        $this->viewLogKpId = $kpId;
+        Flux::modal('student-logs')->show();
     }
 
     public function openVerify(int $id): void
@@ -144,13 +212,12 @@ class KonsultasiIndex extends Component
             'verifier_note'        => $this->verifier_note ?: null,
         ]);
 
-        // Notifikasi ke Mahasiswa
         $mhsUser = $row->kp?->mahasiswa?->user;
         if ($mhsUser) {
             Notifier::toUser(
                 $mhsUser,
                 'Konsultasi Diverifikasi',
-                sprintf('Dosen Pembimbing telah memverifikasi konsultasi tanggal %s.', optional($row->tanggal_konsultasi)->format('d M Y')),
+                sprintf('Dosen Pembimbing memverifikasi konsultasi tgl %s.', optional($row->tanggal_konsultasi)->format('d/m')),
                 route('mhs.kp.konsultasi', $row->kerja_praktik_id),
                 ['type' => 'kp_consultation_verified', 'kp_id' => $row->kerja_praktik_id]
             );
@@ -161,24 +228,11 @@ class KonsultasiIndex extends Component
 
         $this->verifyId = null;
         $this->verifier_note = '';
-        $this->resetPage();
     }
 
     public function badgeColor(string $status): string
     {
         return KerjaPraktik::badgeColor($status);
-    }
-
-    public function badgeIcon(string $status): string
-    {
-        // Peta icon untuk status KP
-        return match ($status) {
-            'kp_berjalan' => 'play-circle',
-            'spk_terbit'  => 'document-check',
-            'selesai'     => 'check-badge',
-            'ditolak'     => 'x-circle',
-            default       => 'clock',
-        };
     }
 
     public function statusLabel(string $status): string

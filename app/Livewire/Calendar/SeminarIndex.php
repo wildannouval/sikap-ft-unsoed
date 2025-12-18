@@ -103,9 +103,9 @@ class SeminarIndex extends Component
         [$start, $end] = $this->dateRange();
         $term = '%' . $this->q . '%';
 
-        // status yang relevan untuk kalender
+        // FIX: Menggunakan string 'dijadwalkan' secara langsung karena konstanta tidak ada di model
         $visibleStatuses = [
-            KpSeminar::ST_DIJADWALKAN,
+            'dijadwalkan',
             KpSeminar::ST_BA_TERBIT,
             KpSeminar::ST_DINILAI,
             KpSeminar::ST_SELESAI,
@@ -135,7 +135,6 @@ class SeminarIndex extends Component
             ->withQueryString();
     }
 
-    // Helper Badge
     public function badgeColor(string $status): string
     {
         return KpSeminar::badgeColor($status);

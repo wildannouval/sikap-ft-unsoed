@@ -25,13 +25,13 @@
                 <flux:tabs>
                     <flux:tab name="pending" icon="inbox-arrow-down">
                         Belum Diterbitkan
-                        <flux:badge size="sm" inset="top bottom" class="ml-2">{{ $this->stats['pending'] }}
-                        </flux:badge>
+                        <flux:badge size="sm" inset="top bottom" class="ml-2" color="amber">
+                            {{ $this->stats['pending'] }}</flux:badge>
                     </flux:tab>
                     <flux:tab name="published" icon="check-badge">
                         Sudah Diterbitkan
-                        <flux:badge size="sm" inset="top bottom" class="ml-2">{{ $this->stats['published'] }}
-                        </flux:badge>
+                        <flux:badge size="sm" inset="top bottom" class="ml-2" color="emerald">
+                            {{ $this->stats['published'] }}</flux:badge>
                     </flux:tab>
                 </flux:tabs>
 
@@ -44,7 +44,6 @@
                             class="flex flex-col gap-4 px-6 py-4 border-b border-zinc-200 dark:border-stone-800 bg-amber-50/50 dark:bg-amber-900/10 md:flex-row md:items-center md:justify-between">
                             <h4 class="text-base font-semibold text-stone-900 dark:text-stone-100">Antrean Penerbitan
                             </h4>
-
                             <div class="flex items-center gap-3">
                                 <flux:input icon="magnifying-glass" placeholder="Cari..."
                                     wire:model.live.debounce.300ms="search"
@@ -74,30 +73,24 @@
                                     <flux:table.row :key="$row->id">
                                         <flux:table.cell class="text-center text-zinc-500">
                                             {{ $this->itemsPending->firstItem() + $i }}</flux:table.cell>
-
                                         <flux:table.cell class="whitespace-nowrap">
-                                            {{ optional($row->updated_at)->format('d M Y') }}
-                                        </flux:table.cell>
-
+                                            {{ optional($row->updated_at)->format('d M Y') }}</flux:table.cell>
                                         <flux:table.cell>
                                             <div class="font-medium text-stone-900 dark:text-stone-100">
                                                 {{ $row->mahasiswa?->user?->name }}</div>
                                             <div class="text-xs text-zinc-500">{{ $row->mahasiswa?->mahasiswa_nim }}
                                             </div>
                                         </flux:table.cell>
-
                                         <flux:table.cell class="max-w-[250px]">
-                                            <div class="line-clamp-1 text-sm font-medium">{{ $row->judul_kp }}</div>
+                                            <div class="truncate font-medium text-sm">{{ $row->judul_kp }}</div>
                                             <div class="text-xs text-zinc-500 truncate">{{ $row->lokasi_kp }}</div>
                                         </flux:table.cell>
-
                                         <flux:table.cell>
                                             <flux:badge size="sm" :color="$this->badgeColor($row->status)"
                                                 :icon="$this->badgeIcon($row->status)">
                                                 {{ $this->statusLabel($row->status) }}
                                             </flux:badge>
                                         </flux:table.cell>
-
                                         <flux:table.cell class="text-right">
                                             <flux:dropdown position="bottom" align="end">
                                                 <flux:button variant="ghost" size="sm"
@@ -117,22 +110,15 @@
                             </flux:table.rows>
                         </flux:table>
 
-                        {{-- Empty State Pending --}}
                         @if ($this->itemsPending->isEmpty())
                             <div class="flex flex-col items-center justify-center py-12 text-center">
                                 <div class="rounded-full bg-zinc-100 p-4 dark:bg-stone-900">
                                     <flux:icon.inbox class="size-8 text-zinc-400" />
                                 </div>
-                                <h3 class="mt-4 text-base font-semibold text-stone-900 dark:text-stone-100">
-                                    Tidak ada antrean
-                                </h3>
-                                <p class="mt-1 text-sm text-zinc-500">
-                                    @if ($search)
-                                        Tidak ditemukan data yang cocok dengan pencarian "{{ $search }}".
-                                    @else
-                                        Belum ada pengajuan KP yang menunggu penerbitan SPK.
-                                    @endif
-                                </p>
+                                <h3 class="mt-4 text-base font-semibold text-stone-900 dark:text-stone-100">Tidak ada
+                                    antrean</h3>
+                                <p class="mt-1 text-sm text-zinc-500">Belum ada pengajuan KP yang menunggu penerbitan
+                                    SPK.</p>
                             </div>
                         @endif
                     </flux:card>
@@ -142,11 +128,9 @@
                 <flux:tab.panel name="published" class="pt-4">
                     <flux:card
                         class="space-y-4 rounded-xl border bg-white dark:bg-stone-950 border-zinc-200 dark:border-stone-800 shadow-sm overflow-hidden">
-                        {{-- Header Tabel --}}
                         <div
                             class="flex flex-col gap-4 px-6 py-4 border-b border-zinc-200 dark:border-stone-800 bg-emerald-50/50 dark:bg-emerald-900/10 md:flex-row md:items-center md:justify-between">
                             <h4 class="text-base font-semibold text-stone-900 dark:text-stone-100">Riwayat Terbit</h4>
-
                             <div class="flex items-center gap-3">
                                 <flux:input icon="magnifying-glass" placeholder="Cari..."
                                     wire:model.live.debounce.300ms="search"
@@ -173,30 +157,23 @@
 
                             <flux:table.rows>
                                 @foreach ($this->itemsPublished as $i => $row)
-                                    <flux:table.row :key="$row->id">
+                                    <flux:table.row :key="'pb-' . $row->id">
                                         <flux:table.cell class="text-center text-zinc-500">
                                             {{ $this->itemsPublished->firstItem() + $i }}</flux:table.cell>
-
                                         <flux:table.cell class="whitespace-nowrap">
-                                            {{ optional($row->tanggal_terbit_spk)->format('d M Y') }}
+                                            {{ optional($row->tanggal_terbit_spk)->format('d M Y') }}</flux:table.cell>
+                                        <flux:table.cell><span class="font-mono text-xs">{{ $row->nomor_spk }}</span>
                                         </flux:table.cell>
-
-                                        <flux:table.cell>
-                                            <span class="font-mono text-xs">{{ $row->nomor_spk }}</span>
-                                        </flux:table.cell>
-
                                         <flux:table.cell>
                                             <div class="font-medium text-stone-900 dark:text-stone-100">
                                                 {{ $row->mahasiswa?->user?->name }}</div>
                                         </flux:table.cell>
-
                                         <flux:table.cell>
                                             <flux:badge size="sm" :color="$this->badgeColor($row->status)"
                                                 :icon="$this->badgeIcon($row->status)">
                                                 {{ $this->statusLabel($row->status) }}
                                             </flux:badge>
                                         </flux:table.cell>
-
                                         <flux:table.cell class="text-right">
                                             <flux:dropdown position="bottom" align="end">
                                                 <flux:button variant="ghost" size="sm"
@@ -220,18 +197,16 @@
                             </flux:table.rows>
                         </flux:table>
 
-                        {{-- Empty State Published --}}
                         @if ($this->itemsPublished->isEmpty())
                             <div class="flex flex-col items-center justify-center py-12 text-center">
                                 <div class="rounded-full bg-zinc-100 p-4 dark:bg-stone-900">
                                     <flux:icon.document-text class="size-8 text-zinc-400" />
                                 </div>
-                                <h3 class="mt-4 text-base font-semibold text-stone-900 dark:text-stone-100">
-                                    Belum ada data
-                                </h3>
+                                <h3 class="mt-4 text-base font-semibold text-stone-900 dark:text-stone-100">Belum ada
+                                    data</h3>
                                 <p class="mt-1 text-sm text-zinc-500">
                                     @if ($search)
-                                        Tidak ditemukan data yang cocok dengan pencarian "{{ $search }}".
+                                        Tidak ditemukan data.
                                     @else
                                         Belum ada SPK yang diterbitkan.
                                     @endif
@@ -287,8 +262,8 @@
                         <ul class="mt-3 text-xs text-sky-800 dark:text-sky-200 space-y-2 list-disc list-inside">
                             <li>Cek data pengajuan di tab <strong>Belum Diterbitkan</strong>.</li>
                             <li>Pastikan judul dan lokasi KP sudah sesuai.</li>
-                            <li>Klik <strong>Terbitkan</strong> dan masukkan Nomor SPK.</li>
-                            <li>SPK yang terbit akan muncul di tab <strong>Sudah Diterbitkan</strong>.</li>
+                            <li>Klik <strong>Terbitkan</strong>, pilih pejabat, dan isi Nomor SPK.</li>
+                            <li>SPK berlaku selama <strong>2 Semester (1 Tahun)</strong> sejak diterbitkan.</li>
                         </ul>
                     </div>
                 </div>
@@ -299,32 +274,78 @@
     {{-- MODAL DETAIL --}}
     <flux:modal name="detail-spk" :show="$detailId !== null" class="md:w-[32rem]">
         <div class="space-y-6">
-            <div>
-                <flux:heading size="lg">Detail Pengajuan</flux:heading>
-                <p class="text-sm text-zinc-500">Informasi lengkap pengajuan KP.</p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <flux:heading size="lg">Detail Pengajuan KP</flux:heading>
+                    <p class="text-sm text-zinc-500">Informasi lengkap pengajuan.</p>
+                </div>
             </div>
 
             @if ($selectedItem = $this->selectedItem)
                 <div class="space-y-4">
-                    <div class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                        <div class="text-xs text-zinc-500">Mahasiswa</div>
-                        <div class="font-medium">{{ $selectedItem->mahasiswa->user->name }}</div>
-                        <div class="text-xs">{{ $selectedItem->mahasiswa->mahasiswa_nim }}</div>
+                    {{-- 1. Data Mahasiswa --}}
+                    <div
+                        class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/50">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="text-xs text-zinc-500 uppercase font-bold tracking-wider">Mahasiswa</div>
+                                <div class="font-medium mt-1">{{ $selectedItem->mahasiswa->user->name }}</div>
+                                <div class="text-sm text-zinc-600 dark:text-zinc-400">
+                                    {{ $selectedItem->mahasiswa->mahasiswa_nim }}</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                        <div class="text-xs text-zinc-500">Judul KP</div>
-                        <div class="font-medium">{{ $selectedItem->judul_kp }}</div>
+                    {{-- 2. Detail KP --}}
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <div class="text-xs text-zinc-500">Judul KP</div>
+                            <div class="font-medium text-sm">{{ $selectedItem->judul_kp }}</div>
+                        </div>
+                        <div class="col-span-2">
+                            <div class="text-xs text-zinc-500">Lokasi / Instansi</div>
+                            <div class="font-medium text-sm">{{ $selectedItem->lokasi_kp }}</div>
+                        </div>
+                        <div class="col-span-2">
+                            <div class="text-xs text-zinc-500">Dosen Pembimbing</div>
+                            <div class="font-medium text-sm">{{ $selectedItem->dosenPembimbing->dosen_name ?? '-' }}
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                        <div class="text-xs text-zinc-500">Lokasi</div>
-                        <div class="font-medium">{{ $selectedItem->lokasi_kp }}</div>
-                    </div>
+                    {{-- 3. Status & Legalitas --}}
+                    <flux:separator variant="subtle" />
 
-                    <div class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                        <div class="text-xs text-zinc-500">Dosen Pembimbing</div>
-                        <div class="font-medium">{{ $selectedItem->dosenPembimbing->dosen_name ?? '-' }}</div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-zinc-500">Status</div>
+                            <flux:badge size="sm" :color="$this->badgeColor($selectedItem->status)">
+                                {{ $this->statusLabel($selectedItem->status) }}
+                            </flux:badge>
+                        </div>
+
+                        @if ($selectedItem->status === 'spk_terbit')
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                    <span class="text-zinc-500">Nomor SPK:</span><br>
+                                    <span class="font-mono">{{ $selectedItem->nomor_spk ?? '-' }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-zinc-500">Tgl Terbit:</span><br>
+                                    <span>{{ optional($selectedItem->tanggal_terbit_spk)->format('d/m/Y') }}</span>
+                                </div>
+                                <div class="col-span-2 mt-1">
+                                    <span class="text-zinc-500">Penandatangan:</span><br>
+                                    <span>{{ $selectedItem->ttd_signed_by_name ?? ($selectedItem->signatory->name ?? '-') }}</span>
+                                </div>
+                                <div
+                                    class="col-span-2 mt-2 p-2 rounded bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-xs">
+                                    <flux:icon.clock class="inline-block size-3 mr-1" />
+                                    SPK berlaku hingga
+                                    {{ optional($selectedItem->tanggal_terbit_spk)->addYear()->format('d F Y') }}.
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -340,11 +361,12 @@
         <div class="space-y-6">
             <div>
                 <flux:heading size="lg">Terbitkan SPK</flux:heading>
-                <p class="text-sm text-zinc-500">Masukkan nomor surat untuk menerbitkan.</p>
+                <p class="text-sm text-zinc-500">Lengkapi data untuk menerbitkan Surat Perintah Kerja.</p>
             </div>
 
             <div class="space-y-4">
-                <flux:input label="Nomor SPK" placeholder="Contoh: 001/UNSOED/2025" wire:model="nomor_spk" />
+                <flux:input label="Nomor SPK (Opsional)" placeholder="Kosongkan jika auto-generate"
+                    wire:model="nomor_spk" />
 
                 <flux:select label="Penandatangan" wire:model="signatory_id">
                     @foreach (\App\Models\Signatory::orderBy('position')->get() as $sig)
@@ -352,6 +374,16 @@
                         </flux:select.option>
                     @endforeach
                 </flux:select>
+                @error('signatory_id')
+                    <div class="text-xs text-red-500">{{ $message }}</div>
+                @enderror
+
+                <div
+                    class="p-3 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs flex items-start gap-2">
+                    <flux:icon.information-circle class="size-4 shrink-0 mt-0.5" />
+                    <p>SPK yang diterbitkan akan berlaku selama <strong>1 Tahun (2 Semester)</strong> terhitung sejak
+                        tanggal hari ini.</p>
+                </div>
             </div>
 
             <div class="flex justify-end gap-2">

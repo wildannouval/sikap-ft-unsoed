@@ -11,7 +11,9 @@ use App\Models\KpSeminar;
 use App\Models\Mahasiswa;
 use App\Models\Room;
 use App\Models\Signatory;
+use App\Models\SuratPengantar;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -28,177 +30,149 @@ class DatabaseSeeder extends Seeder
                 ['nama_jurusan' => 'Teknik Elektro'],
                 ['nama_jurusan' => 'Teknik Sipil'],
                 ['nama_jurusan' => 'Teknik Industri'],
+                ['nama_jurusan' => 'Teknik Geologi'],
             ]);
         }
 
-        Signatory::firstOrCreate(
-            ['nip' => '19716022003221001'],
-            ['name' => 'Dr. Ir. NOR INTANG SETYO HERMANTO, S.T., M.T.', 'position' => 'Wakil Dekan Bidang Akademik']
-        );
+        // Pastikan Ruangan & Penandatangan ada
+        $rooms = collect([
+            Room::firstOrCreate(['room_number' => 'R.201', 'building' => 'Gedung F']),
+            Room::firstOrCreate(['room_number' => 'R.202', 'building' => 'Gedung F']),
+            Room::firstOrCreate(['room_number' => 'R.Sidang', 'building' => 'Gedung A']),
+        ]);
 
-        Room::firstOrCreate(['room_number' => 'R.201', 'building' => 'Gedung F']);
-        Room::firstOrCreate(['room_number' => 'R.202', 'building' => 'Gedung F']);
+        $signatories = collect([
+            Signatory::firstOrCreate(
+                ['nip' => '19716022003221001'],
+                ['name' => 'Dr. Ir. NOR INTANG SETYO HERMANTO, S.T., M.T.', 'position' => 'Wakil Dekan Bidang Akademik']
+            ),
+            Signatory::firstOrCreate(
+                ['nip' => '198001012005011002'],
+                ['name' => 'Prof. Dr. Eng. Retno Supriyanti, S.T., M.T.', 'position' => 'Dekan Fakultas Teknik']
+            )
+        ]);
 
-        // 3. User Bapendik
+        // 3. User Admin
         $bap = User::firstOrCreate(
             ['email' => 'bapendik@example.com'],
             ['name' => 'Bapendik Admin', 'password' => 'password']
         );
         $bap->syncRoles('Bapendik');
 
-        // 4. Dosen (Komisi & Pembimbing)
-        // Dosen Komisi
-        $komisiUser = User::firstOrCreate(
-            ['email' => 'komisi@example.com'],
-            ['name' => 'Dosen Komisi', 'password' => 'password']
-        );
-        $komisiUser->syncRoles(['Dosen Pembimbing', 'Dosen Komisi']);
-        $dosenKomisi = Dosen::factory()->create([
-            'user_id' => $komisiUser->id,
-            'dosen_name' => $komisiUser->name,
-            'is_komisi_kp' => true,
-            'jurusan_id' => 1
-        ]);
-
-        // Dosen Pembimbing Biasa
-        $dspUser = User::firstOrCreate(
-            ['email' => 'dospem@example.com'],
-            ['name' => 'Dosen Pembimbing', 'password' => 'password']
-        );
-        $dspUser->syncRoles('Dosen Pembimbing');
-        $dosenPembimbing = Dosen::factory()->create([
-            'user_id' => $dspUser->id,
-            'dosen_name' => $dspUser->name,
-            'is_komisi_kp' => false,
-            'jurusan_id' => 1
-        ]);
-
-        // Tambah beberapa dosen dummy lain
-        Dosen::factory(5)->create()->each(function ($d) {
-            $d->user->assignRole('Dosen Pembimbing');
+        // 4. Dosen Bulk (10 orang)
+        $dosens = Dosen::factory(10)->create()->each(function ($dosen) {
+            $dosen->user->assignRole('Dosen Pembimbing');
         });
 
-        // 5. Mahasiswa & Skenario KP
+        // Komisi
+        $komisi = $dosens->first();
+        $komisi->update(['is_komisi_kp' => true]);
+        $komisi->user->assignRole(['Dosen Pembimbing', 'Dosen Komisi']);
 
-        // A. Mahasiswa Baru (Belum ada KP)
-        $mhsBaru = User::firstOrCreate(
-            ['email' => 'mhs_baru@example.com'],
-            ['name' => 'Mahasiswa Baru', 'password' => 'password']
+        // 5. Mahasiswa & KP Bulk (Random Data 30 orang)
+        Mahasiswa::factory(30)->create()->each(function ($mhs) use ($dosens, $rooms, $signatories) {
+            $mhs->user->assignRole('Mahasiswa');
+            $rand = rand(1, 100);
+
+            // A. 10% Baru
+            if ($rand <= 10) return;
+
+            // B. 20% SP Diajukan
+            if ($rand <= 30) {
+                SuratPengantar::factory()->create(['mahasiswa_id' => $mhs->mahasiswa_id, 'status_surat_pengantar' => 'Diajukan']);
+                return;
+            }
+
+            // --- Base: SP Diterbitkan ---
+            $lokasi = fake()->company();
+            SuratPengantar::factory()->diterbitkan()->create(['mahasiswa_id' => $mhs->mahasiswa_id, 'lokasi_surat_pengantar' => $lokasi, 'signatory_id' => $signatories->random()->id]);
+
+            // C. 20% KP Review Komisi
+            if ($rand <= 50) {
+                KerjaPraktik::factory()->create([
+                    'mahasiswa_id' => $mhs->mahasiswa_id,
+                    'status' => 'review_komisi',
+                    'lokasi_kp' => $lokasi,
+                ]);
+                return;
+            }
+
+            // Sisanya: KP Berjalan/Selesai
+            $dospem = $dosens->random();
+            $kp = KerjaPraktik::factory()->berjalan()->create([
+                'mahasiswa_id' => $mhs->mahasiswa_id,
+                'dosen_pembimbing_id' => $dospem->dosen_id,
+                'lokasi_kp' => $lokasi,
+                'signatory_id' => $signatories->random()->id,
+            ]);
+
+            // D. 20% Sedang Bimbingan
+            if ($rand <= 70) {
+                KpConsultation::factory(rand(1, 5))->create(['kerja_praktik_id' => $kp->id, 'mahasiswa_id' => $mhs->mahasiswa_id, 'dosen_pembimbing_id' => $dospem->dosen_id]);
+                return;
+            }
+
+            // E. Sisanya: Seminar/Selesai (Bimbingan Penuh)
+            KpConsultation::factory(8)->verified()->create(['kerja_praktik_id' => $kp->id, 'mahasiswa_id' => $mhs->mahasiswa_id, 'dosen_pembimbing_id' => $dospem->dosen_id, 'verified_by_dosen_id' => $dospem->dosen_id]);
+
+            if ($rand <= 85) {
+                // REVISI: Menggunakan disetujuiPembimbing() bukan dijadwalkan()
+                KpSeminar::factory()->disetujuiPembimbing()->create([
+                    'kerja_praktik_id' => $kp->id,
+                    'mahasiswa_id' => $mhs->mahasiswa_id,
+                    'dosen_pembimbing_id' => $dospem->dosen_id,
+                    'judul_laporan' => $kp->judul_kp,
+                    'ruangan_id' => $rooms->random()->id,
+                    'ruangan_nama' => $rooms->random()->room_number,
+                ]);
+            } else {
+                // Selesai / BA Terbit
+                $sem = KpSeminar::factory()->baTerbit()->create([
+                    'kerja_praktik_id' => $kp->id,
+                    'mahasiswa_id' => $mhs->mahasiswa_id,
+                    'dosen_pembimbing_id' => $dospem->dosen_id,
+                    'judul_laporan' => $kp->judul_kp,
+                    'ruangan_id' => $rooms->random()->id,
+                    'ruangan_nama' => $rooms->random()->room_number,
+                    'signatory_id' => $signatories->random()->id,
+                ]);
+
+                // 50% chance sudah dinilai
+                if (rand(0, 1)) {
+                    $sem->update(['status' => 'dinilai']);
+                    KpGrade::create([
+                        'kp_seminar_id' => $sem->id,
+                        'score_dospem' => 85,
+                        'score_pl' => 88,
+                        'final_score' => 86.5,
+                        'final_letter' => 'A',
+                        'graded_by_user_id' => $dospem->user_id,
+                        'graded_at' => now(),
+                    ]);
+                }
+            }
+        });
+
+        // 6. Panggil PeopleDemoSeeder untuk akun fix & scenario spesifik
+        $this->call(PeopleDemoSeeder::class);
+    }
+
+    private function createMhs($email, $name, $jurusanId)
+    {
+        $u = User::firstOrCreate(
+            ['email' => $email],
+            ['name' => $name, 'password' => 'password']
         );
-        $mhsBaru->syncRoles('Mahasiswa');
-        Mahasiswa::factory()->create(['user_id' => $mhsBaru->id, 'jurusan_id' => 1]);
+        $u->syncRoles('Mahasiswa');
 
-        // B. Mahasiswa Mengajukan KP (Review Komisi)
-        $mhsSubmit = User::firstOrCreate(
-            ['email' => 'mhs_submit@example.com'],
-            ['name' => 'Mahasiswa Submit', 'password' => 'password']
+        return Mahasiswa::firstOrCreate(
+            ['user_id' => $u->id],
+            [
+                'mahasiswa_name' => $name,
+                'mahasiswa_nim' => 'H1D0' . rand(10000, 99999),
+                'jurusan_id' => $jurusanId,
+                'mahasiswa_tahun_angkatan' => 2021
+            ]
         );
-        $mhsSubmit->syncRoles('Mahasiswa');
-        $mhsSubmitModel = Mahasiswa::factory()->create(['user_id' => $mhsSubmit->id, 'jurusan_id' => 1]);
-
-        KerjaPraktik::factory()->create([
-            'mahasiswa_id' => $mhsSubmitModel->mahasiswa_id,
-            'status' => 'review_komisi'
-        ]);
-
-        // C. Mahasiswa KP Berjalan (Sudah SPK, Sedang Bimbingan)
-        $mhsActive = User::firstOrCreate(
-            ['email' => 'mhs_active@example.com'],
-            ['name' => 'Mahasiswa Aktif', 'password' => 'password']
-        );
-        $mhsActive->syncRoles('Mahasiswa');
-        $mhsActiveModel = Mahasiswa::factory()->create(['user_id' => $mhsActive->id, 'jurusan_id' => 1]);
-
-        $kpActive = KerjaPraktik::factory()->berjalan()->create([
-            'mahasiswa_id' => $mhsActiveModel->mahasiswa_id,
-            'dosen_pembimbing_id' => $dosenPembimbing->dosen_id, // Bimbingan dospem@example.com
-            'judul_kp' => 'Analisis Performa Jaringan 5G'
-        ]);
-
-        // Buat konsultasi (3 terverifikasi, 2 belum)
-        KpConsultation::factory(3)->verified()->create([
-            'kerja_praktik_id' => $kpActive->id,
-            'mahasiswa_id' => $mhsActiveModel->mahasiswa_id,
-            'dosen_pembimbing_id' => $dosenPembimbing->dosen_id,
-            'verified_by_dosen_id' => $dosenPembimbing->dosen_id,
-        ]);
-        KpConsultation::factory(2)->create([
-            'kerja_praktik_id' => $kpActive->id,
-            'mahasiswa_id' => $mhsActiveModel->mahasiswa_id,
-            'dosen_pembimbing_id' => $dosenPembimbing->dosen_id,
-        ]);
-
-        // D. Mahasiswa Siap Seminar (Konsultasi > 6)
-        $mhsSeminar = User::firstOrCreate(
-            ['email' => 'mhs_seminar@example.com'],
-            ['name' => 'Mahasiswa Seminar', 'password' => 'password']
-        );
-        $mhsSeminar->syncRoles('Mahasiswa');
-        $mhsSeminarModel = Mahasiswa::factory()->create(['user_id' => $mhsSeminar->id, 'jurusan_id' => 1]);
-
-        $kpSeminar = KerjaPraktik::factory()->berjalan()->create([
-            'mahasiswa_id' => $mhsSeminarModel->mahasiswa_id,
-            'dosen_pembimbing_id' => $dosenPembimbing->dosen_id,
-            'judul_kp' => 'Pengembangan Sistem AI Sederhana'
-        ]);
-
-        KpConsultation::factory(8)->verified()->create([
-            'kerja_praktik_id' => $kpSeminar->id,
-            'mahasiswa_id' => $mhsSeminarModel->mahasiswa_id,
-            'dosen_pembimbing_id' => $dosenPembimbing->dosen_id,
-            'verified_by_dosen_id' => $dosenPembimbing->dosen_id,
-        ]);
-
-        // Buat pengajuan seminar (status diajukan)
-        KpSeminar::factory()->create([
-            'kerja_praktik_id' => $kpSeminar->id,
-            'mahasiswa_id' => $mhsSeminarModel->mahasiswa_id,
-            'dosen_pembimbing_id' => $dosenPembimbing->dosen_id,
-            'judul_laporan' => $kpSeminar->judul_kp,
-            'status' => 'diajukan',
-        ]);
-
-        // E. Mahasiswa Selesai (Sudah Nilai)
-        $mhsDone = User::firstOrCreate(
-            ['email' => 'mhs_done@example.com'],
-            ['name' => 'Mahasiswa Selesai', 'password' => 'password']
-        );
-        $mhsDone->syncRoles('Mahasiswa');
-        $mhsDoneModel = Mahasiswa::factory()->create(['user_id' => $mhsDone->id, 'jurusan_id' => 1]);
-
-        $kpDone = KerjaPraktik::factory()->berjalan()->create([
-            'mahasiswa_id' => $mhsDoneModel->mahasiswa_id,
-            'dosen_pembimbing_id' => $dosenPembimbing->dosen_id,
-            'judul_kp' => 'Implementasi IoT Smart Home'
-        ]);
-
-        KpConsultation::factory(10)->verified()->create([
-            'kerja_praktik_id' => $kpDone->id,
-            'mahasiswa_id' => $mhsDoneModel->mahasiswa_id,
-            'dosen_pembimbing_id' => $dosenPembimbing->dosen_id,
-            'verified_by_dosen_id' => $dosenPembimbing->dosen_id,
-        ]);
-
-        $seminarDone = KpSeminar::factory()->create([
-            'kerja_praktik_id' => $kpDone->id,
-            'mahasiswa_id' => $mhsDoneModel->mahasiswa_id,
-            'dosen_pembimbing_id' => $dosenPembimbing->dosen_id,
-            'judul_laporan' => $kpDone->judul_kp,
-            'status' => 'dinilai', // atau selesai
-            'tanggal_seminar' => now()->subDays(5),
-            'ruangan_id' => 1,
-            'ruangan_nama' => 'R.201',
-            'ba_scan_path' => 'dummy/ba_scan.pdf',
-        ]);
-
-        KpGrade::create([
-            'kp_seminar_id' => $seminarDone->id,
-            'score_dospem' => 85,
-            'score_pl' => 90,
-            'final_score' => 87,
-            'final_letter' => 'A',
-            'graded_by_user_id' => $dspUser->id,
-            'graded_at' => now(),
-        ]);
     }
 }

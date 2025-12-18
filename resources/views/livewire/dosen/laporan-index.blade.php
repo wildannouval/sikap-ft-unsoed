@@ -70,38 +70,55 @@
                                 <flux:table.cell>
                                     @if ($row->berkas_laporan_path)
                                         <a href="{{ asset('storage/' . $row->berkas_laporan_path) }}" target="_blank"
-                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800">
-                                            <flux:icon.document-text class="size-3.5" />
-                                            PDF
+                                            rel="noopener"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
+                                                bg-red-50 text-red-700 hover:bg-red-100 border border-red-200
+                                                dark:bg-red-900/20 dark:text-red-300 dark:border-red-800">
+                                            <flux:icon.arrow-down-tray class="size-3.5" />
+                                            Unduh
                                         </a>
+                                        <div class="text-[10px] text-zinc-400 mt-1">PDF Laporan</div>
                                     @else
                                         <span class="text-xs text-zinc-400 italic">Belum ada</span>
                                     @endif
                                 </flux:table.cell>
 
-                                {{-- BA Scan --}}
+                                {{-- BA: Scan + Draft BA (DOCX) --}}
                                 <flux:table.cell>
                                     <div class="flex flex-col gap-1 items-start">
-                                        {{-- 1. Jika Scan Ada --}}
+
+                                        {{-- 1) BA Scan (kalau ada) --}}
                                         @if ($row->grade?->ba_scan_path)
                                             <a href="{{ asset('storage/' . $row->grade->ba_scan_path) }}"
-                                                target="_blank"
-                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 dark:bg-violet-900/20 dark:text-violet-300 dark:border-violet-800">
+                                                target="_blank" rel="noopener"
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
+                                                    bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200
+                                                    dark:bg-violet-900/20 dark:text-violet-300 dark:border-violet-800">
                                                 <flux:icon.clipboard-document-check class="size-3.5" />
-                                                Scan
+                                                Unduh Scan
                                             </a>
+                                        @endif
 
-                                            {{-- 2. Jika Scan Kosong, TAPI status sudah BA Terbit/Dinilai/Selesai --}}
-                                        @elseif (in_array($row->status, ['ba_terbit', 'dinilai', 'selesai']))
+                                        {{-- 2) Draft BA (DOCX) - tampil jika status sudah BA terbit/dinilai/selesai --}}
+                                        @if (in_array($row->status, [
+                                                \App\Models\KpSeminar::ST_BA_TERBIT,
+                                                \App\Models\KpSeminar::ST_DINILAI,
+                                                \App\Models\KpSeminar::ST_SELESAI,
+                                            ]))
                                             <a href="{{ route('dsp.kp.seminar.download.ba', $row->id) }}"
-                                                target="_blank"
-                                                class="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:underline">
+                                                target="_blank" rel="noopener"
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
+                                                    bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200
+                                                    dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-800">
                                                 <flux:icon.arrow-down-tray class="size-3.5" />
                                                 Draft BA
                                             </a>
-                                            <span class="text-[10px] text-zinc-400 italic mt-0.5">Menunggu nilai</span>
 
-                                            {{-- 3. Belum masuk tahap BA --}}
+                                            @if (!$row->grade?->ba_scan_path)
+                                                <span class="text-[10px] text-zinc-400 italic mt-0.5">
+                                                    Scan BA belum diunggah
+                                                </span>
+                                            @endif
                                         @else
                                             <span class="text-xs text-zinc-400 italic">Belum terbit</span>
                                         @endif
@@ -112,9 +129,12 @@
                                 <flux:table.cell>
                                     @if ($row->distribusi_proof_path)
                                         <a href="{{ asset('storage/' . $row->distribusi_proof_path) }}" target="_blank"
-                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 dark:bg-teal-900/20 dark:text-teal-300 dark:border-teal-800">
-                                            <flux:icon.check-circle class="size-3.5" />
-                                            Bukti
+                                            rel="noopener"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium
+                                                bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200
+                                                dark:bg-teal-900/20 dark:text-teal-300 dark:border-teal-800">
+                                            <flux:icon.arrow-down-tray class="size-3.5" />
+                                            Unduh Bukti
                                         </a>
                                         <div class="text-[10px] text-zinc-500 mt-1">
                                             {{ $row->distribusi_uploaded_at?->format('d/m/y') }}
@@ -128,27 +148,44 @@
                                     <flux:dropdown position="bottom" align="end">
                                         <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
                                         <flux:menu>
+
+                                            {{-- Laporan --}}
                                             @if ($row->berkas_laporan_path)
                                                 <flux:menu.item icon="arrow-down-tray"
                                                     href="{{ asset('storage/' . $row->berkas_laporan_path) }}"
                                                     target="_blank">
-                                                    Unduh Laporan
+                                                    Unduh Laporan (PDF)
                                                 </flux:menu.item>
                                             @endif
 
+                                            {{-- Draft BA (DOCX) --}}
+                                            @if (in_array($row->status, [
+                                                    \App\Models\KpSeminar::ST_BA_TERBIT,
+                                                    \App\Models\KpSeminar::ST_DINILAI,
+                                                    \App\Models\KpSeminar::ST_SELESAI,
+                                                ]))
+                                                <flux:menu.item icon="document-text"
+                                                    href="{{ route('dsp.kp.seminar.download.ba', $row->id) }}"
+                                                    target="_blank">
+                                                    Unduh Draft BA (DOCX)
+                                                </flux:menu.item>
+                                            @endif
+
+                                            {{-- BA Scan --}}
                                             @if ($row->grade?->ba_scan_path)
-                                                <flux:menu.item icon="document-duplicate"
+                                                <flux:menu.item icon="clipboard-document-check"
                                                     href="{{ asset('storage/' . $row->grade->ba_scan_path) }}"
                                                     target="_blank">
                                                     Unduh BA Scan
                                                 </flux:menu.item>
                                             @endif
 
-                                            @if (in_array($row->status, ['ba_terbit', 'dinilai', 'selesai']))
-                                                <flux:menu.item icon="document-text"
-                                                    href="{{ route('dsp.kp.seminar.download.ba', $row->id) }}"
+                                            {{-- Distribusi --}}
+                                            @if ($row->distribusi_proof_path)
+                                                <flux:menu.item icon="check-badge"
+                                                    href="{{ asset('storage/' . $row->distribusi_proof_path) }}"
                                                     target="_blank">
-                                                    Unduh BA Asli (DOCX)
+                                                    Unduh Bukti Distribusi
                                                 </flux:menu.item>
                                             @endif
 
@@ -241,6 +278,8 @@
                         <ul class="mt-3 text-xs text-indigo-800 dark:text-indigo-200 space-y-2 list-disc list-inside">
                             <li>Halaman ini memuat seluruh dokumen terkait KP mahasiswa bimbingan Anda.</li>
                             <li><strong>Laporan KP:</strong> Diunggah mahasiswa sebelum seminar.</li>
+                            <li><strong>Draft BA (DOCX):</strong> Bisa diunduh pada status BA Terbit/Dinilai/Selesai.
+                            </li>
                             <li><strong>BA Scan:</strong> Anda unggah saat input nilai.</li>
                             <li><strong>Bukti Distribusi:</strong> Diunggah mahasiswa setelah revisi selesai.</li>
                         </ul>

@@ -39,6 +39,9 @@ class DosenIndex extends Component
     public string $email = '';
     public string $password = '';
 
+    // Delete Confirmation State
+    public ?int $deleteId = null;
+
     public function rules(): array
     {
         return [
@@ -55,7 +58,6 @@ class DosenIndex extends Component
     {
         $this->resetPage();
     }
-
     public function updatingPerPage()
     {
         $this->resetPage();
@@ -76,7 +78,7 @@ class DosenIndex extends Component
     {
         $this->resetForm();
         $this->showForm = true;
-        Flux::modal('dosen-form')->show(); // Fix: Trigger modal show
+        Flux::modal('dosen-form')->show();
     }
 
     public function edit(int $id): void
@@ -91,10 +93,10 @@ class DosenIndex extends Component
 
         $this->user_id = $row->user_id;
         $this->email   = $row->user?->email ?? '';
-        $this->password = ''; // Reset password field
+        $this->password = '';
 
         $this->showForm = true;
-        Flux::modal('dosen-form')->show(); // Fix: Trigger modal show
+        Flux::modal('dosen-form')->show();
     }
 
     public function closeForm(): void
@@ -160,13 +162,26 @@ class DosenIndex extends Component
         Flux::toast(heading: 'Berhasil', text: 'Data dosen disimpan.', variant: 'success');
     }
 
-    public function delete(int $id): void
-    {
-        $row = Dosen::findOrFail($id);
-        $row->delete();
+    // --- Delete Logic ---
 
-        $this->resetPage();
-        Flux::toast(heading: 'Terhapus', text: 'Data dosen dihapus.', variant: 'success');
+    public function confirmDelete(int $id): void
+    {
+        $this->deleteId = $id;
+        Flux::modal('delete-confirm')->show();
+    }
+
+    public function delete(): void
+    {
+        if ($this->deleteId) {
+            $row = Dosen::findOrFail($this->deleteId);
+            $row->delete(); // User juga akan terhapus jika cascade di DB, atau perlu logic tambahan
+
+            $this->resetPage();
+            Flux::toast(heading: 'Terhapus', text: 'Data dosen dihapus.', variant: 'success');
+        }
+
+        $this->deleteId = null;
+        Flux::modal('delete-confirm')->close();
     }
 
     public function resetUserPassword(int $id, string $newPassword = 'password'): void

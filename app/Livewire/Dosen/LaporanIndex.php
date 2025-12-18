@@ -54,9 +54,8 @@ class LaporanIndex extends Component
         return KpSeminar::query()
             ->with(['kp.mahasiswa.user', 'grade'])
             ->where('dosen_pembimbing_id', $this->dosenId)
-            // Hanya tampilkan seminar yang sudah berjalan/selesai atau memiliki dokumen
+            // Menghapus ST_DIJADWALKAN (sesuai catatan kamu)
             ->whereIn('status', [
-                KpSeminar::ST_DIJADWALKAN,
                 KpSeminar::ST_BA_TERBIT,
                 KpSeminar::ST_DINILAI,
                 KpSeminar::ST_SELESAI
@@ -78,12 +77,16 @@ class LaporanIndex extends Component
     #[Computed]
     public function stats(): array
     {
-        $base = KpSeminar::where('dosen_pembimbing_id', $this->dosenId)
+        $base = KpSeminar::query()
+            ->where('dosen_pembimbing_id', $this->dosenId)
             ->whereIn('status', [KpSeminar::ST_BA_TERBIT, KpSeminar::ST_DINILAI, KpSeminar::ST_SELESAI]);
 
         return [
             'total_laporan' => (clone $base)->whereNotNull('berkas_laporan_path')->count(),
-            'total_ba'      => (clone $base)->whereNotNull('ba_scan_path')->count(),
+
+            // BA Scan tersimpan di relasi grade->ba_scan_path, bukan di kp_seminars
+            'total_ba'      => (clone $base)->whereHas('grade', fn($g) => $g->whereNotNull('ba_scan_path'))->count(),
+
             'total_selesai' => (clone $base)->whereNotNull('distribusi_proof_path')->count(),
         ];
     }

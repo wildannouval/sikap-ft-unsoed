@@ -35,8 +35,8 @@ class Page extends Component
     public ?int $selectedSpId = null;
 
     // Table & Filters
-    public string $search = ''; // Diganti dari $q agar konsisten
-    public string $filterStatus = '';
+    public string $search = '';
+    public string $filterStatus = ''; // Default kosong (semua)
     public string $sortBy = 'created_at';
     public string $sortDirection = 'desc';
     public int $perPage = 10;
@@ -62,7 +62,6 @@ class Page extends Component
         ];
     }
 
-    // Reset pagination saat filter/search berubah
     public function updating($name, $value): void
     {
         if (in_array($name, ['search', 'filterStatus', 'sortBy', 'sortDirection', 'perPage'])) {
@@ -100,14 +99,15 @@ class Page extends Component
             ])->all();
     }
 
-    // Opsi untuk Dropdown Filter Status
+    // Opsi Filter
     #[Computed]
     public function statusOptions(): array
     {
         return [
             ['value' => KerjaPraktik::ST_REVIEW_KOMISI, 'label' => 'Menunggu Review Komisi'],
             ['value' => KerjaPraktik::ST_REVIEW_BAPENDIK, 'label' => 'Menunggu Terbit SPK'],
-            ['value' => KerjaPraktik::ST_SPK_TERBIT, 'label' => 'SPK Terbit'],
+            // Gabungkan status SPK Terbit & KP Berjalan dalam satu filter agar user tidak bingung
+            ['value' => 'active', 'label' => 'SPK Terbit / KP Berjalan'],
             ['value' => KerjaPraktik::ST_DITOLAK, 'label' => 'Ditolak'],
         ];
     }
@@ -135,16 +135,10 @@ class Page extends Component
     public function submit(): void
     {
         $this->validate();
-
         $mhs = Mahasiswa::where('user_id', Auth::id())->firstOrFail();
 
-        $proposalPath = $this->proposal_kp
-            ? $this->proposal_kp->store('kp/proposal', 'public')
-            : null;
-
-        $suratPath = $this->surat_keterangan_kp
-            ? $this->surat_keterangan_kp->store('kp/surat-keterangan', 'public')
-            : null;
+        $proposalPath = $this->proposal_kp ? $this->proposal_kp->store('kp/proposal', 'public') : null;
+        $suratPath = $this->surat_keterangan_kp ? $this->surat_keterangan_kp->store('kp/surat-keterangan', 'public') : null;
 
         $kp = KerjaPraktik::create([
             'mahasiswa_id'          => $mhs->getKey(),
@@ -153,26 +147,9 @@ class Page extends Component
             'proposal_path'         => $proposalPath,
             'surat_keterangan_path' => $suratPath,
             'status'                => KerjaPraktik::ST_REVIEW_KOMISI,
-            'catatan'               => null,
         ]);
 
-        // Notif Komisi
-        Notifier::toRole(
-            'Dosen Komisi',
-            'Pengajuan KP Baru',
-            "Mahasiswa {$mhs->user?->name} mengajukan KP: {$this->judul_kp} di {$this->lokasi_kp}.",
-            route('komisi.kp.review'),
-            ['type' => 'kp_submitted', 'kp_id' => $kp->id, 'mhs_id' => $mhs->getKey()]
-        );
-
-        // Notif ACK ke Mahasiswa
-        Notifier::toUser(
-            Auth::id(),
-            'Pengajuan KP diterima',
-            'Pengajuan berhasil disimpan. Menunggu review Komisi.',
-            route('mhs.kp.index'),
-            ['type' => 'kp_ack', 'kp_id' => $kp->id]
-        );
+        Notifier::toRole('Dosen Komisi', 'Pengajuan KP Baru', "Mahasiswa {$mhs->user?->name} mengajukan KP.", route('komisi.kp.review'), ['type' => 'kp_submitted', 'kp_id' => $kp->id]);
 
         $this->reset(['editingId', 'judul_kp', 'lokasi_kp', 'proposal_kp', 'surat_keterangan_kp', 'selectedSpId']);
         Flux::toast(heading: 'Berhasil', text: 'Pengajuan KP dikirim ke Komisi.', variant: 'success');
@@ -180,12 +157,10 @@ class Page extends Component
 
     public function edit(int $id): void
     {
-        $kp = KerjaPraktik::where('id', $id)
-            ->whereHas('mahasiswa', fn($q) => $q->where('user_id', Auth::id()))
-            ->firstOrFail();
+        $kp = KerjaPraktik::where('id', $id)->whereHas('mahasiswa', fn($q) => $q->where('user_id', Auth::id()))->firstOrFail();
 
         if ($kp->status !== KerjaPraktik::ST_REVIEW_KOMISI) {
-            Flux::toast(heading: 'Gagal', text: 'Pengajuan dengan status saat ini tidak dapat diedit.', variant: 'danger');
+            Flux::toast(heading: 'Gagal', text: 'Pengajuan tidak dapat diedit saat ini.', variant: 'danger');
             return;
         }
 
@@ -202,90 +177,65 @@ class Page extends Component
     public function update(): void
     {
         $this->validate();
-
-        $kp = KerjaPraktik::where('id', $this->editingId)
-            ->whereHas('mahasiswa', fn($q) => $q->where('user_id', Auth::id()))
-            ->firstOrFail();
+        $kp = KerjaPraktik::where('id', $this->editingId)->whereHas('mahasiswa', fn($q) => $q->where('user_id', Auth::id()))->firstOrFail();
 
         if ($kp->status !== KerjaPraktik::ST_REVIEW_KOMISI) {
-            Flux::toast(heading: 'Gagal', text: 'Pengajuan dengan status saat ini tidak dapat diperbarui.', variant: 'danger');
+            Flux::toast(heading: 'Gagal', text: 'Pengajuan tidak dapat diperbarui.', variant: 'danger');
             return;
         }
 
-        $data = [
-            'judul_kp'  => $this->judul_kp,
-            'lokasi_kp' => $this->lokasi_kp,
-        ];
-
-        if ($this->proposal_kp) {
-            $data['proposal_path'] = $this->proposal_kp->store('kp/proposal', 'public');
-        }
-        if ($this->surat_keterangan_kp) {
-            $data['surat_keterangan_path'] = $this->surat_keterangan_kp->store('kp/surat-keterangan', 'public');
-        }
+        $data = ['judul_kp' => $this->judul_kp, 'lokasi_kp' => $this->lokasi_kp];
+        if ($this->proposal_kp) $data['proposal_path'] = $this->proposal_kp->store('kp/proposal', 'public');
+        if ($this->surat_keterangan_kp) $data['surat_keterangan_path'] = $this->surat_keterangan_kp->store('kp/surat-keterangan', 'public');
 
         if ($kp->status === KerjaPraktik::ST_DITOLAK) {
             $data['status'] = KerjaPraktik::ST_REVIEW_KOMISI;
         }
 
         $kp->update($data);
-
         $this->cancelEdit();
         Flux::toast(heading: 'Tersimpan', text: 'Pengajuan KP diperbarui.', variant: 'success');
     }
 
     public function markDelete(int $id): void
     {
-        $kp = KerjaPraktik::where('id', $id)
-            ->whereHas('mahasiswa', fn($q) => $q->where('user_id', Auth::id()))
-            ->first();
-
-        if (!$kp) return;
-
-        if ($kp->status !== KerjaPraktik::ST_REVIEW_KOMISI) {
-            Flux::toast(heading: 'Gagal', text: 'Pengajuan dengan status saat ini tidak dapat dihapus.', variant: 'danger');
-            return;
+        $kp = KerjaPraktik::where('id', $id)->whereHas('mahasiswa', fn($q) => $q->where('user_id', Auth::id()))->first();
+        if ($kp && $kp->status === KerjaPraktik::ST_REVIEW_KOMISI) {
+            $this->deleteId = $kp->id;
+            Flux::modal('delete-kp')->show();
+        } else {
+            Flux::toast(heading: 'Gagal', text: 'Tidak dapat dihapus.', variant: 'danger');
         }
-
-        $this->deleteId = $kp->id;
     }
 
     public function confirmDelete(): void
     {
         if (!$this->deleteId) return;
-
-        $kp = KerjaPraktik::where('id', $this->deleteId)
-            ->whereHas('mahasiswa', fn($q) => $q->where('user_id', Auth::id()))
-            ->first();
-
-        if ($kp && $kp->status === KerjaPraktik::ST_REVIEW_KOMISI) {
-            $kp->delete();
-            Flux::toast(heading: 'Terhapus', text: 'Pengajuan KP berhasil dihapus.', variant: 'success');
-        } else {
-            Flux::toast(heading: 'Gagal', text: 'Pengajuan tidak dapat dihapus.', variant: 'danger');
-        }
+        $kp = KerjaPraktik::find($this->deleteId);
+        if ($kp) $kp->delete();
 
         $this->deleteId = null;
         Flux::modal('delete-kp')->close();
+        Flux::toast(heading: 'Terhapus', text: 'Pengajuan KP dihapus.', variant: 'success');
     }
 
     public function openDetail(int $id): void
     {
         $this->detailId = $id;
+        Flux::modal('detail-kp')->show();
     }
+
     public function closeDetail(): void
     {
         $this->detailId = null;
+        Flux::modal('detail-kp')->close();
     }
 
     #[Computed]
     public function selectedItem(): ?KerjaPraktik
     {
         if (!$this->detailId) return null;
-
-        return KerjaPraktik::with(['mahasiswa.user'])
-            ->whereHas('mahasiswa', fn($q) => $q->where('user_id', Auth::id()))
-            ->find($this->detailId);
+        return KerjaPraktik::with(['mahasiswa.user', 'signatory'])->find($this->detailId);
     }
 
     public function removeProposal(): void
@@ -304,16 +254,19 @@ class Page extends Component
 
         return KerjaPraktik::query()
             ->where('mahasiswa_id', $mhs?->getKey() ?? 0)
-            // Logic Search
             ->when($this->search, function ($q) {
                 $q->where(function ($qq) {
-                    $qq->where('judul_kp', 'like', '%' . $this->search . '%')
-                        ->orWhere('lokasi_kp', 'like', '%' . $this->search . '%');
+                    $qq->where('judul_kp', 'like', "%{$this->search}%")
+                        ->orWhere('lokasi_kp', 'like', "%{$this->search}%");
                 });
             })
-            // Logic Filter Status
+            // --- FIX FILTER: Handle multiple status ---
             ->when($this->filterStatus, function ($q) {
-                $q->where('status', $this->filterStatus);
+                if ($this->filterStatus === 'active') {
+                    $q->whereIn('status', [KerjaPraktik::ST_SPK_TERBIT, KerjaPraktik::ST_KP_BERJALAN]);
+                } else {
+                    $q->where('status', $this->filterStatus);
+                }
             })
             ->orderBy($this->sortBy, $this->sortDirection)
             ->paginate($this->perPage);
@@ -329,17 +282,17 @@ class Page extends Component
             'review_komisi'   => (clone $base)->where('status', KerjaPraktik::ST_REVIEW_KOMISI)->count(),
             'review_bapendik' => (clone $base)->where('status', KerjaPraktik::ST_REVIEW_BAPENDIK)->count(),
             'ditolak'         => (clone $base)->where('status', KerjaPraktik::ST_DITOLAK)->count(),
-            'spk_terbit'      => (clone $base)->where('status', KerjaPraktik::ST_SPK_TERBIT)->count(),
+            'spk_terbit'      => (clone $base)->whereIn('status', [KerjaPraktik::ST_SPK_TERBIT, KerjaPraktik::ST_KP_BERJALAN])->count(),
         ];
     }
 
-    public function badgeColor(string $status): string
+    public function badgeColor(string $st): string
     {
-        return KerjaPraktik::badgeColor($status);
+        return KerjaPraktik::badgeColor($st);
     }
-    public function statusLabel(string $status): string
+    public function statusLabel(string $st): string
     {
-        return KerjaPraktik::statusLabel($status);
+        return KerjaPraktik::statusLabel($st);
     }
 
     public function render()

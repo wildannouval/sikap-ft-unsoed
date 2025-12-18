@@ -24,21 +24,26 @@
                         Belum Dibaca
                         @if ($this->unreadCount > 0)
                             <flux:badge size="sm" color="amber" inset="top bottom" class="ml-2">
-                                {{ $this->unreadCount }}</flux:badge>
+                                {{ $this->unreadCount }}
+                            </flux:badge>
                         @endif
                     </flux:tab>
+
                     <flux:tab name="all" icon="inbox-stack">
                         Semua
-                        <flux:badge size="sm" inset="top bottom" class="ml-2">{{ $this->allCount }}</flux:badge>
+                        <flux:badge size="sm" inset="top bottom" class="ml-2">
+                            {{ $this->allCount }}
+                        </flux:badge>
                     </flux:tab>
                 </flux:tabs>
 
+                {{-- REVISI: panel pakai dataset yang berbeda --}}
                 <flux:tab.panel name="unread" class="pt-4">
-                    @include('livewire.notifications.partials.table', ['rows' => $this->rows])
+                    @include('livewire.notifications.partials.table', ['rows' => $this->unreadRows])
                 </flux:tab.panel>
 
                 <flux:tab.panel name="all" class="pt-4">
-                    @include('livewire.notifications.partials.table', ['rows' => $this->rows])
+                    @include('livewire.notifications.partials.table', ['rows' => $this->allRows])
                 </flux:tab.panel>
             </flux:tab.group>
         </div>
@@ -60,9 +65,11 @@
                         Tandai Semua Dibaca
                     </flux:button>
 
+                    {{-- REVISI: hapus semua pakai $wire agar benar-benar terpanggil --}}
                     <flux:button class="w-full justify-start text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20"
-                        variant="ghost" icon="trash"
-                        onclick="if (confirm('Hapus semua notifikasi?')) { @this.deleteAll(); }">
+                        variant="ghost" icon="trash" x-data
+                        x-on:click="if (confirm('Hapus semua notifikasi?')) { $wire.deleteAll() }"
+                        :disabled="$this->allCount === 0">
                         Hapus Semua
                     </flux:button>
                 </div>

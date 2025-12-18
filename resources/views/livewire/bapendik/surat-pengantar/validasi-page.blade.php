@@ -278,7 +278,8 @@
                                                     </flux:menu.item>
                                                     <flux:menu.item icon="arrow-path"
                                                         wire:click="openPublish({{ $row->id }})">Proses Ulang
-                                                        (Terbitkan)</flux:menu.item>
+                                                        (Terbitkan)
+                                                    </flux:menu.item>
                                                 </flux:menu>
                                             </flux:dropdown>
                                         </flux:table.cell>
@@ -354,7 +355,8 @@
                             <li>Klik <strong>Terbitkan</strong>, pilih penandatangan, dan (opsional) isi nomor surat.
                             </li>
                             <li>Jika data tidak sesuai, klik <strong>Tolak</strong>. Data akan pindah ke tab
-                                <strong>Ditolak</strong>.</li>
+                                <strong>Ditolak</strong>.
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -511,9 +513,9 @@
             <div>
                 <flux:textarea label="Alasan Penolakan" placeholder="Misal: Alamat kurang lengkap..."
                     wire:model.defer="catatan_tolak" />
-                @error('catatan_tolak')
+                {{-- @error('catatan_tolak')
                     <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
-                @enderror
+                @enderror --}}
             </div>
 
             <div class="flex justify-end gap-2">

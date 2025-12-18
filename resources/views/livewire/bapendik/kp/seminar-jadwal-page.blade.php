@@ -395,9 +395,9 @@
             <flux:textarea label="Alasan Pengembalian" wire:model.defer="rejectReason"
                 placeholder="Contoh: Jadwal bentrok dengan seminar lain..." />
 
-            @error('rejectReason')
+            {{-- @error('rejectReason')
                 <div class="text-xs text-rose-600">{{ $message }}</div>
-            @enderror
+            @enderror --}}
 
             <div class="flex justify-end gap-2">
                 <flux:modal.close>

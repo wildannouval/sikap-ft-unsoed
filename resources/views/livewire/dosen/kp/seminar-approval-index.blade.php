@@ -504,9 +504,9 @@
             <p class="text-sm text-zinc-500">Berikan alasan penolakan agar mahasiswa dapat memperbaiki.</p>
 
             <flux:textarea label="Alasan Penolakan" wire:model.defer="rejectReason" />
-            @error('rejectReason')
+            {{-- @error('rejectReason')
                 <div class="text-xs text-rose-600">{{ $message }}</div>
-            @enderror
+            @enderror --}}
 
             <div class="flex justify-end gap-2 pt-2">
                 <flux:modal.close>

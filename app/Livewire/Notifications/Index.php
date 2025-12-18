@@ -35,24 +35,37 @@ class Index extends Component
         return (clone $this->base())->count();
     }
 
+    /**
+     * REVISI: pisahkan pagination & filter untuk tiap tab,
+     * supaya "Belum Dibaca" dan "Semua" tidak menampilkan data yang sama.
+     */
     #[Computed]
-    public function rows()
+    public function unreadRows()
     {
-        $q = $this->base();
-        if ($this->tab === 'unread') {
-            $q->unread();
-        }
-        return $q->paginate($this->perPage);
+        return $this->base()
+            ->unread()
+            ->paginate($this->perPage, ['*'], 'unreadPage')
+            ->withQueryString();
+    }
+
+    #[Computed]
+    public function allRows()
+    {
+        return $this->base()
+            ->paginate($this->perPage, ['*'], 'allPage')
+            ->withQueryString();
     }
 
     public function updatingPerPage(): void
     {
-        $this->resetPage();
+        $this->resetPage('unreadPage');
+        $this->resetPage('allPage');
     }
 
     public function updatingTab(): void
     {
-        $this->resetPage();
+        $this->resetPage('unreadPage');
+        $this->resetPage('allPage');
     }
 
     public function open(int $id): void
@@ -83,19 +96,23 @@ class Index extends Component
             ->unread()
             ->update(['read_at' => now()]);
 
-        $this->resetPage();
+        $this->resetPage('unreadPage');
+        $this->resetPage('allPage');
     }
 
     public function deleteOne(int $id): void
     {
         AppNotification::forUser(Auth::id())->whereKey($id)->delete();
-        $this->resetPage();
+        $this->resetPage('unreadPage');
+        $this->resetPage('allPage');
     }
 
     public function deleteAll(): void
     {
         AppNotification::forUser(Auth::id())->delete();
-        $this->resetPage();
+
+        $this->resetPage('unreadPage');
+        $this->resetPage('allPage');
     }
 
     // Helper Badge (Opsional, untuk konsistensi di view)

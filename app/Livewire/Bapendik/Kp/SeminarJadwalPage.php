@@ -214,7 +214,11 @@ class SeminarJadwalPage extends Component
     {
         $this->validate([
             'rejectReason' => ['required', 'string', 'min:5']
-        ], ['rejectReason.required' => 'Alasan pengembalian wajib diisi.']);
+        ], [
+            'rejectReason.required' => 'Alasan pengembalian wajib diisi.',
+            'rejectReason.min'      => 'Alasan pengembalian minimal :min karakter.',
+            'rejectReason.string'   => 'Alasan pengembalian harus berupa teks.',
+        ]);
 
         $row = KpSeminar::with(['kp.mahasiswa.user'])->findOrFail($this->rejectId);
 

@@ -6,6 +6,7 @@ use App\Models\KpGrade;
 use App\Models\KpSeminar;
 use App\Services\Notifier;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -180,7 +181,15 @@ class PenilaianForm extends Component
             'pl_kecermatan'     => $score,
             'pl_tanggung_jawab' => $score,
 
-            'ba_scan'           => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            // REVISI: BA wajib ada.
+            // - Jika belum ada ba_scan_path sebelumnya => upload wajib.
+            // - Jika sudah ada ba_scan_path (edit nilai) => tidak wajib upload ulang.
+            'ba_scan' => [
+                Rule::requiredIf(fn() => empty($this->ba_scan_path)),
+                'file',
+                'mimes:pdf,jpg,jpeg,png',
+                'max:10240',
+            ],
         ];
     }
 
@@ -325,7 +334,7 @@ class PenilaianForm extends Component
         $this->resetPage('pendingPage');
         $this->resetPage('gradedPage');
 
-        // otomatis tutup form setelah simpan
+        // REVISI: setelah submit balik ke halaman/list sebelumnya
         $this->closeForm();
     }
 

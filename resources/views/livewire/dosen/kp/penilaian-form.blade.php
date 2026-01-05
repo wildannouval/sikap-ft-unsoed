@@ -55,7 +55,7 @@
                                     class="size-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
                                     D
                                 </div>
-                                <h4 class="font-medium text-stone-900 dark:text-stone-100">Komponen Dospem (60%)</h4>
+                                <h4 class="font-medium text-stone-900 dark:text-stone-100">Komponen Dospem (75%)</h4>
                             </div>
 
                             <flux:input type="number" label="Sistematika Laporan"
@@ -81,7 +81,7 @@
                                     class="size-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">
                                     P
                                 </div>
-                                <h4 class="font-medium text-stone-900 dark:text-stone-100">Komponen Lapangan (40%)</h4>
+                                <h4 class="font-medium text-stone-900 dark:text-stone-100">Komponen Lapangan (25%)</h4>
                             </div>
 
                             <flux:input type="number" label="Kesesuaian" wire:model.defer="pl_kesesuaian"
@@ -118,9 +118,9 @@
                             @endif
                         </div>
                         <div wire:loading wire:target="ba_scan" class="text-xs text-zinc-500">Mengunggah...</div>
-                        @error('ba_scan')
+                        {{-- @error('ba_scan')
                             <div class="text-sm text-red-600">{{ $message }}</div>
-                        @enderror
+                        @enderror --}}
                     </div>
 
                     <div class="flex justify-end pt-4">
@@ -392,7 +392,7 @@
                             <li><strong>Perlu Dinilai</strong>: seminar status <strong>BA Terbit</strong>.</li>
                             <li><strong>Sudah Dinilai</strong>: seminar status <strong>Dinilai</strong> dan dapat
                                 diedit.</li>
-                            <li>Komponen nilai: <strong>Dosen (60%)</strong> dan <strong>Lapangan (40%)</strong>.</li>
+                            <li>Komponen nilai: <strong>Dosen (75%)</strong> dan <strong>Lapangan (25%)</strong>.</li>
                             <li>Unggah <strong>Scan BA</strong> sebagai bukti fisik penilaian.</li>
                         </ul>
                     </div>

@@ -18,16 +18,17 @@
         "livewire/flux": "2.2.6",
         "livewire/flux-pro": "2.2.6",
         "livewire/volt": "^1.7.0",
+        "maatwebsite/excel": "^3.1",
         "mpdf/mpdf": "^8.2",
         "ncjoes/office-converter": "^1.0",
-        "phpoffice/phpword": "1.2",
+        "phpoffice/phpword": "^1.4",
         "spatie/laravel-permission": "^6.21"
     },
-    "repositories": [     
-       {
-           "type": "artifact",
-           "url": "./packages"
-       }
+    "repositories": [
+        {
+            "type": "artifact",
+            "url": "./packages"
+        }
     ],
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -99,6 +100,12 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "audit": {
+            "ignore": [
+                "PKSA-365x-2zjk-pt47",
+                "PKSA-jw72-bn8m-h7rc"
+            ]
         }
     },
     "minimum-stability": "stable",

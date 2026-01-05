@@ -214,8 +214,8 @@ class PenilaianForm extends Component
             $this->pl_tanggung_jawab,
         ])->filter(fn($v) => $v !== null)->avg() ?? 0;
 
-        $scoreDospem = round($d * 0.60, 2);
-        $scorePl     = round($p * 0.40, 2);
+        $scoreDospem = round($d * 0.75, 2);
+        $scorePl     = round($p * 0.25, 2);
         $final       = round(($scoreDospem + $scorePl), 2);
 
         $letter = match (true) {

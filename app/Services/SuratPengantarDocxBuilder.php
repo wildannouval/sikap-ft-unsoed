@@ -25,10 +25,7 @@ class SuratPengantarDocxBuilder
         protected string $templateName = 'TEMPLATE_SURAT_PENGANTAR.docx',
     ) {}
 
-    /* ============================
-     * Path & util
-     * ============================ */
-
+    // Path & util
     protected function templatePath(): string
     {
         $path = storage_path('app/templates/' . $this->templateName);
@@ -91,6 +88,35 @@ class SuratPengantarDocxBuilder
         }
 
         $verifyUrl = route('sp.verify', ['token' => $this->sp->qr_token]);
+
+        /**
+         * Tanggal acuan:
+         * - Prioritas: tanggal_disetujui_surat_pengantar (biar konsisten dengan surat)
+         * - Fallback : $today
+         *
+         * Aturan umum:
+         * - Feb–Jul  => Genap (tahun berjalan)
+         * - Aug–Dec  => Ganjil (tahun berjalan)
+         * - Jan      => masih Ganjil tahun sebelumnya
+         */
+        $refDate = $this->sp->tanggal_disetujui_surat_pengantar ?? $today;
+
+        $month = (int) $refDate->format('n');
+        $year  = (int) $refDate->format('Y');
+
+        if ($month === 1) {
+            $semesterNama  = 'Ganjil';
+            $semesterTahun = $year - 1;
+        } elseif ($month >= 2 && $month <= 7) {
+            $semesterNama  = 'Genap';
+            $semesterTahun = $year;
+        } else { // 8–12
+            $semesterNama  = 'Ganjil';
+            $semesterTahun = $year;
+        }
+
+        // Isi placeholder semester
+        $tpl->setValue('semester_tahun_aktif', "{$semesterNama} {$semesterTahun}");
 
         // Isi placeholder teks lain
         $tpl->setValue('nomor_surat_pengantar', $this->sp->nomor_surat ?? '-');

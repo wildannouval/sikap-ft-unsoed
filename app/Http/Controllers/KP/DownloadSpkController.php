@@ -13,9 +13,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class DownloadSpkController extends Controller
 {
-    /**
-     * Bapendik mengunduh SPK (DOCX).
-     */
+    
+    // Bapendik mengunduh SPK (DOCX).
     public function downloadDocxForBapendik(KerjaPraktik $kp): BinaryFileResponse
     {
         abort_unless($kp->status === KerjaPraktik::ST_SPK_TERBIT, 403, 'SPK belum diterbitkan.');
@@ -34,16 +33,12 @@ class DownloadSpkController extends Controller
         return response()->download($path, $name)->deleteFileAfterSend(true);
     }
 
-    /**
-     * Mahasiswa mengunduh SPK (DOCX) miliknya.
-     */
+    //Mahasiswa mengunduh SPK (DOCX) miliknya.
     public function downloadDocxForMahasiswa(Request $request, KerjaPraktik $kp): BinaryFileResponse
     {
         // Ambil record Mahasiswa berdasar user login
         $mhs = Mahasiswa::where('user_id', $request->user()->id)->first();
 
-        // === FIX 403: bandingkan dengan primary key yang benar ===
-        // gunakan getKey() agar aman apabila PK ≠ "id" (mis. "mahasiswa_id")
         abort_unless($mhs && (int) $kp->mahasiswa_id === (int) $mhs->getKey(), 403, 'Tidak berwenang.');
         abort_unless($kp->status === KerjaPraktik::ST_SPK_TERBIT, 403, 'SPK belum terbit.');
 
@@ -59,9 +54,7 @@ class DownloadSpkController extends Controller
         return response()->download($path, $name)->deleteFileAfterSend(true);
     }
 
-    /**
-     * Komisi mengunduh SPK (DOCX).
-     */
+    // Komisi mengunduh SPK (DOCX).
     public function downloadDocxForKomisi(KerjaPraktik $kp): BinaryFileResponse
     {
         abort_unless($kp->status === KerjaPraktik::ST_SPK_TERBIT, 403, 'SPK belum terbit.');

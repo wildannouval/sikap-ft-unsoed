@@ -111,7 +111,7 @@ class NilaiIndex extends Component
                     'status'                 => KpSeminar::ST_SELESAI,
                 ]);
 
-                // 2) Update kerja_praktiks.status ke ENUM yang VALID (lihat SQL kamu)
+                // 2) Update kerja_praktiks.status ke ENUM yang VALID
                 // enum kerja_praktiks: ... 'nilai_terbit' itu ada, 'selesai' TIDAK ADA
                 if ($seminar->kerja_praktik_id) {
                     KerjaPraktik::where('id', $seminar->kerja_praktik_id)->update([
@@ -132,7 +132,6 @@ class NilaiIndex extends Component
 
             $this->redirect(route('mhs.nilai'), navigate: true);
         } catch (\Throwable $e) {
-            // kalau DB gagal, hapus file yang sudah tersimpan agar tidak nyampah
             if ($pathDist && Storage::disk('public')->exists($pathDist)) {
                 Storage::disk('public')->delete($pathDist);
             }

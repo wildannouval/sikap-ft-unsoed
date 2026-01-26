@@ -55,7 +55,7 @@ class Mahasiswa extends Model
                     ['email' => $email],
                     [
                         'name'     => $model->mahasiswa_name,
-                        'password' => Hash::make('password'), // hash!
+                        'password' => Hash::make('password'),
                     ]
                 );
 

@@ -78,7 +78,7 @@ class SignatoryIndex extends Component
             ->paginate($this->perPage);
     }
 
-    // --- Actions ---
+    // Actions
 
     public function create(): void
     {
@@ -134,7 +134,7 @@ class SignatoryIndex extends Component
         Flux::toast(heading: 'Berhasil', text: $msg, variant: 'success');
     }
 
-    // --- Delete Logic ---
+    // Delete Logic
 
     public function confirmDelete(int $id): void
     {

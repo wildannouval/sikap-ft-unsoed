@@ -50,19 +50,8 @@ class KonsultasiIndex extends Component
         return Dosen::where('user_id', Auth::id())->firstOrFail();
     }
 
-    /**
-     * FIX FILTER STATUS:
-     * Dropdown UI mengirim value:
-     * - all
-     * - kp_sedang_berjalan
-     * - spk_terbit
-     * - selesai (di UI dipakai sebagai "Nilai Terbit")
-     *
-     * Tapi di DB KerjaPraktik status real bisa:
-     * - spk_terbit
-     * - kp_berjalan
-     * - nilai_terbit (atau legacy: lulus / selesai)
-     */
+
+    //FILTER STATUS:
     protected function applyStatusFilter($query)
     {
         $filter = $this->statusFilter;
@@ -115,7 +104,7 @@ class KonsultasiIndex extends Component
                 });
             });
 
-        // FIX: apply mapping filter dari dropdown
+        // apply mapping filter dari dropdown
         $q = $this->applyStatusFilter($q);
 
         return $q->orderByDesc('updated_at')
@@ -173,7 +162,7 @@ class KonsultasiIndex extends Component
         ];
     }
 
-    // --- Actions ---
+    // Actions
 
     public function openLogModal(int $kpId): void
     {

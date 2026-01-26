@@ -131,7 +131,7 @@ class SpkPage extends Component
 
     public function publishSave(): void
     {
-        // REVISI: Nomor SPK optional, Signatory wajib
+        // Nomor SPK optional, Signatory wajib
         $this->validate([
             'select_id'    => ['required', 'exists:kerja_praktiks,id'],
             'nomor_spk'    => ['nullable', 'string', 'max:255'],

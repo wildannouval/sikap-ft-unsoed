@@ -23,7 +23,7 @@ class KpConsultation extends Model
         'hasil_konsultasi',
         'verified_at',
         'verified_by_dosen_id',
-        'verifier_note', // pastikan nama kolom di DB sesuai (verifier_note vs verified_note)
+        'verifier_note',
     ];
 
     protected $casts = [
@@ -31,12 +31,7 @@ class KpConsultation extends Model
         'verified_at'        => 'datetime',
     ];
 
-    // ===== Relations =====
-
-    /**
-     * Diubah dari kerjaPraktik() menjadi kp()
-     * agar konsisten dengan pemanggilan ->with('kp') dan $row->kp
-     */
+    // Relations
     public function kp(): BelongsTo
     {
         return $this->belongsTo(KerjaPraktik::class, 'kerja_praktik_id');

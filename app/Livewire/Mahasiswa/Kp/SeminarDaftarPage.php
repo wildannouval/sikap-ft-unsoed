@@ -32,11 +32,6 @@ class SeminarDaftarPage extends Component
     public $berkas_laporan;
     public ?string $berkas_laporan_path = null;
 
-    /**
-     * NOTE:
-     * - Default jangan "diajukan" supaya ketika belum ada pengajuan (seminar null),
-     *   status tidak misleading jadi "Menunggu ACC".
-     */
     public string $status = 'draft';
 
     public ?string $rejected_reason = null; // Tambahan untuk menyimpan alasan penolakan
@@ -67,7 +62,7 @@ class SeminarDaftarPage extends Component
             $this->abstrak             = $this->seminar->abstrak;
             $this->berkas_laporan_path = $this->seminar->berkas_laporan_path;
             $this->status              = $this->seminar->status;
-            $this->rejected_reason     = $this->seminar->rejected_reason; // Load alasan
+            $this->rejected_reason     = $this->seminar->rejected_reason;
 
             $this->tanggal_seminar = optional($this->seminar->tanggal_seminar)->toDateString();
             $this->ruangan_id      = $this->seminar->ruangan_id;
@@ -96,7 +91,7 @@ class SeminarDaftarPage extends Component
     #[Computed]
     public function statusLabel(): string
     {
-        // FIX 1: jika belum ada pengajuan (seminar null) jangan tampil "Menunggu ACC"
+        // jika belum ada pengajuan (seminar null) jangan tampil "Menunggu ACC"
         if (! $this->seminar) {
             return 'Belum Diajukan';
         }
@@ -107,7 +102,7 @@ class SeminarDaftarPage extends Component
     #[Computed]
     public function statusBadge(): array
     {
-        // FIX 1: jika belum ada pengajuan, beri badge draft yang benar
+        // jika belum ada pengajuan, beri badge draft yang benar
         if (! $this->seminar) {
             return [
                 'color' => 'zinc',
@@ -116,7 +111,7 @@ class SeminarDaftarPage extends Component
             ];
         }
 
-        // FIX 2: tambahkan mapping untuk DINILAI agar tidak jatuh ke "Status belum tersedia"
+        // tambahkan mapping untuk DINILAI agar tidak jatuh ke "Status belum tersedia"
         return match ($this->status) {
             KpSeminar::ST_DIAJUKAN             => ['color' => 'indigo', 'icon' => 'clock',         'desc' => 'Menunggu persetujuan Dosen'],
             KpSeminar::ST_DISETUJUI_PEMBIMBING => ['color' => 'sky',    'icon' => 'check-circle',  'desc' => 'Menunggu penjadwalan Koordinator'],

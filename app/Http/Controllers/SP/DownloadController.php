@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 
 class DownloadController extends Controller
 {
-    /** Nama file aman untuk header Content-Disposition */
+    // Nama file aman untuk header Content-Disposition
     private function safeDocxName(?string $nomorSurat, int|string $fallbackId): string
     {
         $base = $nomorSurat ?: $fallbackId;
@@ -28,7 +28,7 @@ class DownloadController extends Controller
         return 'Surat_Pengantar_' . $base . '.docx';
     }
 
-    /** Helper kirim file & auto hapus temp */
+    // Helper kirim file & auto hapus temp
     private function sendDocx(string $path, string $filename)
     {
         return response()->download(
@@ -38,10 +38,7 @@ class DownloadController extends Controller
         )->deleteFileAfterSend(true);
     }
 
-    /**
-     * Mahasiswa: unduh DOCX miliknya (hanya setelah Diterbitkan)
-     * Route: mhs.sp.download.docx
-     */
+    // Mahasiswa: unduh DOCX miliknya (hanya setelah Diterbitkan)
     public function downloadDocxForMahasiswa(Request $request, SuratPengantar $sp)
     {
         // Pastikan pemilik
@@ -61,10 +58,7 @@ class DownloadController extends Controller
         return $this->sendDocx($docxPath, $filename);
     }
 
-    /**
-     * Bapendik/Admin: unduh DOCX (umumnya hanya yang Diterbitkan)
-     * Route: bap.sp.download.docx
-     */
+    // Bapendik/Admin: unduh DOCX (umumnya hanya yang Diterbitkan)
     public function downloadDocxForBapendik(Request $request, SuratPengantar $sp)
     {
         // Guard ekstra (selain middleware)

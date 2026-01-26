@@ -162,7 +162,7 @@ class DosenIndex extends Component
         Flux::toast(heading: 'Berhasil', text: 'Data dosen disimpan.', variant: 'success');
     }
 
-    // --- Delete Logic ---
+    // Delete Logic
 
     public function confirmDelete(int $id): void
     {
@@ -174,7 +174,7 @@ class DosenIndex extends Component
     {
         if ($this->deleteId) {
             $row = Dosen::findOrFail($this->deleteId);
-            $row->delete(); // User juga akan terhapus jika cascade di DB, atau perlu logic tambahan
+            $row->delete();
 
             $this->resetPage();
             Flux::toast(heading: 'Terhapus', text: 'Data dosen dihapus.', variant: 'success');

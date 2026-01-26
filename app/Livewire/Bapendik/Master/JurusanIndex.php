@@ -43,7 +43,7 @@ class JurusanIndex extends Component
         ];
     }
 
-    // --- Reset Pagination Hooks ---
+    // Reset Pagination Hooks
     public function updatingQ()
     {
         $this->resetPage();
@@ -64,7 +64,7 @@ class JurusanIndex extends Component
         $this->resetPage();
     }
 
-    // --- Actions ---
+    // Actions 
 
     public function create(): void
     {
@@ -109,7 +109,7 @@ class JurusanIndex extends Component
         Flux::toast(heading: 'Berhasil', text: $msg, variant: 'success');
     }
 
-    // --- Delete Logic ---
+    // Delete Logic
 
     public function confirmDelete(int $id): void
     {

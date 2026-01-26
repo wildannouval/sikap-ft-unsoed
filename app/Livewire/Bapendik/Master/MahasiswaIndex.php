@@ -154,7 +154,7 @@ class MahasiswaIndex extends Component
         Flux::toast(heading: 'Berhasil', text: 'Data mahasiswa disimpan.', variant: 'success');
     }
 
-    // --- Delete Logic ---
+    // Delete Logic 
 
     public function confirmDelete(int $id): void
     {

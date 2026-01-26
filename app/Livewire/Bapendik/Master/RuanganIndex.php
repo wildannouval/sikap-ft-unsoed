@@ -51,7 +51,7 @@ class RuanganIndex extends Component
         ];
     }
 
-    // --- Reset Pagination Hooks ---
+    // Reset Pagination Hooks 
     public function updatingQ()
     {
         $this->resetPage();
@@ -72,7 +72,7 @@ class RuanganIndex extends Component
         $this->resetPage();
     }
 
-    // --- Actions ---
+    // Actions
 
     public function create(): void
     {
@@ -125,7 +125,7 @@ class RuanganIndex extends Component
         Flux::toast(heading: 'Berhasil', text: $msg, variant: 'success');
     }
 
-    // --- Delete Logic ---
+    // Delete Logic
 
     public function confirmDelete(int $id): void
     {

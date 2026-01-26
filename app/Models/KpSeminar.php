@@ -58,7 +58,6 @@ class KpSeminar extends Model
 
     public const ST_DIAJUKAN              = 'diajukan';
     public const ST_DISETUJUI_PEMBIMBING  = 'disetujui_pembimbing';
-    // public const ST_DIJADWALKAN        = 'dijadwalkan'; // KITA HAPUS DARI FLOW
     public const ST_SELESAI               = 'selesai';
     public const ST_REVISI                = 'revisi';
     public const ST_GAGAL                 = 'gagal';
@@ -71,7 +70,6 @@ class KpSeminar extends Model
         return match ($st) {
             self::ST_DIAJUKAN              => 'zinc',
             self::ST_DISETUJUI_PEMBIMBING  => 'sky',
-            // self::ST_DIJADWALKAN        => 'emerald',
             self::ST_SELESAI               => 'teal',
             self::ST_REVISI                => 'amber',
             self::ST_BA_TERBIT             => 'violet',
@@ -85,10 +83,9 @@ class KpSeminar extends Model
     {
         return match ($st) {
             self::ST_DIAJUKAN              => 'Menunggu ACC',
-            self::ST_DISETUJUI_PEMBIMBING  => 'Menunggu Jadwal', // Label disesuaikan agar user paham
-            // self::ST_DIJADWALKAN        => 'Dijadwalkan',
+            self::ST_DISETUJUI_PEMBIMBING  => 'Menunggu Jadwal',
             self::ST_SELESAI               => 'Selesai Seminar',
-            self::ST_REVISI                => 'Revisi Jadwal', // Disesuaikan
+            self::ST_REVISI                => 'Revisi Jadwal',
             self::ST_BA_TERBIT             => 'BA Terbit',
             self::ST_DINILAI               => 'Dinilai',
             self::ST_DITOLAK               => 'Ditolak',
@@ -97,7 +94,7 @@ class KpSeminar extends Model
         };
     }
 
-    // --- RELATIONS ---
+    // RELATIONS
 
     public function kp(): BelongsTo
     {
@@ -113,8 +110,7 @@ class KpSeminar extends Model
     {
         return $this->belongsTo(Dosen::class, 'dosen_pembimbing_id', 'dosen_id');
     }
-
-    // INI YANG MENYEBABKAN ERROR SEBELUMNYA (KURANG)
+    
     public function signatory(): BelongsTo
     {
         return $this->belongsTo(Signatory::class, 'signatory_id');

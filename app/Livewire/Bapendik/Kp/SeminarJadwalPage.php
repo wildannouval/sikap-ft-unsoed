@@ -19,7 +19,7 @@ class SeminarJadwalPage extends Component
     #[Url] public string $search = '';
     #[Url] public string $tab = 'pending'; // 'pending' | 'completed'
     #[Url] public string $sortBy = 'created_at';
-    #[Url] public string $sortDirection = 'asc'; // Pending biasanya ASC (yang lama diproses dulu)
+    #[Url] public string $sortDirection = 'asc';
     #[Url] public int $perPage = 10;
 
     // Form State (Unified)
@@ -122,8 +122,7 @@ class SeminarJadwalPage extends Component
         return KpSeminar::with(['kp.mahasiswa.user', 'kp.dosenPembimbing', 'signatory'])->find($this->detailId);
     }
 
-    // --- Actions ---
-
+    // Action
     public function openDetail(int $id): void
     {
         $this->detailId = $id;

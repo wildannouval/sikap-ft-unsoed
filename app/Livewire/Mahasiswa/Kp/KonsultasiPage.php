@@ -74,7 +74,7 @@ class KonsultasiPage extends Component
         ];
     }
 
-    // --- Hooks ---
+    // Hooks
     public function updatingSearch()
     {
         $this->resetPage();
@@ -107,7 +107,7 @@ class KonsultasiPage extends Component
         $this->resetPage();
     }
 
-    // --- Computed Properties ---
+    // Computed Properties
 
     #[Computed]
     public function dosenName(): string
@@ -159,7 +159,7 @@ class KonsultasiPage extends Component
         return KpConsultation::find($this->detailId);
     }
 
-    // --- Actions ---
+    // Actions
 
     public function submit(): void
     {
@@ -268,7 +268,7 @@ class KonsultasiPage extends Component
         $this->resetForm();
     }
 
-    // --- Modal Actions ---
+    // Modal Actions
 
     public function openDetail(int $id): void
     {

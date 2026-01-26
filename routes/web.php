@@ -118,7 +118,7 @@ Route::prefix('mhs')
         Route::get('/kp', MhsKpPage::class)->name('mhs.kp.index');
         Route::get('/kp/{kp}/download-docx', [DownloadSpkController::class, 'downloadDocxForMahasiswa'])->name('mhs.kp.download.docx');
 
-        // Tambahkan Route Download SPK (Ini yang sebelumnya missing/salah nama)
+        // Tambahkan Route Download SPK
         Route::get('/kp/{kp}/download-spk', [DownloadSpkController::class, 'downloadDocxForMahasiswa'])->name('mhs.kp.download.spk');
 
         Route::get('/kp/{kp}/konsultasi', MhsKpKonsultasiPage::class)->name('mhs.kp.konsultasi');

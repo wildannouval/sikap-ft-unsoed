@@ -16,7 +16,7 @@ class Index extends Component
     #[Url] public string $sortBy = 'created_at';
     #[Url] public string $sortDirection = 'desc';
     #[Url] public int $perPage = 10;
-    #[Url] public string $search = '';   // <— search query
+    #[Url] public string $search = '';
 
     // form state
     public ?int $editingId = null;

@@ -62,7 +62,7 @@ class ValidasiPage extends Component
         $this->resetPage();
     }
 
-    // --- Helpers ---
+    // Helpers
 
     public function badgeColor(string $status): string
     {
@@ -84,7 +84,7 @@ class ValidasiPage extends Component
         };
     }
 
-    // --- Queries ---
+    // Queries
 
     protected function baseQuery(): Builder
     {
@@ -148,7 +148,7 @@ class ValidasiPage extends Component
         return SuratPengantar::with(['mahasiswa.user', 'mahasiswa.jurusan', 'signatory'])->find($this->detailId);
     }
 
-    // --- Actions ---
+    // Actions
 
     public function openDetail(int $id): void
     {
@@ -192,7 +192,7 @@ class ValidasiPage extends Component
         $sp->signatory_id = $sig->id;
         $sp->ttd_signed_at = now();
 
-        // Snapshot data pejabat (agar sejarah tetap ada jika master berubah)
+        // Snapshot data pejabat
         $sp->ttd_signed_by_name     = $sig->name;
         $sp->ttd_signed_by_position = $sig->position;
         $sp->ttd_signed_by_nip      = $sig->nip;

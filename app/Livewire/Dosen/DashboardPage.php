@@ -19,7 +19,7 @@ class DashboardPage extends Component
     public function stats(): array
     {
         $dosenId = $this->dosenId();
-        // Hapus 'dijadwalkan' dari default return
+        
         if (!$dosenId) {
             return ['menungguAcc' => 0, 'perluNilai' => 0, 'baTerbit' => 0];
         }
@@ -28,7 +28,6 @@ class DashboardPage extends Component
 
         return [
             'menungguAcc' => (clone $base)->where('status', KpSeminar::ST_DIAJUKAN)->count(),
-            // 'dijadwalkan' => ... // HAPUS
             'baTerbit'    => (clone $base)->where('status', KpSeminar::ST_BA_TERBIT)->count(),
             // Perlu nilai: Sudah BA terbit tapi belum ada nilai (grade)
             'perluNilai'  => (clone $base)->where('status', KpSeminar::ST_BA_TERBIT)

@@ -181,9 +181,9 @@ class PenilaianForm extends Component
             'pl_kecermatan'     => $score,
             'pl_tanggung_jawab' => $score,
 
-            // REVISI: BA wajib ada.
-            // - Jika belum ada ba_scan_path sebelumnya => upload wajib.
-            // - Jika sudah ada ba_scan_path (edit nilai) => tidak wajib upload ulang.
+            // BA wajib ada.
+            // Jika belum ada ba_scan_path sebelumnya => upload wajib.
+            // Jika sudah ada ba_scan_path (edit nilai) => tidak wajib upload ulang.
             'ba_scan' => [
                 Rule::requiredIf(fn() => empty($this->ba_scan_path)),
                 'file',
@@ -334,7 +334,7 @@ class PenilaianForm extends Component
         $this->resetPage('pendingPage');
         $this->resetPage('gradedPage');
 
-        // REVISI: setelah submit balik ke halaman/list sebelumnya
+        // setelah submit balik ke halaman/list sebelumnya
         $this->closeForm();
     }
 

@@ -7,10 +7,7 @@ use App\Models\KerjaPraktik;
 
 class SpkVerifyController extends Controller
 {
-    /**
-     * Halaman verifikasi QR SPK KP
-     * Route: GET /kp/spk/verify/{token} (contoh)
-     */
+    // Halaman verifikasi QR SPK KP
     public function __invoke(string $token)
     {
         $kp = KerjaPraktik::with(['mahasiswa.user'])

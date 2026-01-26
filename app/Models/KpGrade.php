@@ -11,6 +11,7 @@ class KpGrade extends Model
 
     protected $fillable = [
         'kp_seminar_id',
+
         // dosen pembimbing
         'dospem_sistematika_laporan',
         'dospem_tata_bahasa',
@@ -19,6 +20,7 @@ class KpGrade extends Model
         'dospem_materi_kp',
         'dospem_penguasaan_masalah',
         'dospem_diskusi',
+
         // pembimbing lapangan
         'pl_kesesuaian',
         'pl_kehadiran',
@@ -26,11 +28,13 @@ class KpGrade extends Model
         'pl_keaktifan',
         'pl_kecermatan',
         'pl_tanggung_jawab',
+
         // rekap
         'score_dospem',
         'score_pl',
         'final_score',
         'final_letter',
+        
         // meta
         'graded_by_user_id',
         'graded_at',

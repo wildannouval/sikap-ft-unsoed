@@ -123,8 +123,8 @@
                                         <div class="text-zinc-500">Status Surat</div>
                                         <flux:badge size="sm" inset="top bottom"
                                             :color="$sp->status_surat_pengantar === 'Diterbitkan'
-                                                                                            ? 'green'
-                                                                                            : ($sp->status_surat_pengantar === 'Diajukan' ? 'zinc' : 'red')">
+                                                                                                                                        ? 'green'
+                                                                                                                                        : ($sp->status_surat_pengantar === 'Diajukan' ? 'zinc' : 'red')">
                                             {{ $sp->status_surat_pengantar }}
                                         </flux:badge>
                                     </div>

@@ -8,10 +8,8 @@ use Carbon\Carbon;
 
 class VerifyController extends Controller
 {
-    /**
-     * Tampilkan halaman verifikasi QR berdasarkan token.
-     * Route: GET /sp/verify/{token}  (name: sp.verify)
-     */
+
+    // Tampilkan halaman verifikasi QR berdasarkan token.
     public function show(string $token)
     {
         $sp = SuratPengantar::with(['mahasiswa.jurusan', 'signatory'])

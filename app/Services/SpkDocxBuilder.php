@@ -94,12 +94,12 @@ class SpkDocxBuilder
             $this->setIfPresent($tpl, $vars, $k, $tgl);
         }
 
-        // === Identitas mahasiswa (PASTI gunakan kolom kamu) ===
+        // === Identitas mahasiswa ===
         $namaMhs = $mhs?->user?->name
             ?? $mhs?->nama_mahasiswa
             ?? '-';
 
-        $nimMhs  = $mhs?->mahasiswa_nim // <— ini yang benar di DB kamu
+        $nimMhs  = $mhs?->mahasiswa_nim
             ?? '-';
 
         $jurusan = $jur?->nama_jurusan ?? '-';
@@ -132,11 +132,11 @@ class SpkDocxBuilder
 
         // nama
         $this->setIfPresent($tpl, $vars, 'dosen_pembimbing_nama', $pembimbingNama);
-        $this->setIfPresent($tpl, $vars, 'nama_dosen_pembimbing', $pembimbingNama); // alias
+        $this->setIfPresent($tpl, $vars, 'nama_dosen_pembimbing', $pembimbingNama);
         $this->setIfPresent($tpl, $vars, 'dosen_komisi_nama', $komisiNama);
-        $this->setIfPresent($tpl, $vars, 'nama_dosen_komisi', $komisiNama); // alias
+        $this->setIfPresent($tpl, $vars, 'nama_dosen_komisi', $komisiNama);
 
-        // NIP (tambahkan placeholder ini pada template jika belum ada)
+        // NIP
         $this->setIfPresent($tpl, $vars, 'nip_dosen_pembimbing', $pembimbingNip);
         $this->setIfPresent($tpl, $vars, 'nip_dosen_komisi', $komisiNip);
 
@@ -157,8 +157,8 @@ class SpkDocxBuilder
             if (method_exists($tpl, 'setImageValue')) {
                 $tpl->setImageValue('qr_code_ttd', [
                     'path'   => $normalized,
-                    'width'  => 120,
-                    'height' => 120,
+                    'width'  => 100,
+                    'height' => 100,
                 ]);
                 $inserted = true;
             }

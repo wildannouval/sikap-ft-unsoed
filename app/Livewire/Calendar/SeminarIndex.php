@@ -103,7 +103,7 @@ class SeminarIndex extends Component
         [$start, $end] = $this->dateRange();
         $term = '%' . $this->q . '%';
 
-        // FIX: Menggunakan string 'dijadwalkan' secara langsung karena konstanta tidak ada di model
+        // Menggunakan string 'dijadwalkan' secara langsung karena konstanta tidak ada di model
         $visibleStatuses = [
             'dijadwalkan',
             KpSeminar::ST_BA_TERBIT,

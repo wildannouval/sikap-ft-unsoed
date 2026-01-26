@@ -32,11 +32,11 @@ class DownloadBaController extends Controller
             ->where('kerja_praktik_id', $kpId)
             ->firstOrFail();
 
-        // Otorisasi: Pastikan mahasiswa yang login adalah pemilik seminar
+        // Cek mahasiswa yang login adalah pemilik seminar
         $mhs = Mahasiswa::where('user_id', $request->user()->id)->first();
         abort_unless($mhs && (int)$seminar->mahasiswa_id === (int)$mhs->getKey(), 403, 'Tidak berwenang.');
 
-        // FIX: Izinkan download jika status sudah lanjut (dinilai/selesai)
+        // Izinkan download jika status sudah lanjut (dinilai/selesai)
         if (!$this->isDownloadable($seminar->status)) {
             abort(403, 'Berita Acara belum diterbitkan.');
         }
@@ -50,7 +50,7 @@ class DownloadBaController extends Controller
         $seminar = KpSeminar::with(['kp.mahasiswa.user', 'kp.dosenPembimbing'])->findOrFail($seminarId);
         $user = auth()->user();
 
-        // Otorisasi: Harus Dosen Pembimbing yang bersangkutan ATAU Dosen Komisi
+        // Harus Dosen Pembimbing yang bersangkutan ATAU Dosen Komisi
         $isDospem = $user->dosen?->dosen_id === $seminar->dosen_pembimbing_id;
         $isKomisi = $user->hasRole('Dosen Komisi');
 
@@ -58,7 +58,7 @@ class DownloadBaController extends Controller
             abort(403, 'Anda bukan pembimbing mahasiswa ini.');
         }
 
-        // FIX: Izinkan download jika status sudah lanjut
+        // Izinkan download jika status sudah lanjut
         if (!$this->isDownloadable($seminar->status)) {
             abort(403, 'Berita Acara belum diterbitkan.');
         }
@@ -71,7 +71,7 @@ class DownloadBaController extends Controller
     {
         $seminar = KpSeminar::with(['kp.mahasiswa.user'])->findOrFail($seminarId);
 
-        // FIX: Izinkan download jika status sudah lanjut
+        // Izinkan download jika status sudah lanjut
         if (!$this->isDownloadable($seminar->status)) {
             abort(403, 'Berita Acara belum diterbitkan.');
         }
@@ -79,19 +79,18 @@ class DownloadBaController extends Controller
         return $this->processDownload($seminar);
     }
 
-    // --- Private Helper untuk Generate File ---
+    // Private Helper untuk Generate File
     private function processDownload(KpSeminar $seminar)
     {
         // Pastikan Signatory diambil
         $sign = $seminar->signatory_id ? Signatory::find($seminar->signatory_id) : null;
 
         // Generate file
-        // Pastikan class BaDocxBuilder ada dan namespace-nya benar
         $path = (new BaDocxBuilder($seminar, $sign))->buildDocx();
 
         // Nama file output
         $mhsName = $seminar->kp?->mahasiswa?->user?->name ?? 'mahasiswa';
-        $mhsNim  = $seminar->kp?->mahasiswa?->mahasiswa_nim ?? 'nim'; // Ganti 'nim' dengan 'mahasiswa_nim' sesuai tabel
+        $mhsNim  = $seminar->kp?->mahasiswa?->mahasiswa_nim ?? 'nim';
 
         $who  = trim($mhsName . '_' . $mhsNim);
         $name = 'BA_Seminar_' . ($seminar->nomor_ba ?? 'draft') . '_' . Str::slug($who) . '.docx';

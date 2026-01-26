@@ -35,10 +35,6 @@ class Index extends Component
         return (clone $this->base())->count();
     }
 
-    /**
-     * REVISI: pisahkan pagination & filter untuk tiap tab,
-     * supaya "Belum Dibaca" dan "Semua" tidak menampilkan data yang sama.
-     */
     #[Computed]
     public function unreadRows()
     {
@@ -115,7 +111,7 @@ class Index extends Component
         $this->resetPage('allPage');
     }
 
-    // Helper Badge (Opsional, untuk konsistensi di view)
+    // Helper Badge (untuk konsistensi di view)
     public function getBadgeConfig(string $type): array
     {
         return match ($type) {

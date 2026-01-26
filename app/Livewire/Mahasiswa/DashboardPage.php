@@ -54,7 +54,7 @@ class DashboardPage extends Component
 
         // 2. Status KP Terakhir
         $kp = $this->activeKp;
-        // Fix: Pastikan status label ada, jika null default 'Belum Ada'
+        // Pastikan status label ada, jika null default 'Belum Ada'
         $kpStatusLabel = $kp ? $kp::statusLabel($kp->status) : 'Belum Ada';
 
         // 3. Konsultasi

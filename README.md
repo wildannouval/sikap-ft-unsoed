@@ -243,7 +243,7 @@ Setelah menjalankan `php artisan db:seed`, Anda dapat login dengan akun-akun ber
 3. PELAKSANAAN KP & BIMBINGAN
    ┌──────────┐      ┌──────────┐      ┌──────────┐
    │ Mahasiswa│ ───▶ │  Dosen   │ ───▶ │ Minimal  │
-   │Konsultasi│      │ Verifikasi│     │ 8x ACC   │
+   │Konsultasi│      │ Verifikasi│     │ 6x ACC   │
    └──────────┘      └──────────┘      └──────────┘
 
 4. SEMINAR KP
@@ -290,7 +290,7 @@ sikap-ft-unsoed/
 
 ## 📝 Lisensi
 
-Proyek ini dikembangkan untuk keperluan internal **Fakultas Teknik Universitas Jenderal Soedirman**.
+Proyek ini dikembangkan untuk keperluan internal dan tugas akhir **Fakultas Teknik Universitas Jenderal Soedirman**.
 
 ---
 

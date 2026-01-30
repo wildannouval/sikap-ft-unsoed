@@ -20,6 +20,7 @@ Sistem informasi manajemen Kerja Praktik (KP) untuk **Fakultas Teknik Universita
 ## 🚀 Fitur
 
 ### Mahasiswa
+
 - 📝 Mengajukan Surat Pengantar KP
 - 📄 Mengajukan Kerja Praktik
 - 💬 Melakukan Konsultasi/Bimbingan dengan Dosen Pembimbing
@@ -28,16 +29,19 @@ Sistem informasi manajemen Kerja Praktik (KP) untuk **Fakultas Teknik Universita
 - 📥 Download dokumen (Surat Pengantar, SPK, Berita Acara)
 
 ### Dosen Pembimbing
+
 - ✅ Verifikasi konsultasi mahasiswa bimbingan
 - 📋 Menyetujui pendaftaran seminar
 - 📊 Input nilai KP mahasiswa
 
 ### Dosen Komisi
+
 - 🔍 Review pengajuan KP mahasiswa
 - ✅ Approve/reject pengajuan KP
 - 📊 Melihat rekap nilai
 
 ### Bapendik (Bagian Pendidikan)
+
 - 📄 Validasi & menerbitkan Surat Pengantar
 - 📑 Menerbitkan SPK (Surat Penunjukan Kerja Praktik)
 - 📅 Menjadwalkan Seminar KP
@@ -49,18 +53,18 @@ Sistem informasi manajemen Kerja Praktik (KP) untuk **Fakultas Teknik Universita
 
 ## 🛠️ Tech Stack
 
-| Komponen        | Teknologi                        |
-| --------------- | -------------------------------- |
-| Framework       | Laravel 12                       |
-| Frontend        | Livewire + Volt + Flux UI        |
-| CSS             | Tailwind CSS 4                   |
-| Database        | SQLite (default) / MySQL         |
-| Authentication  | Laravel Fortify                  |
-| Authorization   | Spatie Laravel Permission        |
-| PDF Generation  | DomPDF, mPDF                     |
-| Document Export | PhpWord                          |
-| Excel Export    | Maatwebsite Excel                |
-| Build Tool      | Vite 7                           |
+| Komponen        | Teknologi                 |
+| --------------- | ------------------------- |
+| Framework       | Laravel 12                |
+| Frontend        | Livewire + Volt + Flux UI |
+| CSS             | Tailwind CSS 4            |
+| Database        | SQLite (default) / MySQL  |
+| Authentication  | Laravel Fortify           |
+| Authorization   | Spatie Laravel Permission |
+| PDF Generation  | DomPDF, mPDF              |
+| Document Export | PhpWord                   |
+| Excel Export    | Maatwebsite Excel         |
+| Build Tool      | Vite 7                    |
 
 ---
 
@@ -116,6 +120,7 @@ php artisan db:seed
 ```
 
 > **💡 Tips:** Untuk menggunakan MySQL, edit file `.env` dan ubah konfigurasi database:
+>
 > ```env
 > DB_CONNECTION=mysql
 > DB_HOST=127.0.0.1
@@ -145,6 +150,7 @@ composer dev
 ```
 
 Perintah ini akan menjalankan:
+
 - 🌐 **Laravel Server** di `http://localhost:8000`
 - 📬 **Queue Worker** untuk proses background
 - ⚡ **Vite Dev Server** untuk hot reload assets
@@ -172,17 +178,17 @@ Buka browser dan akses: **http://localhost:8000**
 
 Setelah menjalankan `php artisan db:seed`, Anda dapat login dengan akun-akun berikut:
 
-| Role              | Email                     | Password   | Keterangan                      |
-| ----------------- | ------------------------- | ---------- | ------------------------------- |
-| **Bapendik**      | bapendik@example.com      | `password` | Admin Bagian Pendidikan         |
-| **Dosen Pembimbing** | dsp@example.com        | `password` | Dosen Pembimbing Demo           |
-| **Dosen Komisi**  | kom@example.com           | `password` | Dosen Komisi KP                 |
-| **Mahasiswa Baru**| mhs_baru@example.com      | `password` | Mahasiswa belum ada aktivitas   |
-| **Mahasiswa (Ajukan SP)** | mhs_sp@example.com | `password` | Sedang mengajukan Surat Pengantar |
-| **Mahasiswa (Ajukan KP)** | mhs_submit@example.com | `password` | Sedang mengajukan KP           |
-| **Mahasiswa (Bimbingan)** | mhs_active@example.com | `password` | Sedang dalam proses bimbingan  |
-| **Mahasiswa (Siap Seminar)** | mhs_seminar@example.com | `password` | Siap mendaftar seminar       |
-| **Mahasiswa (Selesai)** | mhs_nilai@example.com | `password` | KP sudah selesai & dinilai     |
+| Role                         | Email                   | Password   | Keterangan                        |
+| ---------------------------- | ----------------------- | ---------- | --------------------------------- |
+| **Bapendik**                 | bapendik@example.com    | `password` | Admin Bagian Pendidikan           |
+| **Dosen Pembimbing**         | dsp@example.com         | `password` | Dosen Pembimbing Demo             |
+| **Dosen Komisi**             | kom@example.com         | `password` | Dosen Komisi KP                   |
+| **Mahasiswa Baru**           | mhs_baru@example.com    | `password` | Mahasiswa belum ada aktivitas     |
+| **Mahasiswa (Ajukan SP)**    | mhs_sp@example.com      | `password` | Sedang mengajukan Surat Pengantar |
+| **Mahasiswa (Ajukan KP)**    | mhs_submit@example.com  | `password` | Sedang mengajukan KP              |
+| **Mahasiswa (Bimbingan)**    | mhs_active@example.com  | `password` | Sedang dalam proses bimbingan     |
+| **Mahasiswa (Siap Seminar)** | mhs_seminar@example.com | `password` | Siap mendaftar seminar            |
+| **Mahasiswa (Selesai)**      | mhs_nilai@example.com   | `password` | KP sudah selesai & dinilai        |
 
 ---
 
@@ -190,33 +196,33 @@ Setelah menjalankan `php artisan db:seed`, Anda dapat login dengan akun-akun ber
 
 ### Roles
 
-| Role             | Deskripsi                                           |
-| ---------------- | --------------------------------------------------- |
-| Mahasiswa        | Peserta Kerja Praktik                               |
-| Dosen Pembimbing | Membimbing mahasiswa selama KP                      |
-| Dosen Komisi     | Mereview dan menyetujui pengajuan KP                |
-| Bapendik         | Admin Bagian Pendidikan (manajemen dokumen & jadwal)|
+| Role             | Deskripsi                                            |
+| ---------------- | ---------------------------------------------------- |
+| Mahasiswa        | Peserta Kerja Praktik                                |
+| Dosen Pembimbing | Membimbing mahasiswa selama KP a                     |
+| Dosen Komisi     | Mereview dan menyetujui pengajuan KP                 |
+| Bapendik         | Admin Bagian Pendidikan (manajemen dokumen & jadwal) |
 
 ### Permissions
 
-| Permission        | Deskripsi                              |
-| ----------------- | -------------------------------------- |
-| sp.create         | Membuat Surat Pengantar                |
-| sp.view           | Melihat Surat Pengantar                |
-| sp.validate       | Memvalidasi Surat Pengantar            |
-| kp.create         | Membuat pengajuan KP                   |
-| kp.view           | Melihat data KP                        |
-| kp.review         | Mereview pengajuan KP                  |
-| kp.approve        | Menyetujui pengajuan KP                |
-| bimbingan.create  | Membuat catatan bimbingan              |
-| bimbingan.view    | Melihat catatan bimbingan              |
-| bimbingan.verify  | Memverifikasi bimbingan                |
-| seminar.register  | Mendaftar seminar                      |
-| seminar.schedule  | Menjadwalkan seminar                   |
-| seminar.view      | Melihat jadwal seminar                 |
-| nilai.input       | Menginput nilai                        |
-| nilai.view        | Melihat nilai                          |
-| masterdata.manage | Mengelola master data                  |
+| Permission        | Deskripsi                   |
+| ----------------- | --------------------------- |
+| sp.create         | Membuat Surat Pengantar     |
+| sp.view           | Melihat Surat Pengantar     |
+| sp.validate       | Memvalidasi Surat Pengantar |
+| kp.create         | Membuat pengajuan KP        |
+| kp.view           | Melihat data KP             |
+| kp.review         | Mereview pengajuan KP       |
+| kp.approve        | Menyetujui pengajuan KP     |
+| bimbingan.create  | Membuat catatan bimbingan   |
+| bimbingan.view    | Melihat catatan bimbingan   |
+| bimbingan.verify  | Memverifikasi bimbingan     |
+| seminar.register  | Mendaftar seminar           |
+| seminar.schedule  | Menjadwalkan seminar        |
+| seminar.view      | Melihat jadwal seminar      |
+| nilai.input       | Menginput nilai             |
+| nilai.view        | Melihat nilai               |
+| masterdata.manage | Mengelola master data       |
 
 ---
 
